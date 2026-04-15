@@ -13,6 +13,7 @@
 
 """VF2Layout pass to find a layout using subgraph isomorphism"""
 
+from collections import deque
 from enum import Enum
 
 from qiskit.transpiler.layout import Layout
@@ -24,6 +25,71 @@ from qiskit._accelerate.vf2_layout import (
     MultiQEncountered,
     VF2PassConfiguration,
 )
+
+
+def _is_bipartite(coupling_map):
+    """Check if a coupling map's graph is bipartite using 2-coloring BFS."""
+    graph = coupling_map.graph
+    num_nodes = len(graph)
+    if num_nodes == 0:
+        return True
+    color = {}
+    for start in graph.node_indices():
+        if start in color:
+            continue
+        color[start] = 0
+        queue = deque([start])
+        while queue:
+            node = queue.popleft()
+            for neighbor in graph.neighbors(node):
+                if neighbor not in color:
+                    color[neighbor] = 1 - color[node]
+                    queue.append(neighbor)
+                elif color[neighbor] == color[node]:
+                    return False
+    return True
+
+
+def _interaction_graph_has_odd_cycle(dag):
+    """Check if the circuit's 2Q interaction graph contains an odd cycle.
+
+    Builds an undirected graph of unique 2Q interactions and checks bipartiteness.
+    A non-bipartite interaction graph contains an odd cycle, which cannot be embedded
+    as a subgraph of any bipartite graph.
+    """
+    # Build adjacency list from unique 2Q edges
+    adj = {}
+    for node in dag.op_nodes(include_directives=False):
+        if len(node.qargs) == 2:
+            q0 = dag.find_bit(node.qargs[0]).index
+            q1 = dag.find_bit(node.qargs[1]).index
+            if q0 not in adj:
+                adj[q0] = set()
+            if q1 not in adj:
+                adj[q1] = set()
+            adj[q0].add(q1)
+            adj[q1].add(q0)
+
+    if not adj:
+        return False
+
+    # Check bipartiteness of the interaction graph via 2-coloring
+    color = {}
+    for start in adj:
+        if start in color:
+            continue
+        color[start] = 0
+        queue = deque([start])
+        while queue:
+            node = queue.popleft()
+            for neighbor in adj[node]:
+                if neighbor not in color:
+                    color[neighbor] = 1 - color[node]
+                    queue.append(neighbor)
+                elif color[neighbor] == color[node]:
+                    return True  # Odd cycle found
+    return False
+
 
 
 class VF2LayoutStopReason(Enum):
@@ -144,6 +210,12 @@ class VF2Layout(AnalysisPass):
             else:
                 target = self.target
         self.avg_error_map = self.property_set["vf2_avg_error_map"]
+        # Early exit: skip VF2 when the search is provably impossible.
+        # Case 1: Bipartite coupling + odd-cycle interaction graph — no subgraph
+        #         isomorphism can exist (odd cycles cannot embed in bipartite graphs).
+        if _is_bipartite(coupling_map) and _interaction_graph_has_odd_cycle(dag):
+            self.property_set["VF2Layout_stop_reason"] = VF2LayoutStopReason.NO_SOLUTION_FOUND
+            return
         config = VF2PassConfiguration.from_legacy_api(
             call_limit=self.call_limit,
             time_limit=self.time_limit,

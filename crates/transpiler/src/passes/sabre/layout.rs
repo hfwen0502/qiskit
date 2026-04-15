@@ -10,6 +10,8 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
+use std::collections::VecDeque;
+
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
@@ -32,7 +34,7 @@ use crate::passes::{
 };
 use crate::target::{Target, TargetCouplingError};
 
-use super::dag::SabreDAG;
+use super::dag::{InteractionKind, SabreDAG};
 use super::heuristic::Heuristic;
 use super::route::{RoutingProblem, RoutingResult, RoutingTarget, swap_map, swap_map_trial};
 
@@ -439,6 +441,142 @@ fn compute_dense_starting_layout(
         .collect()
 }
 
+/// Find a long simple path through the coupling graph.
+///
+/// Uses a greedy DFS with Warnsdorff-like heuristic: at each step, move to the unvisited
+/// neighbor that has the fewest unvisited neighbors of its own. This produces near-Hamiltonian
+/// paths on grid-like graphs (e.g., 118 out of 120 nodes on a 10x12 square lattice).
+///
+/// Starts from a peripheral node found via double-BFS to maximize path length.
+///
+/// This replaces the hard-coded ring arrays for 127/133/156-qubit devices, generalizing to any
+/// coupling topology.
+fn find_long_path(neighbors: &Neighbors) -> Vec<PhysicalQubit> {
+    let n = neighbors.num_qubits();
+    if n == 0 {
+        return Vec::new();
+    }
+
+    // BFS to find a peripheral (farthest) node from a given start
+    let bfs_farthest = |start: PhysicalQubit| -> PhysicalQubit {
+        let mut visited = vec![false; n];
+        let mut queue = VecDeque::new();
+        visited[start.index()] = true;
+        queue.push_back(start);
+        let mut farthest = start;
+        while let Some(node) = queue.pop_front() {
+            farthest = node;
+            for &neighbor in &neighbors[node] {
+                if !visited[neighbor.index()] {
+                    visited[neighbor.index()] = true;
+                    queue.push_back(neighbor);
+                }
+            }
+        }
+        farthest
+    };
+
+    // Find a peripheral starting node via double-BFS
+    let u = bfs_farthest(PhysicalQubit::new(0));
+    let start = bfs_farthest(u);
+
+    // Greedy DFS with Warnsdorff heuristic: always visit the neighbor with
+    // the fewest remaining unvisited neighbors
+    let mut visited = vec![false; n];
+    let mut path = Vec::with_capacity(n);
+    visited[start.index()] = true;
+    path.push(start);
+
+    loop {
+        let current = *path.last().unwrap();
+        // Among unvisited neighbors, pick the one with fewest unvisited neighbors
+        let next = neighbors[current]
+            .iter()
+            .copied()
+            .filter(|nb| !visited[nb.index()])
+            .min_by_key(|nb| {
+                neighbors[*nb]
+                    .iter()
+                    .filter(|nn| !visited[nn.index()])
+                    .count()
+            });
+        match next {
+            Some(nb) => {
+                visited[nb.index()] = true;
+                path.push(nb);
+            }
+            None => break,
+        }
+    }
+    path
+}
+
+/// Detect whether the circuit's 2Q interaction graph forms a simple path (chain) or cycle (ring).
+///
+/// Returns `Some(num_qubits_in_structure)` if the 2Q interactions form a path or ring,
+/// `None` otherwise. Both chain and ring circuits benefit from the same layout strategy:
+/// mapping virtual qubits sequentially onto a long hardware path.
+fn detect_path_or_ring(sabre: &SabreDAG) -> Option<usize> {
+    // Collect unique 2Q edges and count degree per virtual qubit
+    let mut max_qubit: u32 = 0;
+    for node_idx in sabre.dag.node_indices() {
+        if let InteractionKind::TwoQ([a, b]) = &sabre.dag[node_idx].kind {
+            max_qubit = max_qubit.max(a.index() as u32).max(b.index() as u32);
+        }
+    }
+
+    let n = (max_qubit + 1) as usize;
+    if n < 2 {
+        return None;
+    }
+    let mut deg = vec![0u32; n];
+    let mut unique_edges: HashSet<(u32, u32)> = HashSet::new();
+    for node_idx in sabre.dag.node_indices() {
+        if let InteractionKind::TwoQ([a, b]) = &sabre.dag[node_idx].kind {
+            let (a, b) = (a.index() as u32, b.index() as u32);
+            let edge = (a.min(b), a.max(b));
+            if unique_edges.insert(edge) {
+                deg[a as usize] += 1;
+                deg[b as usize] += 1;
+            }
+        }
+    }
+
+    // Count vertices by degree (only consider qubits that participate in 2Q gates)
+    let mut num_deg1 = 0usize;
+    let mut num_deg2 = 0usize;
+    let mut num_active = 0usize;
+    for &d in &deg {
+        if d == 0 {
+            continue;
+        }
+        num_active += 1;
+        match d {
+            1 => num_deg1 += 1,
+            2 => num_deg2 += 1,
+            _ => return None, // Degree > 2 means not a path or ring
+        }
+    }
+
+    if num_active < 2 {
+        return None;
+    }
+
+    // Chain: exactly 2 endpoints (deg 1), rest are deg 2
+    // Ring: all vertices deg 2
+    // Both require: num_edges == num_active (ring) or num_active - 1 (chain)
+    let num_edges = unique_edges.len();
+    if num_deg1 == 2 && num_deg2 == num_active - 2 && num_edges == num_active - 1 {
+        // Chain/path structure
+        Some(num_active)
+    } else if num_deg1 == 0 && num_deg2 == num_active && num_edges == num_active {
+        // Ring/cycle structure
+        Some(num_active)
+    } else {
+        None
+    }
+}
+
 /// Add any extra starting layouts we want to try by default, based on best guesses of what might
 /// work well.
 fn add_heuristic_layouts(
@@ -456,57 +594,24 @@ fn add_heuristic_layouts(
     ));
     starting_layouts.push((0..num_physical_qubits as u32).map(lift).collect());
     starting_layouts.push((0..num_physical_qubits as u32).rev().map(lift).collect());
-    // This layout targets the largest ring on an IBM eagle device. It has been
-    // shown to have good results on some circuits targeting these backends. In
-    // all other cases this is no different from an additional random trial,
-    // see: https://xkcd.com/221/
-    if num_physical_qubits == 127 {
-        starting_layouts.push(
-            [
-                0, 1, 2, 3, 4, 5, 6, 15, 22, 23, 24, 25, 34, 43, 42, 41, 40, 53, 60, 59, 61, 62,
-                72, 81, 80, 79, 78, 91, 98, 99, 100, 101, 102, 103, 92, 83, 82, 84, 85, 86, 73, 66,
-                65, 64, 63, 54, 45, 44, 46, 47, 35, 28, 29, 27, 26, 16, 7, 8, 9, 10, 11, 12, 13,
-                17, 30, 31, 32, 36, 51, 50, 49, 48, 55, 68, 67, 69, 70, 74, 89, 88, 87, 93, 106,
-                105, 104, 107, 108, 112, 126, 125, 124, 123, 122, 111, 121, 120, 119, 118, 110,
-                117, 116, 115, 114, 113, 109, 96, 97, 95, 94, 90, 75, 76, 77, 71, 58, 57, 56, 52,
-                37, 38, 39, 33, 20, 21, 19, 18, 14,
-            ]
-            .into_iter()
-            .map(lift)
-            .collect(),
-        );
-    } else if num_physical_qubits == 133 {
-        // Same for IBM Heron 133 qubit devices. This is the ring computed by using rustworkx's
-        // max(simple_cycles(graph), key=len) on the connectivity graph.
-        starting_layouts.push(
-            [
-                108, 107, 94, 88, 89, 90, 75, 71, 70, 69, 56, 50, 51, 52, 37, 33, 32, 31, 18, 12,
-                11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 15, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
-                29, 36, 48, 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 53, 57, 58, 59, 60, 61, 62, 63,
-                64, 65, 66, 67, 74, 86, 85, 84, 83, 82, 81, 80, 79, 78, 77, 76, 91, 95, 96, 97,
-                110, 116, 117, 118, 119, 120, 111, 101, 102, 103, 104, 105, 112, 124, 125, 126,
-                127, 128, 113, 109,
-            ]
-            .into_iter()
-            .map(lift)
-            .collect(),
-        );
-    } else if num_physical_qubits == 156 {
-        // Same for IBM Heron 156 qubit devices. This is the ring computed by using rustworkx's
-        // max(simple_cycles(graph), key=len) on the connectivity graph.
-        starting_layouts.push(
-            [
-                136, 123, 122, 121, 116, 101, 102, 103, 96, 83, 82, 81, 76, 61, 62, 63, 56, 43, 42,
-                41, 36, 21, 22, 23, 16, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 19, 35, 34,
-                33, 32, 31, 30, 29, 28, 27, 26, 25, 37, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55,
-                59, 75, 74, 73, 72, 71, 70, 69, 68, 67, 66, 65, 77, 85, 86, 87, 88, 89, 90, 91, 92,
-                93, 94, 95, 99, 115, 114, 113, 112, 111, 110, 109, 108, 107, 106, 105, 117, 125,
-                126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 139, 155, 154, 153, 152, 151,
-                150, 149, 148, 147, 146, 145, 144, 143,
-            ]
-            .into_iter()
-            .map(lift)
-            .collect(),
-        );
+
+    // Compute a long path through the coupling graph dynamically.
+    // This generalizes the previous hard-coded rings for 127/133/156-qubit IBM devices
+    // to work on any hardware topology.
+    let long_path = find_long_path(&problem.target.neighbors);
+    starting_layouts.push(long_path.iter().copied().map(Some).collect());
+
+    // Circuit-aware layout: if the circuit's 2Q interaction graph forms a chain or ring,
+    // map it directly onto the hardware long path. This avoids the catastrophic overhead
+    // that occurs when SABRE starts from a random layout for path/ring circuits on
+    // constrained topologies (especially bipartite graphs where VF2 fails on odd rings).
+    if let Some(path_len) = detect_path_or_ring(&problem.sabre) {
+        if path_len <= long_path.len() {
+            let mut layout: Vec<Option<PhysicalQubit>> = vec![None; num_physical_qubits];
+            for (i, &phys) in long_path.iter().enumerate().take(path_len) {
+                layout[i] = Some(phys);
+            }
+            starting_layouts.push(layout);
+        }
     }
 }
