@@ -149,8 +149,41 @@ Compare with 2Q: KAK produces at most 3 CX gates, so even a small 2Q block of 4 
 |-----------|:--------:|:-----:|:--------:|:-------------------:|
 | QSD (already in Qiskit) | ~20 | Fast (ms) | Production | Already done |
 | Block ZXZ (Krol & Al-Ars) | 19 | Fast | Paper (2024) | Medium — implement in Rust |
-| Numerical (Rakyta & Zimboras) | 15 | Slow (~100ms) | Paper (2021) | High — optimization loop in Rust |
-| AQC (already in Qiskit) | ~15-20 | Slow (~1s) | In Qiskit | Medium — wire into pipeline |
+| SQUANDER (Rakyta & Zimboras) | 15 | Slow (~100ms) | Library (C++) | High — optimization loop in Rust |
+| AQC (already in Qiskit) | 14 | Slow (~1s) | In Qiskit | Medium — wire into pipeline |
+
+**AQC detail**: Uses L-BFGS-B to optimize 65 parameters (3Q case) over a circuit template of 14 CX + single-qubit rotations. Achieves the theoretical minimum of 14 CX. Located in `qiskit/synthesis/unitary/aqc/`. Already integrated as a transpiler plugin but not in the default pipeline due to runtime cost.
+
+### Alternative Approaches from Recent Research
+
+Beyond full unitary resynthesis, several other optimization strategies exist:
+
+**1. Block-Based Topology-Aware Synthesis (TopAS / BQSKit)**
+- Partition circuit into multi-qubit blocks, resynthesize each block using numerical optimization (QFactor, QSearch, LEAP)
+- QFactor handles 12+ qubit blocks using tensor network formulation + GPU parallelism
+- LEAP extends synthesis to 5-6 qubits using incremental prefix optimization (59x faster than QSearch for 4Q)
+- Permutation-Aware Synthesis (PAS) achieves 18-68% fewer gates than Qiskit by jointly optimizing block synthesis + qubit routing
+- **Key limitation**: numerical synthesis per block is slow (seconds to minutes), not suitable for default pipeline
+
+**2. Phase Polynomial Optimization (PhasePoly)**
+- Recognizes "phase polynomial" subcircuits (common in QAOA, Hamiltonian simulation, Shor's algorithm) and optimizes their parity network
+- Achieves up to 48.6% CNOT reduction on phase polynomial blocks
+- **Only applies to specific gate structures** — not general purpose
+
+**3. RL-Based CNOT Minimization (AlphaCNOT)**
+- Uses reinforcement learning + Monte Carlo Tree Search for CNOT circuit optimization
+- Up to 32% reduction on linear reversible circuits (up to 8 qubits)
+- **Limited to CNOT-only subcircuits** — not applicable to general blocks with rotations
+
+**4. SU(4)-Aware Compilation**
+- Treats 2Q gate blocks natively as SU(4) operations, avoiding unnecessary decomposition
+- 4.97x pulse duration reduction on flux-tunable transmons
+- **2Q only** — does not extend to 3Q
+
+**5. SAT-Based Clifford Synthesis**
+- Finds CNOT-optimal Clifford circuits via SAT encoding
+- Up to 32% CNOT reduction on Clifford subcircuits
+- **Only applies to Clifford circuits** — not general purpose
 
 ## Research Papers
 
@@ -258,20 +291,58 @@ The max 2Q count in any 3Q block across all 12 circuits on NightHawk is **19** �
 
 3-qubit block synthesis via QSD is not viable on **any current or upcoming IBM topology**. The result is topology-independent: denser topologies produce fewer SWAPs, which means sparser 3Q blocks. The only scenario where 3Q resynthesis could help is on very constrained topologies with very high SWAP overhead — but on those topologies, better routing is a more effective optimization.
 
-### Potential Alternative: 3Q Block Optimization Without Full Resynthesis
+### What Could Work Instead?
 
-Instead of full unitary resynthesis, a lighter optimization could:
-- Consolidate 3Q blocks into unitaries
-- Check if any 2Q gates in the block are removable (product-state decomposition, like `Split2QUnitaries` does for 2Q)
-- Apply peephole optimization within the 3-qubit subspace without full QSD
+Given that full 3Q resynthesis is a dead end, here are the directions that **could** pay off, ranked by expected impact:
 
-This would avoid the 20-CX overhead of QSD while still exploiting the 3Q block structure. However, this is a more complex research direction.
+#### 1. Extend `Split2QUnitaries` to 3Q (Low Effort, Narrow Benefit)
+
+`Split2QUnitaries` already checks if a 2Q unitary is a tensor product (separable into two 1Q gates). The same idea extends to 3Q: check if an 8x8 unitary decomposes as a tensor product of smaller unitaries (e.g., 4x4 ⊗ 2x2, or 2x2 ⊗ 2x2 ⊗ 2x2). This requires only matrix factorization — no synthesis loop. If a 3Q block's unitary is partially separable, we can split it into a 2Q + 1Q operation (or three 1Q operations), then the existing 2Q KAK decomposition handles the rest.
+
+**Expected benefit**: Would catch cases where routing accidentally creates 3Q blocks that are actually separable. Unknown how common this is — needs profiling.
+**Effort**: Small — SVD-based separability check, no new synthesis code.
+
+#### 2. Structure-Specific Optimization Passes (Medium Effort, Targeted Benefit)
+
+Instead of generic 3Q synthesis, add optimization passes that target specific patterns that appear frequently:
+
+- **Phase polynomial optimization** (PhasePoly approach): Recognize CX + RZ chains in 3Q blocks and optimize the parity network. Up to 48% CNOT reduction on phase polynomial structures. Relevant for QAOA, Hamiltonian simulation, QPE.
+- **Clifford subcircuit optimization**: For Clifford portions of 3Q blocks, SAT-based synthesis finds CNOT-optimal decompositions (up to 32% reduction). Relevant for error correction and Clifford-heavy circuits.
+- **Commutation-based peephole**: Move commuting gates past each other within 3Q blocks to enable additional cancellations. Extension of existing `CommutativeCancellation` to 3Q scope.
+
+**Expected benefit**: Moderate for specific circuit families. Phase polynomial optimization is the most promising for real workloads.
+**Effort**: Medium — each is a separate pass targeting a specific structure.
+
+#### 3. BQSKit-Style Numerical Block Optimization (High Effort, Broad Benefit)
+
+The BQSKit/QFactor approach partitions circuits into multi-qubit blocks and uses numerical optimization (tensor network formulation) to resynthesize each block. Key capabilities:
+- QFactor handles 12+ qubit blocks with GPU acceleration
+- LEAP extends to 5-6 qubit blocks, 59x faster than QSearch
+- Permutation-Aware Synthesis (PAS) jointly optimizes block synthesis + qubit routing, achieving 18-68% fewer gates than Qiskit
+
+This is the "gold standard" for block optimization but is **too slow for the default transpiler pipeline** (seconds to minutes per block). Could work as an optional high-effort optimization pass.
+
+**Expected benefit**: Potentially large (10-30% CX reduction) for circuits where it's applied.
+**Effort**: High — would need to integrate BQSKit or implement similar numerical optimization in Qiskit.
+
+#### 4. SQUANDER-Style Variational 3Q Synthesis (High Effort, Targeted Benefit)
+
+SQUANDER (Rakyta & Zimboras) achieves 15 CX for arbitrary 3Q unitaries using gradient-based optimization (BFGS, ADAM) with circuit templates. The library is C++ with Python bindings. For our use case:
+- Only 48 blocks (0.2%) on Torino have >15 CX — even this near-optimal method helps very few blocks
+- Runtime per unitary is ~100ms (too slow for thousands of blocks)
+- **Not viable for pipeline integration** unless the target blocks are pre-filtered
+
+**Expected benefit**: Negligible — too few qualifying blocks.
+**Effort**: High — would need C++ integration or Rust reimplementation.
 
 ## Next Steps
 
 - [x] Profile benchpress circuits: how many 3Q blocks exist and how large are they?
 - [x] ~~Investigate whether denser topologies (square grid) produce 3Q blocks with higher CX density~~ — NightHawk (degree 4) makes it worse, not better
-- [ ] ~~Quick test: swap Collect2qBlocks → CollectMultiQBlocks(max_block_size=3)~~ — not worth pursuing given profiling results
-- [ ] ~~Evaluate QSD output quality on collected 3Q blocks~~ — data shows QSD would regress 99.8%+ of blocks
-- [ ] ~~If promising: investigate implementing Krol & Al-Ars (2024) Block ZXZ in Rust~~ — not worth it
-- [ ] Explore lightweight 3Q peephole optimization (no full resynthesis) as alternative
+- [x] Research literature: full 3Q unitary resynthesis is not viable; alternative approaches identified
+- [ ] ~~Quick test: swap Collect2qBlocks → CollectMultiQBlocks(max_block_size=3)~~ — not worth pursuing
+- [ ] ~~Evaluate QSD output quality~~ — would regress 99.8%+ of blocks
+- [ ] ~~Krol & Al-Ars Block ZXZ~~ — 19 CX still above most block thresholds
+- [ ] Profile 3Q block separability — how many 3Q unitaries are tensor products? (Split2QUnitaries extension)
+- [ ] Profile phase polynomial structure — how many 3Q blocks are phase polynomial chains?
+- [ ] Evaluate BQSKit integration as optional high-effort pass (not default pipeline)
