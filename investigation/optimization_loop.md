@@ -476,6 +476,56 @@ Orderings B and C produce significantly more total gates and deeper circuits. Th
 
 **Conclusion: the current ordering is correct.** ConsolidateBlocks + UnitarySynthesis must come first. No benefit from reordering.
 
+## Real Chemistry Circuit: [4Fe-4S] LUCJ
+
+Validated findings on a real production workload: the 72-qubit Local Unitary Cluster Jastrow (LUCJ) ansatz for the [4Fe-4S] iron-sulfur cluster. This is the kind of circuit real users run at optimization_level=3 on IBM hardware for quantum chemistry applications (SQD workflow, arXiv:2405.05068).
+
+**Script**: `investigation/test_fe4s4.py`
+
+### Circuit Details
+
+- 72 qubits (36 orbitals x 2 spins), (27a, 27b) electrons
+- Built with `ffsim.UCJOpSpinBalancedJW` from pre-computed parameters
+- Uses `ffsim.qiskit.PRE_INIT` for circuit decomposition before transpilation
+- Target: FakeTorino (133Q heavy-hex)
+
+### Results
+
+| | L2 Loop | L2 No-Loop | L3 Loop | L3 No-Loop |
+|--|:-------:|:----------:|:-------:|:----------:|
+| 2Q gates | 4,225 | 4,225 | 3,993 | 3,993 |
+| Total gates | 29,264 | 29,270 | 28,499 | 28,505 |
+| Depth | 1,621 | 1,623 | 1,615 | 1,615 |
+| Opt time (ms) | 5,822 | 3,754 | 7,810 | 3,639 |
+| Iterations | 3 | 1 | 3 | 1 |
+| Speedup | — | **1.6x** | — | **2.1x** |
+
+**Zero 2Q gate regression from removing the loop at both levels.** This confirms the findings from the 6 synthetic circuits on a real production workload.
+
+### Loop Behavior Detail
+
+**Level 2**: Pre-loop ConsolidateBlocks removes 1,844 2Q gates, UnitarySynthesis adds back 1,772 (net -72 2Q). The loop body runs 3 iterations but only does 1Q optimization — zero 2Q change.
+
+**Level 3**: Iteration 1 does all the work (ConsolidateBlocks -1,759 2Q, UnitarySynthesis +1,755, net -4 2Q). Iterations 2-3 show tiny ConsolidateBlocks/UnitarySynthesis oscillation (-2/+2 per iteration) that nets to zero — pure overhead waiting for MinimumPoint to converge.
+
+### Level 2 vs Level 3
+
+Level 3 produces 5.5% fewer 2Q gates (3,993 vs 4,225). This difference comes from the pre-optimization stages (init/layout/routing differ between levels), not from the optimization loop design. Both levels' loops are equally unnecessary.
+
+## Conclusions
+
+Across **7 circuits** (6 synthetic + 1 real chemistry) at **both optimization levels**:
+
+1. **The optimization loop is unnecessary.** A single iteration produces identical or near-identical 2Q gate counts. The maximum regression observed was 8 gates on QFT at Level 3 (0.09%).
+
+2. **Removing the loop saves 1.1-4.7x optimization time** depending on circuit and level. The savings are larger at Level 3 because ConsolidateBlocks (51-75% of optimization time) runs inside the loop.
+
+3. **Level 3 sometimes produces better gate quality than Level 2**, but this comes from pre-optimization stages (layout/routing), not from the loop running more passes.
+
+4. **The current pass ordering is correct.** ConsolidateBlocks + UnitarySynthesis must run first; light passes clean up afterward.
+
+5. **Potential upstream recommendation**: At minimum, reduce MinimumPoint `backtrack_depth` from 5 to 1 or 2. More aggressively, consider removing the loop entirely and running the optimization passes once — the data shows no quality benefit from iterating.
+
 ## Next Steps
 
 - [x] Instrument the optimization loop to count iterations per circuit
@@ -483,5 +533,6 @@ Orderings B and C produce significantly more total gates and deeper circuits. Th
 - [x] Compare level 2 vs level 3 quality and speed
 - [x] Test whether removing the loop (single iteration) degrades gate quality
 - [x] Test whether pass ordering matters — current order is optimal
-- [ ] Profile with real chemistry circuits (e.g., fe4s4 LUCJ) that may have different loop behavior
+- [x] Profile with real chemistry circuit (fe4s4 LUCJ) — confirms loop is unnecessary
 - [ ] Investigate whether reducing MinimumPoint backtrack_depth (e.g., 2 instead of 5) would save time without losing quality
+- [ ] Test on more circuit families (e.g., Grover, arithmetic, error correction) to check for edge cases where the loop may help

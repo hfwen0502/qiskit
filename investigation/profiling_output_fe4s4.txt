@@ -1,0 +1,22 @@
+# fe4s4 LUCJ profiling output saved inline since it was short enough
+
+[4Fe-4S] LUCJ: 72Q, 36 orbitals, (27a,27b) electrons, 1 reps
+
+Level 2:
+  Pre-opt: 3341ms — size=69347, 2q=4297, depth=3823
+  Full loop: 3 iters, 5822ms, final 2q=4225
+    Pre-loop CB: -1844 2q, US: +1772 2q (net -72)
+    Loop iters: no 2Q change, only 1Q optimization
+  No-loop: 3754ms, final 2q=4225 (identical)
+  Speedup: 1.6x
+
+Level 3:
+  Pre-opt: 5101ms — size=68447, 2q=3997, depth=3797
+  Full loop: 3 iters, 7810ms, final 2q=3993
+    Iter 1: CB -1759, US +1755 (net -4 2q)
+    Iters 2-3: CB -2/+2 oscillation, net 0
+  No-loop: 3639ms, final 2q=3993 (identical)
+  Speedup: 2.1x
+
+Summary: Zero 2Q regression from removing the loop at both levels.
+Level 3 produces 5.5% fewer 2Q gates than Level 2 (from pre-opt, not loop).
