@@ -1,0 +1,81 @@
+Backend: FakeTorino (133 qubits)
+Testing 3 pass orderings, single iteration, Level 3
+
+Building QFT_100... 100Q, 1 gates
+  Pre-optimizing... size=52726, 2q=10912, depth=6696
+  A (current)         : 2q=  8472  size= 36950  depth= 4193  time=2257ms
+  B (cancel first)    : 2q=  8538  size= 42070  depth= 4876  time=2255ms
+  C (light first)     : 2q=  8454  size= 43161  depth= 4777  time=2164ms
+Building QV_100... 100Q, 1 gates
+  Pre-optimizing... size=435205, 2q=98400, depth=30598
+  A (current)         : 2q= 96240  size=388839  depth=27051  time=15859ms
+  B (cancel first)    : 2q= 96240  size=413624  depth=28974  time=15607ms
+  C (light first)     : 2q= 96240  size=433676  depth=30290  time=15479ms
+Building EfficientSU2_100... 100Q, 1 gates
+  Pre-optimizing... size=4479, 2q=297, depth=439
+  A (current)         : 2q=   297  size=  3482  depth=  330  time=102ms
+  B (cancel first)    : 2q=   297  size=  3485  depth=  331  time=100ms
+  C (light first)     : 2q=   297  size=  3482  depth=  330  time=99ms
+Building QAOA_100... 100Q, 1400 gates
+  Pre-optimizing... size=59217, 2q=16407, depth=5879
+  A (current)         : 2q= 16123  size= 53793  depth= 5038  time=2211ms
+  B (cancel first)    : 2q= 16123  size= 54521  depth= 5111  time=2190ms
+  C (light first)     : 2q= 16123  size= 54158  depth= 5093  time=2276ms
+Building BV_100... 100Q, 399 gates
+  Pre-optimizing... size=2266, 2q=390, depth=1276
+  A (current)         : 2q=   200  size=  1083  depth=  443  time=110ms
+  B (cancel first)    : 2q=   200  size=  1328  depth=  631  time=106ms
+  C (light first)     : 2q=   200  size=  1614  depth=  976  time=105ms
+Building Heisenberg_100... 100Q, 1820 gates
+  Pre-optimizing... size=46895, 2q=6318, depth=7103
+  A (current)         : 2q=  4539  size= 19379  depth= 2351  time=1120ms
+  B (cancel first)    : 2q=  4539  size= 20978  depth= 2524  time=1225ms
+  C (light first)     : 2q=  4539  size= 23403  depth= 2815  time=1108ms
+
+====================================================================================================
+SUMMARY: Pass Ordering Comparison (single iteration, Level 3)
+====================================================================================================
+
+--- 2Q Gates ---
+
+             Circuit   Pre-Opt           A (current)      B (cancel first)       C (light first)     B-A     C-A
+------------------------------------------------------------------------------------------------------------
+             QFT_100     10912                  8472                  8538                  8454     +66     -18
+              QV_100     98400                 96240                 96240                 96240      +0      +0
+    EfficientSU2_100       297                   297                   297                   297      +0      +0
+            QAOA_100     16407                 16123                 16123                 16123      +0      +0
+              BV_100       390                   200                   200                   200      +0      +0
+      Heisenberg_100      6318                  4539                  4539                  4539      +0      +0
+
+--- Optimization Time (ms) ---
+
+             Circuit           A (current)      B (cancel first)       C (light first)
+--------------------------------------------------------------------------------------
+             QFT_100                  2257                  2255                  2164
+              QV_100                 15859                 15607                 15479
+    EfficientSU2_100                   102                   100                    99
+            QAOA_100                  2211                  2190                  2276
+              BV_100                   110                   106                   105
+      Heisenberg_100                  1120                  1225                  1108
+
+--- Total Gates ---
+
+             Circuit   Pre-Opt           A (current)      B (cancel first)       C (light first)     B-A     C-A
+------------------------------------------------------------------------------------------------------------
+             QFT_100     52726                 36950                 42070                 43161   +5120   +6211
+              QV_100    435205                388839                413624                433676  +24785  +44837
+    EfficientSU2_100      4479                  3482                  3485                  3482      +3      +0
+            QAOA_100     59217                 53793                 54521                 54158    +728    +365
+              BV_100      2266                  1083                  1328                  1614    +245    +531
+      Heisenberg_100     46895                 19379                 20978                 23403   +1599   +4024
+
+--- Circuit Depth ---
+
+             Circuit   Pre-Opt           A (current)      B (cancel first)       C (light first)     B-A     C-A
+------------------------------------------------------------------------------------------------------------
+             QFT_100      6696                  4193                  4876                  4777    +683    +584
+              QV_100     30598                 27051                 28974                 30290   +1923   +3239
+    EfficientSU2_100       439                   330                   331                   330      +1      +0
+            QAOA_100      5879                  5038                  5111                  5093     +73     +55
+              BV_100      1276                   443                   631                   976    +188    +533
+      Heisenberg_100      7103                  2351                  2524                  2815    +173    +464

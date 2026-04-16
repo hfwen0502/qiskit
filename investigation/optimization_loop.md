@@ -439,11 +439,49 @@ The speedup from removing the loop is larger at Level 3 because:
 1. ConsolidateBlocks (the dominant cost) runs every iteration at L3 vs once at L2
 2. MinimumPoint needs more iterations to confirm convergence than FixedPoint
 
+## Pass Ordering Experiment
+
+Tested whether reordering passes within a single iteration affects quality. Three orderings on the same pre-optimized circuits (Level 3, single iteration):
+
+- **A (current)**: ConsolidateBlocks → UnitarySynthesis → RemoveIdentityEquivalent → Optimize1qGatesDecomposition → CommutativeCancellation
+- **B (cancel first)**: CommutativeCancellation → ConsolidateBlocks → UnitarySynthesis → RemoveIdentityEquivalent → Optimize1qGatesDecomposition
+- **C (light first)**: RemoveIdentityEquivalent → Optimize1qGatesDecomposition → CommutativeCancellation → ConsolidateBlocks → UnitarySynthesis
+
+**Script**: `investigation/test_pass_ordering.py`
+
+### 2Q Gates (what matters most)
+
+| Circuit | A (current) | B-A | C-A |
+|---------|:-----------:|:---:|:---:|
+| QFT_100 | 8,472 | +66 | -18 |
+| QV_100 | 96,240 | 0 | 0 |
+| EfficientSU2_100 | 297 | 0 | 0 |
+| QAOA_100 | 16,123 | 0 | 0 |
+| BV_100 | 200 | 0 | 0 |
+| Heisenberg_100 | 4,539 | 0 | 0 |
+
+5 of 6 circuits produce identical 2Q counts. Only QFT shows minor variation (C is 18 better, B is 66 worse).
+
+### Total Gates and Depth: Current Order Wins
+
+| Circuit | A total gates | B-A | C-A | A depth | B-A | C-A |
+|---------|:------------:|:---:|:---:|:-------:|:---:|:---:|
+| QFT_100 | 36,950 | +5,120 | +6,211 | 4,193 | +683 | +584 |
+| QV_100 | 388,839 | +24,785 | +44,837 | 27,051 | +1,923 | +3,239 |
+| QAOA_100 | 53,793 | +728 | +365 | 5,038 | +73 | +55 |
+| BV_100 | 1,083 | +245 | +531 | 443 | +188 | +533 |
+| Heisenberg_100 | 19,379 | +1,599 | +4,024 | 2,351 | +173 | +464 |
+
+Orderings B and C produce significantly more total gates and deeper circuits. The reason: in A, ConsolidateBlocks + UnitarySynthesis run first and reconstruct optimal 2Q blocks, then Optimize1qGatesDecomposition and CommutativeCancellation clean up the resulting 1Q gates. In B and C, the light passes run on the pre-optimized circuit first, but ConsolidateBlocks + UnitarySynthesis then reconstruct it from scratch — the 1Q cleanup doesn't happen afterward.
+
+**Conclusion: the current ordering is correct.** ConsolidateBlocks + UnitarySynthesis must come first. No benefit from reordering.
+
 ## Next Steps
 
 - [x] Instrument the optimization loop to count iterations per circuit
 - [x] Add per-pass timing to measure where time is spent
 - [x] Compare level 2 vs level 3 quality and speed
 - [x] Test whether removing the loop (single iteration) degrades gate quality
+- [x] Test whether pass ordering matters — current order is optimal
 - [ ] Profile with real chemistry circuits (e.g., fe4s4 LUCJ) that may have different loop behavior
 - [ ] Investigate whether reducing MinimumPoint backtrack_depth (e.g., 2 instead of 5) would save time without losing quality
