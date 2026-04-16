@@ -534,5 +534,5 @@ Across **7 circuits** (6 synthetic + 1 real chemistry) at **both optimization le
 - [x] Test whether removing the loop (single iteration) degrades gate quality
 - [x] Test whether pass ordering matters — current order is optimal
 - [x] Profile with real chemistry circuit (fe4s4 LUCJ) — confirms loop is unnecessary
-- [ ] Investigate whether reducing MinimumPoint backtrack_depth (e.g., 2 instead of 5) would save time without losing quality
+- [x] ~~Investigate reducing MinimumPoint backtrack_depth~~ — moot if loop is removed entirely
 - [ ] Test on more circuit families (e.g., Grover, arithmetic, error correction) to check for edge cases where the loop may help
