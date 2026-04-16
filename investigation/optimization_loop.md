@@ -392,11 +392,58 @@ At Level 2, the pre-loop (ConsolidateBlocks + UnitarySynthesis) does all the 2Q 
 
 5. **Level 3's re-consolidation rarely helps.** Only QFT shows meaningful benefit from re-running ConsolidateBlocks (312 fewer 2Q gates). For most circuits, iteration 1 finds everything.
 
+## No-Loop Experiment: Is the Loop Necessary?
+
+Tested removing the loop entirely (single iteration only) at both levels. The no-loop runs use the **same pre-optimized circuit** as the looped runs, so the only variable is whether the loop body repeats.
+
+### Level 2: No-Loop vs Loop
+
+| Circuit | Loop 2Q | No-Loop 2Q | Diff | Regression? | Loop Opt (ms) | No-Loop Opt (ms) | Speedup |
+|---------|:-------:|:----------:|:----:|:-----------:|:-------------:|:-----------------:|:-------:|
+| QFT_100 | 9,116 | 9,116 | 0 | no | 2,714 | 2,175 | 1.2x |
+| QV_100 | 96,093 | 96,093 | 0 | no | 18,324 | 15,789 | 1.2x |
+| EfficientSU2_100 | 297 | 297 | 0 | no | 126 | 100 | 1.3x |
+| QAOA_100 | 15,961 | 15,961 | 0 | no | 3,046 | 2,223 | 1.4x |
+| BV_100 | 200 | 200 | 0 | no | 118 | 105 | 1.1x |
+| Heisenberg_100 | 4,947 | 4,947 | 0 | no | 1,299 | 1,140 | 1.1x |
+
+**Zero 2Q gate regression across all 6 circuits.** The loop is provably unnecessary at Level 2 for these circuits.
+
+Total gate difference is negligible (QFT +69, QAOA +9, others 0). Depth difference is negligible (QFT +3, others 0). The loop's only contribution at Level 2 is a second pass of Optimize1qGatesDecomposition and CommutativeCancellation, which occasionally shave a few 1Q gates but never affect 2Q gates.
+
+### Level 3: No-Loop vs Loop
+
+| Circuit | Loop 2Q | No-Loop 2Q | Diff | Regression? | Loop Opt (ms) | No-Loop Opt (ms) | Speedup |
+|---------|:-------:|:----------:|:----:|:-----------:|:-------------:|:-----------------:|:-------:|
+| QFT_100 | 9,323 | 9,331 | **+8** | YES | 8,645 | 2,241 | 3.9x |
+| QV_100 | 95,979 | 95,979 | 0 | no | 45,762 | 15,707 | 2.9x |
+| EfficientSU2_100 | 297 | 297 | 0 | no | 276 | 98 | 2.8x |
+| QAOA_100 | 16,283 | 16,283 | 0 | no | 6,110 | 2,136 | 2.9x |
+| BV_100 | 196 | 196 | 0 | no | 179 | 105 | 1.7x |
+| Heisenberg_100 | 4,506 | 4,506 | 0 | no | 5,120 | 1,096 | 4.7x |
+
+**Only QFT regresses, by 8 gates (0.09%).** All other circuits are identical. The optimization speedup is **1.7-4.7x** without the loop.
+
+Interestingly, Heisenberg no-loop produces fewer total gates (-308) and lower depth (-48) than the looped version. This is because MinimumPoint's backtracking restores a DAG from an earlier iteration that had lower depth but slightly more total gates — a quirk of the (depth, size) tuple scoring.
+
+### Summary: The Loop Is Almost Always Unnecessary
+
+| Level | Circuits Regressed | Max 2Q Regression | Optimization Speedup |
+|:-----:|:------------------:|:-----------------:|:--------------------:|
+| 2 | **0 / 6** | 0 gates | 1.1-1.4x |
+| 3 | **1 / 6** | 8 gates (0.09%) | 1.7-4.7x |
+
+The loop provides negligible benefit on these circuits. At Level 2, it does nothing. At Level 3, it saves 8 2Q gates on QFT at a cost of 3.9x slower optimization.
+
+The speedup from removing the loop is larger at Level 3 because:
+1. ConsolidateBlocks (the dominant cost) runs every iteration at L3 vs once at L2
+2. MinimumPoint needs more iterations to confirm convergence than FixedPoint
+
 ## Next Steps
 
 - [x] Instrument the optimization loop to count iterations per circuit
 - [x] Add per-pass timing to measure where time is spent
 - [x] Compare level 2 vs level 3 quality and speed
-- [ ] Test whether removing the loop entirely (single iteration) degrades gate quality
+- [x] Test whether removing the loop (single iteration) degrades gate quality
 - [ ] Profile with real chemistry circuits (e.g., fe4s4 LUCJ) that may have different loop behavior
 - [ ] Investigate whether reducing MinimumPoint backtrack_depth (e.g., 2 instead of 5) would save time without losing quality

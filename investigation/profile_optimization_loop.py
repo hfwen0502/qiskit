@@ -192,11 +192,18 @@ def run_pass_instrumented(dag, pass_name, pass_inst, prop_set):
     }
 
 
-def profile_optimization_loop(circuit, backend, optimization_level=3):
+def profile_optimization_loop(circuit, backend, optimization_level=3,
+                               max_loop_iters=20, pre_opt_circuit=None):
     """Run transpilation and profile the optimization stage loop.
 
     Supports both level 2 (pre-loop + FixedPoint loop) and level 3
     (all-in-loop + MinimumPoint).
+
+    Args:
+        max_loop_iters: Cap on loop iterations. Use 1 for "no loop" mode.
+        pre_opt_circuit: If provided, skip pre-optimization stages and use
+            this circuit directly. Useful for comparing loop vs no-loop on
+            the same starting circuit.
 
     Returns dict with per-iteration, per-pass timing and gate count data.
     """
@@ -204,12 +211,15 @@ def profile_optimization_loop(circuit, backend, optimization_level=3):
     basis_gates = list(target.operation_names)
 
     # Step 1: Run init + layout + routing + translation (everything before optimization)
-    pm_pre_opt = generate_preset_pass_manager(optimization_level, backend=backend)
-    pm_pre_opt.optimization = PassManager()  # Empty — skip optimization
+    if pre_opt_circuit is None:
+        pm_pre_opt = generate_preset_pass_manager(optimization_level, backend=backend)
+        pm_pre_opt.optimization = PassManager()  # Empty — skip optimization
 
-    t0 = time.perf_counter()
-    pre_opt_circuit = pm_pre_opt.run(circuit)
-    pre_opt_time = time.perf_counter() - t0
+        t0 = time.perf_counter()
+        pre_opt_circuit = pm_pre_opt.run(circuit)
+        pre_opt_time = time.perf_counter() - t0
+    else:
+        pre_opt_time = 0.0
 
     dag = circuit_to_dag(pre_opt_circuit)
     pre_opt_stats = get_circuit_stats(dag)
@@ -257,8 +267,7 @@ def profile_optimization_loop(circuit, backend, optimization_level=3):
         fp_size = FixedPoint("size")
         fp_depth = FixedPoint("depth")
 
-        max_iterations = 20
-        for iteration in range(max_iterations):
+        for iteration in range(max_loop_iters):
             iter_data = {"iteration": iteration + 1, "passes": []}
 
             for pass_name, pass_inst in loop_passes:
@@ -301,8 +310,10 @@ def profile_optimization_loop(circuit, backend, optimization_level=3):
                 results["convergence_reason"] = "fixed_point"
                 break
         else:
-            results["converged_at"] = max_iterations
-            results["convergence_reason"] = "max_iterations"
+            results["converged_at"] = max_loop_iters
+            results["convergence_reason"] = (
+                "max_iterations" if max_loop_iters > 1 else "no_loop"
+            )
 
     elif optimization_level == 3:
         # Level 3: all passes inside the loop, MinimumPoint convergence
@@ -319,8 +330,7 @@ def profile_optimization_loop(circuit, backend, optimization_level=3):
         depth_pass = Depth(recurse=True)
         min_point = MinimumPoint(["depth", "size"], "optimization_loop", backtrack_depth=5)
 
-        max_iterations = 20
-        for iteration in range(max_iterations):
+        for iteration in range(max_loop_iters):
             iter_data = {"iteration": iteration + 1, "passes": []}
 
             for pass_name, pass_inst in loop_passes:
@@ -363,10 +373,13 @@ def profile_optimization_loop(circuit, backend, optimization_level=3):
                 results["convergence_reason"] = "minimum_point"
                 break
         else:
-            results["converged_at"] = max_iterations
-            results["convergence_reason"] = "max_iterations"
+            results["converged_at"] = max_loop_iters
+            results["convergence_reason"] = (
+                "max_iterations" if max_loop_iters > 1 else "no_loop"
+            )
 
     results["final_stats"] = get_circuit_stats(dag)
+    results["_pre_opt_circuit"] = pre_opt_circuit  # For reuse in no-loop comparison
     return results
 
 
@@ -572,6 +585,57 @@ def print_comparison(l2_results, l3_results):
         print(f"{name:>20s}  {t2_total:12.0f}  {t3_total:12.0f}  {ratio:7.2f}x")
 
 
+def print_noloop_comparison(loop_results, noloop_results, level):
+    """Print loop vs no-loop comparison for one level."""
+    print(f"\n{'=' * 80}")
+    print(f"NO-LOOP COMPARISON — Level {level} (loop vs single iteration)")
+    print(f"{'=' * 80}")
+
+    print(f"\n--- Gate Quality (2Q Gates) ---\n")
+    print(f"{'Circuit':>20s}  {'Pre-Opt':>8s}  {'Loop':>8s}  {'No-Loop':>8s}  "
+          f"{'Diff':>6s}  {'Regression?':>11s}  "
+          f"{'Loop Opt(ms)':>12s}  {'NoLoop Opt(ms)':>14s}  {'Speedup':>8s}")
+    print("-" * 115)
+    for name in loop_results:
+        rl = loop_results[name]
+        rn = noloop_results[name]
+        pre_2q = rl["pre_opt_stats"]["2q_gates"]
+        loop_2q = rl["final_stats"]["2q_gates"]
+        noloop_2q = rn["final_stats"]["2q_gates"]
+        diff = noloop_2q - loop_2q  # positive = no-loop is worse
+        regressed = "YES" if diff > 0 else "no"
+        t_loop = get_total_opt_time(rl)
+        t_noloop = get_total_opt_time(rn)
+        speedup = t_loop / t_noloop if t_noloop > 0 else float('inf')
+        print(f"{name:>20s}  {pre_2q:8d}  {loop_2q:8d}  {noloop_2q:8d}  "
+              f"{diff:+6d}  {regressed:>11s}  "
+              f"{t_loop:12.0f}  {t_noloop:14.0f}  {speedup:7.1f}x")
+
+    # Total gates comparison
+    print(f"\n--- Total Gates ---\n")
+    print(f"{'Circuit':>20s}  {'Loop Size':>10s}  {'NoLoop Size':>11s}  {'Diff':>6s}")
+    print("-" * 55)
+    for name in loop_results:
+        rl = loop_results[name]
+        rn = noloop_results[name]
+        loop_size = rl["final_stats"]["size"]
+        noloop_size = rn["final_stats"]["size"]
+        diff = noloop_size - loop_size
+        print(f"{name:>20s}  {loop_size:10d}  {noloop_size:11d}  {diff:+6d}")
+
+    # Depth comparison
+    print(f"\n--- Circuit Depth ---\n")
+    print(f"{'Circuit':>20s}  {'Loop Depth':>10s}  {'NoLoop Depth':>12s}  {'Diff':>6s}")
+    print("-" * 55)
+    for name in loop_results:
+        rl = loop_results[name]
+        rn = noloop_results[name]
+        loop_d = rl["final_stats"]["depth"]
+        noloop_d = rn["final_stats"]["depth"]
+        diff = noloop_d - loop_d
+        print(f"{name:>20s}  {loop_d:10d}  {noloop_d:12d}  {diff:+6d}")
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -581,8 +645,10 @@ def main():
     print(f"Backend: FakeTorino ({backend.num_qubits} qubits)")
     print(f"Basis gates: {list(backend.target.operation_names)[:5]}...")
 
-    l2_results = {}
-    l3_results = {}
+    l2_loop = {}
+    l2_noloop = {}
+    l3_loop = {}
+    l3_noloop = {}
 
     for name, builder in CIRCUITS.items():
         print(f"\n{'=' * 80}")
@@ -594,25 +660,51 @@ def main():
               f"{circuit.size()} gates")
 
         for level in [2, 3]:
-            print(f"\n  Profiling Level {level}...")
+            # Full loop run
+            print(f"\n  Level {level} — full loop...")
             try:
-                results = profile_optimization_loop(circuit, backend, optimization_level=level)
+                results = profile_optimization_loop(
+                    circuit, backend, optimization_level=level
+                )
                 if level == 2:
-                    l2_results[name] = results
+                    l2_loop[name] = results
                 else:
-                    l3_results[name] = results
+                    l3_loop[name] = results
                 print_results(name, results)
             except Exception as e:
                 print(f"    ERROR: {e}")
                 import traceback
                 traceback.print_exc()
+                continue
 
-    # Per-level summaries
-    print_summary(l2_results, level=2)
-    print_summary(l3_results, level=3)
+            # No-loop run (single iteration, same pre-opt circuit)
+            print(f"\n  Level {level} — no loop (1 iteration)...")
+            try:
+                noloop = profile_optimization_loop(
+                    circuit, backend, optimization_level=level,
+                    max_loop_iters=1,
+                    pre_opt_circuit=results["_pre_opt_circuit"],
+                )
+                if level == 2:
+                    l2_noloop[name] = noloop
+                else:
+                    l3_noloop[name] = noloop
+                print_results(name, noloop)
+            except Exception as e:
+                print(f"    ERROR: {e}")
+                import traceback
+                traceback.print_exc()
 
-    # Side-by-side comparison
-    print_comparison(l2_results, l3_results)
+    # Per-level summaries (loop)
+    print_summary(l2_loop, level=2)
+    print_summary(l3_loop, level=3)
+
+    # Level 2 vs Level 3 comparison
+    print_comparison(l2_loop, l3_loop)
+
+    # No-loop comparisons
+    print_noloop_comparison(l2_loop, l2_noloop, level=2)
+    print_noloop_comparison(l3_loop, l3_noloop, level=3)
 
 
 if __name__ == "__main__":

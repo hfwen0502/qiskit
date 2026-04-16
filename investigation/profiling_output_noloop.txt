@@ -1,0 +1,791 @@
+Backend: FakeTorino (133 qubits)
+Basis gates: ['switch_case', 'if_else', 'measure', 'id', 'sx']...
+
+================================================================================
+Building QFT_100...
+  Built in 0ms: 100Q, 1 gates
+
+  Level 2 — full loop...
+
+================================================================================
+Circuit: QFT_100 (Level 2)
+================================================================================
+Pre-optimization: 4246ms (size=52744, 2q=10918, depth=8517)
+
+Pre-loop passes:
+  ConsolidateBlocks: 1272.1ms, 2Q: 10918→7355 (-3563)
+  UnitarySynthesis: 507.5ms, 2Q: 7355→9166 (+1811)
+Converged at iteration 3 (fixed_point)
+Final: size=37285, 2q=9116, depth=5357
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  FixPt?
+-------------------------------------------------------
+   1   37354    9116    5360      394.1       no      no
+   2   37285    9116    5357      270.0       no      no
+   3   37285    9116    5357      270.2       no     YES
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+           RemoveIdentityEquivalent       19.3       6.4              -186                0
+       Optimize1qGatesDecomposition      450.3     150.1             -6472                0
+            CommutativeCancellation      464.5     154.8             -6302              -50
+     ContractIdleWiresInControlFlow        0.1       0.0                 0                0
+
+  Level 2 — no loop (1 iteration)...
+
+================================================================================
+Circuit: QFT_100 (Level 2)
+================================================================================
+Pre-optimization: 0ms (size=52744, 2q=10918, depth=8517)
+
+Pre-loop passes:
+  ConsolidateBlocks: 1273.5ms, 2Q: 10918→7355 (-3563)
+  UnitarySynthesis: 507.2ms, 2Q: 7355→9166 (+1811)
+Converged at iteration 1 (no_loop)
+Final: size=37354, 2q=9116, depth=5360
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  FixPt?
+-------------------------------------------------------
+   1   37354    9116    5360      394.8       no      no
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+           RemoveIdentityEquivalent        2.1       2.1              -173                0
+       Optimize1qGatesDecomposition      197.9     197.9             -6416                0
+            CommutativeCancellation      194.7     194.7             -6302              -50
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+  Level 3 — full loop...
+
+================================================================================
+Circuit: QFT_100 (Level 3)
+================================================================================
+Pre-optimization: 6286ms (size=53131, 2q=11047, depth=8297)
+Converged at iteration 6 (minimum_point)
+Final: size=37822, 2q=9323, depth=5288
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  MinPt?
+-------------------------------------------------------
+   1   37935    9331    5301     2258.7       no      no
+   2   37822    9323    5288     1336.4       no      no
+   3   37837    9323    5288     1327.3       no      no
+   4   37840    9323    5288     1295.7       no      no
+   5   37844    9323    5292     1288.2       no      no
+   6   37822    9323    5288     1138.6       no     YES
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+                  ConsolidateBlocks     5800.9     966.8            -20898            -3451
+                   UnitarySynthesis     1072.1     178.7             19177             1775
+           RemoveIdentityEquivalent       43.8       7.3              -346                0
+       Optimize1qGatesDecomposition      838.1     139.7             -6684                0
+            CommutativeCancellation      890.0     148.3             -6537              -48
+     ContractIdleWiresInControlFlow        0.2       0.0                 0                0
+
+  Level 3 — no loop (1 iteration)...
+
+================================================================================
+Circuit: QFT_100 (Level 3)
+================================================================================
+Pre-optimization: 0ms (size=53131, 2q=11047, depth=8297)
+Converged at iteration 1 (no_loop)
+Final: size=37935, 2q=9331, depth=5301
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  MinPt?
+-------------------------------------------------------
+   1   37935    9331    5301     2241.1       no      no
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+                  ConsolidateBlocks     1343.8    1343.8            -20702            -3409
+                   UnitarySynthesis      495.9     495.9             18842             1741
+           RemoveIdentityEquivalent        2.3       2.3              -285                0
+       Optimize1qGatesDecomposition      199.6     199.6             -6598                0
+            CommutativeCancellation      199.5     199.5             -6453              -48
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+================================================================================
+Building QV_100...
+  Built in 560ms: 100Q, 1 gates
+
+  Level 2 — full loop...
+
+================================================================================
+Circuit: QV_100 (Level 2)
+================================================================================
+Pre-optimization: 73944ms (size=434665, 2q=98220, depth=30418)
+
+Pre-loop passes:
+  ConsolidateBlocks: 9272.0ms, 2Q: 98220→86165 (-12055)
+  UnitarySynthesis: 3257.6ms, 2Q: 86165→96093 (+9928)
+Converged at iteration 2 (fixed_point)
+Final: size=388349, 2q=96093, depth=26772
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  FixPt?
+-------------------------------------------------------
+   1  388349   96093   26772     3145.9       no      no
+   2  388349   96093   26772     2648.7       no     YES
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+           RemoveIdentityEquivalent       17.6       8.8                -3                0
+       Optimize1qGatesDecomposition     2860.7    1430.4            -20355                0
+            CommutativeCancellation     2916.2    1458.1            -24806                0
+     ContractIdleWiresInControlFlow        0.1       0.0                 0                0
+
+  Level 2 — no loop (1 iteration)...
+
+================================================================================
+Circuit: QV_100 (Level 2)
+================================================================================
+Pre-optimization: 0ms (size=434665, 2q=98220, depth=30418)
+
+Pre-loop passes:
+  ConsolidateBlocks: 9236.5ms, 2Q: 98220→86165 (-12055)
+  UnitarySynthesis: 3347.7ms, 2Q: 86165→96093 (+9928)
+Converged at iteration 1 (no_loop)
+Final: size=388349, 2q=96093, depth=26772
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  FixPt?
+-------------------------------------------------------
+   1  388349   96093   26772     3204.9       no      no
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+           RemoveIdentityEquivalent        9.5       9.5                -3                0
+       Optimize1qGatesDecomposition     1565.0    1565.0            -20355                0
+            CommutativeCancellation     1630.4    1630.4            -24806                0
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+  Level 3 — full loop...
+
+================================================================================
+Circuit: QV_100 (Level 3)
+================================================================================
+Pre-optimization: 88703ms (size=434341, 2q=98112, depth=31428)
+Converged at iteration 3 (minimum_point)
+Final: size=388069, 2q=95979, depth=27892
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  MinPt?
+-------------------------------------------------------
+   1  388068   95979   27892    15619.7       no      no
+   2  388069   95979   27892    15161.0       no      no
+   3  388069   95979   27892    14981.3       no     YES
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+                  ConsolidateBlocks    26767.1    8922.4           -359156           -31851
+                   UnitarySynthesis     9505.8    3168.6            436753            29718
+           RemoveIdentityEquivalent       28.4       9.5                -6                0
+       Optimize1qGatesDecomposition     4599.6    1533.2            -49578                0
+            CommutativeCancellation     4861.0    1620.3            -74285                0
+     ContractIdleWiresInControlFlow        0.1       0.0                 0                0
+
+  Level 3 — no loop (1 iteration)...
+
+================================================================================
+Circuit: QV_100 (Level 3)
+================================================================================
+Pre-optimization: 0ms (size=434341, 2q=98112, depth=31428)
+Converged at iteration 1 (no_loop)
+Final: size=388068, 2q=95979, depth=27892
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  MinPt?
+-------------------------------------------------------
+   1  388068   95979   27892    15707.4       no      no
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+                  ConsolidateBlocks     9174.8    9174.8           -150695           -12057
+                   UnitarySynthesis     3372.5    3372.5            149317             9924
+           RemoveIdentityEquivalent        9.1       9.1                -2                0
+       Optimize1qGatesDecomposition     1543.4    1543.4            -20099                0
+            CommutativeCancellation     1607.6    1607.6            -24794                0
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+================================================================================
+Building EfficientSU2_100...
+  Built in 2ms: 100Q, 1 gates
+
+  Level 2 — full loop...
+
+================================================================================
+Circuit: EfficientSU2_100 (Level 2)
+================================================================================
+Pre-optimization: 356ms (size=4479, 2q=297, depth=439)
+
+Pre-loop passes:
+  ConsolidateBlocks: 65.7ms, 2Q: 297→297 (+0)
+  UnitarySynthesis: 0.1ms, 2Q: 297→297 (+0)
+Converged at iteration 2 (fixed_point)
+Final: size=3482, 2q=297, depth=330
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  FixPt?
+-------------------------------------------------------
+   1    3482     297     330       35.7       no      no
+   2    3482     297     330       25.0       no     YES
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+           RemoveIdentityEquivalent        2.6       1.3              -400                0
+       Optimize1qGatesDecomposition       27.9      14.0                -3                0
+            CommutativeCancellation       30.1      15.1              -594                0
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+  Level 2 — no loop (1 iteration)...
+
+================================================================================
+Circuit: EfficientSU2_100 (Level 2)
+================================================================================
+Pre-optimization: 0ms (size=4479, 2q=297, depth=439)
+
+Pre-loop passes:
+  ConsolidateBlocks: 64.7ms, 2Q: 297→297 (+0)
+  UnitarySynthesis: 0.0ms, 2Q: 297→297 (+0)
+Converged at iteration 1 (no_loop)
+Final: size=3482, 2q=297, depth=330
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  FixPt?
+-------------------------------------------------------
+   1    3482     297     330       34.7       no      no
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+           RemoveIdentityEquivalent        1.8       1.8              -400                0
+       Optimize1qGatesDecomposition       14.6      14.6                -3                0
+            CommutativeCancellation       18.4      18.4              -594                0
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+  Level 3 — full loop...
+
+================================================================================
+Circuit: EfficientSU2_100 (Level 3)
+================================================================================
+Pre-optimization: 2296ms (size=4479, 2q=297, depth=439)
+Converged at iteration 3 (minimum_point)
+Final: size=3482, 2q=297, depth=330
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  MinPt?
+-------------------------------------------------------
+   1    3482     297     330       99.2       no      no
+   2    3482     297     330       89.5       no      no
+   3    3482     297     330       87.4       no     YES
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+                  ConsolidateBlocks      191.4      63.8                 0                0
+                   UnitarySynthesis        0.1       0.0                 0                0
+           RemoveIdentityEquivalent        3.4       1.1              -400                0
+       Optimize1qGatesDecomposition       39.5      13.2                -3                0
+            CommutativeCancellation       41.7      13.9              -594                0
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+  Level 3 — no loop (1 iteration)...
+
+================================================================================
+Circuit: EfficientSU2_100 (Level 3)
+================================================================================
+Pre-optimization: 0ms (size=4479, 2q=297, depth=439)
+Converged at iteration 1 (no_loop)
+Final: size=3482, 2q=297, depth=330
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  MinPt?
+-------------------------------------------------------
+   1    3482     297     330       98.0       no      no
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+                  ConsolidateBlocks       63.4      63.4                 0                0
+                   UnitarySynthesis        0.0       0.0                 0                0
+           RemoveIdentityEquivalent        1.8       1.8              -400                0
+       Optimize1qGatesDecomposition       14.6      14.6                -3                0
+            CommutativeCancellation       18.1      18.1              -594                0
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+================================================================================
+Building QAOA_100...
+  Built in 33ms: 100Q, 1400 gates
+
+  Level 2 — full loop...
+
+================================================================================
+Circuit: QAOA_100 (Level 2)
+================================================================================
+Pre-optimization: 7423ms (size=58677, 2q=16227, depth=5706)
+
+Pre-loop passes:
+  ConsolidateBlocks: 1621.2ms, 2Q: 16227→15593 (-634)
+  UnitarySynthesis: 310.9ms, 2Q: 15593→15961 (+368)
+Converged at iteration 3 (fixed_point)
+Final: size=53226, 2q=15961, depth=4889
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  FixPt?
+-------------------------------------------------------
+   1   53235   15961    4889      402.3       no      no
+   2   53226   15961    4889      354.1       no      no
+   3   53226   15961    4889      357.2       no     YES
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+           RemoveIdentityEquivalent        3.9       1.3                 0                0
+       Optimize1qGatesDecomposition      552.2     184.1             -3325                0
+            CommutativeCancellation      557.4     185.8             -1911                0
+     ContractIdleWiresInControlFlow        0.1       0.0                 0                0
+
+  Level 2 — no loop (1 iteration)...
+
+================================================================================
+Circuit: QAOA_100 (Level 2)
+================================================================================
+Pre-optimization: 0ms (size=58677, 2q=16227, depth=5706)
+
+Pre-loop passes:
+  ConsolidateBlocks: 1503.4ms, 2Q: 16227→15593 (-634)
+  UnitarySynthesis: 315.3ms, 2Q: 15593→15961 (+368)
+Converged at iteration 1 (no_loop)
+Final: size=53235, 2q=15961, depth=4889
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  FixPt?
+-------------------------------------------------------
+   1   53235   15961    4889      404.2       no      no
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+           RemoveIdentityEquivalent        1.7       1.7                 0                0
+       Optimize1qGatesDecomposition      204.5     204.5             -3316                0
+            CommutativeCancellation      198.0     198.0             -1911                0
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+  Level 3 — full loop...
+
+================================================================================
+Circuit: QAOA_100 (Level 3)
+================================================================================
+Pre-optimization: 8626ms (size=59739, 2q=16581, depth=6265)
+Converged at iteration 3 (minimum_point)
+Final: size=54258, 2q=16283, depth=5339
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  MinPt?
+-------------------------------------------------------
+   1   54263   16283    5340     2162.5       no      no
+   2   54258   16283    5339     1988.9       no      no
+   3   54258   16283    5339     1958.6       no     YES
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+                  ConsolidateBlocks     4256.1    1418.7             -5538             -683
+                   UnitarySynthesis      737.0     245.7              5276              385
+           RemoveIdentityEquivalent        4.0       1.3                 0                0
+       Optimize1qGatesDecomposition      565.6     188.5             -3303                0
+            CommutativeCancellation      547.1     182.4             -1916                0
+     ContractIdleWiresInControlFlow        0.1       0.0                 0                0
+
+  Level 3 — no loop (1 iteration)...
+
+================================================================================
+Circuit: QAOA_100 (Level 3)
+================================================================================
+Pre-optimization: 0ms (size=59739, 2q=16581, depth=6265)
+Converged at iteration 1 (no_loop)
+Final: size=54263, 2q=16283, depth=5340
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  MinPt?
+-------------------------------------------------------
+   1   54263   16283    5340     2136.2       no      no
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+                  ConsolidateBlocks     1420.1    1420.1             -5498             -681
+                   UnitarySynthesis      312.1     312.1              5232              383
+           RemoveIdentityEquivalent        1.5       1.5                 0                0
+       Optimize1qGatesDecomposition      206.2     206.2             -3298                0
+            CommutativeCancellation      196.2     196.2             -1912                0
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+================================================================================
+Building BV_100...
+  Built in 5ms: 100Q, 399 gates
+
+  Level 2 — full loop...
+
+================================================================================
+Circuit: BV_100 (Level 2)
+================================================================================
+Pre-optimization: 1119ms (size=2266, 2q=390, depth=1276)
+
+Pre-loop passes:
+  ConsolidateBlocks: 41.8ms, 2Q: 390→105 (-285)
+  UnitarySynthesis: 48.3ms, 2Q: 105→200 (+95)
+Converged at iteration 2 (fixed_point)
+Final: size=1083, 2q=200, depth=450
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  FixPt?
+-------------------------------------------------------
+   1    1083     200     450       17.0       no      no
+   2    1083     200     450       10.9       no     YES
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+           RemoveIdentityEquivalent        0.8       0.4                 0                0
+       Optimize1qGatesDecomposition       14.2       7.1              -409                0
+            CommutativeCancellation       12.9       6.5              -242                0
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+  Level 2 — no loop (1 iteration)...
+
+================================================================================
+Circuit: BV_100 (Level 2)
+================================================================================
+Pre-optimization: 0ms (size=2266, 2q=390, depth=1276)
+
+Pre-loop passes:
+  ConsolidateBlocks: 42.0ms, 2Q: 390→105 (-285)
+  UnitarySynthesis: 46.2ms, 2Q: 105→200 (+95)
+Converged at iteration 1 (no_loop)
+Final: size=1083, 2q=200, depth=450
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  FixPt?
+-------------------------------------------------------
+   1    1083     200     450       16.9       no      no
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+           RemoveIdentityEquivalent        0.5       0.5                 0                0
+       Optimize1qGatesDecomposition        8.6       8.6              -409                0
+            CommutativeCancellation        7.9       7.9              -242                0
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+  Level 3 — full loop...
+
+================================================================================
+Circuit: BV_100 (Level 3)
+================================================================================
+Pre-optimization: 560813ms (size=2266, 2q=390, depth=1282)
+Converged at iteration 3 (minimum_point)
+Final: size=1059, 2q=196, depth=428
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  MinPt?
+-------------------------------------------------------
+   1    1059     196     428      107.0       no      no
+   2    1059     196     428       36.0       no      no
+   3    1059     196     428       35.6       no     YES
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+                  ConsolidateBlocks       90.8      30.3             -2037             -291
+                   UnitarySynthesis       48.7      16.2              1501               97
+           RemoveIdentityEquivalent        1.1       0.4                 0                0
+       Optimize1qGatesDecomposition       19.8       6.6              -426                0
+            CommutativeCancellation       18.1       6.0              -245                0
+     ContractIdleWiresInControlFlow        0.1       0.0                 0                0
+
+  Level 3 — no loop (1 iteration)...
+
+================================================================================
+Circuit: BV_100 (Level 3)
+================================================================================
+Pre-optimization: 0ms (size=2266, 2q=390, depth=1282)
+Converged at iteration 1 (no_loop)
+Final: size=1059, 2q=196, depth=428
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  MinPt?
+-------------------------------------------------------
+   1    1059     196     428      104.8       no      no
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+                  ConsolidateBlocks       40.6      40.6             -2037             -291
+                   UnitarySynthesis       46.9      46.9              1501               97
+           RemoveIdentityEquivalent        0.5       0.5                 0                0
+       Optimize1qGatesDecomposition        8.5       8.5              -426                0
+            CommutativeCancellation        8.4       8.4              -245                0
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+================================================================================
+Building Heisenberg_100...
+  Built in 30ms: 100Q, 1820 gates
+
+  Level 2 — full loop...
+
+================================================================================
+Circuit: Heisenberg_100 (Level 2)
+================================================================================
+Pre-optimization: 2748ms (size=48128, 2q=6729, depth=6830)
+
+Pre-loop passes:
+  ConsolidateBlocks: 650.6ms, 2Q: 6729→3857 (-2872)
+  UnitarySynthesis: 301.8ms, 2Q: 3857→4947 (+1090)
+Converged at iteration 2 (fixed_point)
+Final: size=20640, 2q=4947, depth=2275
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  FixPt?
+-------------------------------------------------------
+   1   20640    4947    2275      203.7       no      no
+   2   20640    4947    2275      143.4       no     YES
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+           RemoveIdentityEquivalent       10.8       5.4                 0                0
+       Optimize1qGatesDecomposition      169.8      84.9             -3724                0
+            CommutativeCancellation      166.4      83.2             -2714                0
+     ContractIdleWiresInControlFlow        0.1       0.0                 0                0
+
+  Level 2 — no loop (1 iteration)...
+
+================================================================================
+Circuit: Heisenberg_100 (Level 2)
+================================================================================
+Pre-optimization: 0ms (size=48128, 2q=6729, depth=6830)
+
+Pre-loop passes:
+  ConsolidateBlocks: 643.8ms, 2Q: 6729→3857 (-2872)
+  UnitarySynthesis: 295.5ms, 2Q: 3857→4947 (+1090)
+Converged at iteration 1 (no_loop)
+Final: size=20640, 2q=4947, depth=2275
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  FixPt?
+-------------------------------------------------------
+   1   20640    4947    2275      200.5       no      no
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+           RemoveIdentityEquivalent        6.6       6.6                 0                0
+       Optimize1qGatesDecomposition       98.7      98.7             -3724                0
+            CommutativeCancellation       95.2      95.2             -2714                0
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+  Level 3 — full loop...
+
+================================================================================
+Circuit: Heisenberg_100 (Level 3)
+================================================================================
+Pre-optimization: 2393ms (size=46715, 2q=6258, depth=6197)
+Converged at iteration 6 (minimum_point)
+Final: size=19533, 2q=4506, depth=2138
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  MinPt?
+-------------------------------------------------------
+   1   19225    4506    2090     1098.3       no      no
+   2   19533    4506    2138     1400.5       no      no
+   3   19551    4506    2139      770.9       no      no
+   4   19555    4506    2142      629.8       no      no
+   5   19555    4506    2142      612.5       no      no
+   6   19533    4506    2138      608.3       no     YES
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+                  ConsolidateBlocks     3503.1     583.8            -36027            -3088
+                   UnitarySynthesis      725.4     120.9             16043             1336
+           RemoveIdentityEquivalent       27.7       4.6                 0                0
+       Optimize1qGatesDecomposition      430.1      71.7             -4188                0
+            CommutativeCancellation      433.8      72.3             -2988                0
+     ContractIdleWiresInControlFlow        0.2       0.0                 0                0
+
+  Level 3 — no loop (1 iteration)...
+
+================================================================================
+Circuit: Heisenberg_100 (Level 3)
+================================================================================
+Pre-optimization: 0ms (size=46715, 2q=6258, depth=6197)
+Converged at iteration 1 (no_loop)
+Final: size=19225, 2q=4506, depth=2090
+
+Iter    Size      2Q   Depth   Time(ms)  Unroll?  MinPt?
+-------------------------------------------------------
+   1   19225    4506    2090     1095.6       no      no
+
+Per-pass cumulative stats (loop only):
+                               Pass   Total ms    Avg ms  Total size delta   Total 2Q delta
+------------------------------------------------------------------------------------------
+                  ConsolidateBlocks      616.5     616.5            -34704            -2846
+                   UnitarySynthesis      290.5     290.5             13594             1094
+           RemoveIdentityEquivalent        5.9       5.9                 0                0
+       Optimize1qGatesDecomposition       93.3      93.3             -3895                0
+            CommutativeCancellation       89.4      89.4             -2485                0
+     ContractIdleWiresInControlFlow        0.0       0.0                 0                0
+
+================================================================================
+SUMMARY — Level 2
+================================================================================
+
+--- Table 1: Loop Convergence & Timing ---
+
+             Circuit  Iters  Productive           Why Stopped   Opt(ms)  Pre-Opt(ms)   Opt %
+------------------------------------------------------------------------------------------
+             QFT_100      3           2  fixed point (iter 3)      2714         4246   39.0%
+              QV_100      2           1  fixed point (iter 2)     18324        73944   19.9%
+    EfficientSU2_100      2           0  fixed point (iter 2)       126          356   26.2%
+            QAOA_100      3           1  fixed point (iter 3)      3046         7423   29.1%
+              BV_100      2           1  fixed point (iter 2)       118         1119    9.5%
+      Heisenberg_100      2           1  fixed point (iter 2)      1299         2748   32.1%
+
+--- Table 2: Gate Quality (2Q Gates) ---
+
+             Circuit   Pre-Opt  After Iter1   Final  Iter1 Reduction  Loop Extra  Total Reduction
+-----------------------------------------------------------------------------------------------
+             QFT_100     10918         9166    9116    1752 (16.0%)          50    1802 (16.5%)
+              QV_100     98220        96093   96093    2127 ( 2.2%)           0    2127 ( 2.2%)
+    EfficientSU2_100       297          297     297       0 ( 0.0%)           0       0 ( 0.0%)
+            QAOA_100     16227        15961   15961     266 ( 1.6%)           0     266 ( 1.6%)
+              BV_100       390          200     200     190 (48.7%)           0     190 (48.7%)
+      Heisenberg_100      6729         4947    4947    1782 (26.5%)           0    1782 (26.5%)
+
+================================================================================
+SUMMARY — Level 3
+================================================================================
+
+--- Table 1: Loop Convergence & Timing ---
+
+             Circuit  Iters  Productive           Why Stopped   Opt(ms)  Pre-Opt(ms)   Opt %
+------------------------------------------------------------------------------------------
+             QFT_100      6           2   backtrack (depth=6)      8645         6286   57.9%
+              QV_100      3           1  fixed point (iter 1-2)     45762        88703   34.0%
+    EfficientSU2_100      3           0  fixed point (iter 1-2)       276         2296   10.7%
+            QAOA_100      3           1  fixed point (iter 1-2)      6110         8626   41.5%
+              BV_100      3           1  fixed point (iter 1-2)       179       560813    0.0%
+      Heisenberg_100      6           1   backtrack (depth=6)      5120         2393   68.1%
+
+--- Table 2: Gate Quality (2Q Gates) ---
+
+             Circuit   Pre-Opt  After Iter1   Final  Iter1 Reduction  Loop Extra  Total Reduction
+-----------------------------------------------------------------------------------------------
+             QFT_100     11047         9331    9323    1716 (15.5%)           8    1724 (15.6%)
+              QV_100     98112        95979   95979    2133 ( 2.2%)           0    2133 ( 2.2%)
+    EfficientSU2_100       297          297     297       0 ( 0.0%)           0       0 ( 0.0%)
+            QAOA_100     16581        16283   16283     298 ( 1.8%)           0     298 ( 1.8%)
+              BV_100       390          196     196     194 (49.7%)           0     194 (49.7%)
+      Heisenberg_100      6258         4506    4506    1752 (28.0%)           0    1752 (28.0%)
+
+================================================================================
+COMPARISON — Level 2 vs Level 3
+================================================================================
+
+--- Convergence ---
+
+             Circuit  L2 Iters  L3 Iters  L2 Opt(ms)  L3 Opt(ms)   Speedup
+---------------------------------------------------------------------------
+             QFT_100         3         6        2714        8645      3.2x
+              QV_100         2         3       18324       45762      2.5x
+    EfficientSU2_100         2         3         126         276      2.2x
+            QAOA_100         3         3        3046        6110      2.0x
+              BV_100         2         3         118         179      1.5x
+      Heisenberg_100         2         6        1299        5120      3.9x
+
+--- Gate Quality (Final 2Q Gates) ---
+
+             Circuit   Pre-Opt  L2 Final  L3 Final  L2 Reduction  L3 Reduction  L3-L2 Diff
+------------------------------------------------------------------------------------------
+             QFT_100     10918      9116      9323   1802 (16.5%)   1595 (14.6%)        +207
+              QV_100     98220     96093     95979   2127 ( 2.2%)   2241 ( 2.3%)        -114
+    EfficientSU2_100       297       297       297      0 ( 0.0%)      0 ( 0.0%)          +0
+            QAOA_100     16227     15961     16283    266 ( 1.6%)    -56 (-0.3%)        +322
+              BV_100       390       200       196    190 (48.7%)    194 (49.7%)          -4
+      Heisenberg_100      6729      4947      4506   1782 (26.5%)   2223 (33.0%)        -441
+
+--- Total Transpile Time ---
+
+             Circuit  L2 Total(ms)  L3 Total(ms)     L3/L2
+------------------------------------------------------------
+             QFT_100          6960         14931     2.15x
+              QV_100         92268        134465     1.46x
+    EfficientSU2_100           482          2572     5.34x
+            QAOA_100         10468         14736     1.41x
+              BV_100          1237        560992   453.65x
+      Heisenberg_100          4047          7513     1.86x
+
+================================================================================
+NO-LOOP COMPARISON — Level 2 (loop vs single iteration)
+================================================================================
+
+--- Gate Quality (2Q Gates) ---
+
+             Circuit   Pre-Opt      Loop   No-Loop    Diff  Regression?  Loop Opt(ms)  NoLoop Opt(ms)   Speedup
+-------------------------------------------------------------------------------------------------------------------
+             QFT_100     10918      9116      9116      +0           no          2714            2175      1.2x
+              QV_100     98220     96093     96093      +0           no         18324           15789      1.2x
+    EfficientSU2_100       297       297       297      +0           no           126             100      1.3x
+            QAOA_100     16227     15961     15961      +0           no          3046            2223      1.4x
+              BV_100       390       200       200      +0           no           118             105      1.1x
+      Heisenberg_100      6729      4947      4947      +0           no          1299            1140      1.1x
+
+--- Total Gates ---
+
+             Circuit   Loop Size  NoLoop Size    Diff
+-------------------------------------------------------
+             QFT_100       37285        37354     +69
+              QV_100      388349       388349      +0
+    EfficientSU2_100        3482         3482      +0
+            QAOA_100       53226        53235      +9
+              BV_100        1083         1083      +0
+      Heisenberg_100       20640        20640      +0
+
+--- Circuit Depth ---
+
+             Circuit  Loop Depth  NoLoop Depth    Diff
+-------------------------------------------------------
+             QFT_100        5357          5360      +3
+              QV_100       26772         26772      +0
+    EfficientSU2_100         330           330      +0
+            QAOA_100        4889          4889      +0
+              BV_100         450           450      +0
+      Heisenberg_100        2275          2275      +0
+
+================================================================================
+NO-LOOP COMPARISON — Level 3 (loop vs single iteration)
+================================================================================
+
+--- Gate Quality (2Q Gates) ---
+
+             Circuit   Pre-Opt      Loop   No-Loop    Diff  Regression?  Loop Opt(ms)  NoLoop Opt(ms)   Speedup
+-------------------------------------------------------------------------------------------------------------------
+             QFT_100     11047      9323      9331      +8          YES          8645            2241      3.9x
+              QV_100     98112     95979     95979      +0           no         45762           15707      2.9x
+    EfficientSU2_100       297       297       297      +0           no           276              98      2.8x
+            QAOA_100     16581     16283     16283      +0           no          6110            2136      2.9x
+              BV_100       390       196       196      +0           no           179             105      1.7x
+      Heisenberg_100      6258      4506      4506      +0           no          5120            1096      4.7x
+
+--- Total Gates ---
+
+             Circuit   Loop Size  NoLoop Size    Diff
+-------------------------------------------------------
+             QFT_100       37822        37935    +113
+              QV_100      388069       388068      -1
+    EfficientSU2_100        3482         3482      +0
+            QAOA_100       54258        54263      +5
+              BV_100        1059         1059      +0
+      Heisenberg_100       19533        19225    -308
+
+--- Circuit Depth ---
+
+             Circuit  Loop Depth  NoLoop Depth    Diff
+-------------------------------------------------------
+             QFT_100        5288          5301     +13
+              QV_100       27892         27892      +0
+    EfficientSU2_100         330           330      +0
+            QAOA_100        5339          5340      +1
+              BV_100         428           428      +0
+      Heisenberg_100        2138          2090     -48
