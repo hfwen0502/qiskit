@@ -1,8 +1,8 @@
-# Investigation: Qiskit Level 2 Pass Manager Construction
+# Investigation: Qiskit Optimization Loop (Level 2 & 3)
 
 ## Overview
 
-This document analyzes the Qiskit transpiler pass manager at `optimization_level=2`, focusing on the optimization stage loop: what it does, why it exists, whether it's necessary, and opportunities for improvement.
+This document analyzes the Qiskit transpiler optimization stage loop: what it does, why it exists, whether it's necessary, and opportunities for improvement. The pipeline structure is described using Level 2 as a reference (simpler to follow), then compared with Level 3 which is what real users care about. The profiling results focus on **Level 3** — the recommended optimization level for production hardware runs.
 
 **Branch**: `pass-manager-investigation` (based on Qiskit main, commit `03c640f73`)
 
@@ -17,13 +17,13 @@ This document analyzes the Qiskit transpiler pass manager at `optimization_level
 | `qiskit/transpiler/passes/utils/fixed_point.py` | `FixedPoint` — convergence check (used at level 1 and 2) |
 | `qiskit/transpiler/passes/utils/minimum_point.py` | `MinimumPoint` — local minimum tracker (used at level 3) |
 
-## Full Pipeline at Level 2
+## Full Pipeline (Level 2 Reference)
 
-The `StagedPassManager` runs 6 stages in order. Each stage is built by a plugin class in `builtin_plugins.py`.
+The `StagedPassManager` runs 6 stages in order. Each stage is built by a plugin class in `builtin_plugins.py`. Level 2 is shown here for clarity; Level 3 differences are noted in the "Comparison" sections below.
 
 ### Stage 1: Init (lines 135-177 of builtin_plugins.py)
 
-Prepares the circuit before layout/routing. At level 2:
+Prepares the circuit before layout/routing. At level 2 (same at level 3):
 
 ```
 UnitarySynthesis(min_qubits=3)       # Synthesize 3+ qubit unitaries into basis gates
@@ -76,7 +76,9 @@ TimeUnitConversion → ALAPScheduleAnalysis → PadDelay
 
 ## The Optimization Stage in Detail
 
-The optimization stage has three phases: **pre-loop**, **loop**, and **post-loop**.
+The optimization stage has three phases: **pre-loop**, **loop**, and **post-loop**. Level 2 structure shown first, then Level 3 differences.
+
+### Level 2 Structure
 
 ```python
 # builtin_plugins.py, lines 505-533
@@ -152,7 +154,7 @@ At the end of each iteration:
 
 **Max iterations**: 1000 (DoWhileController default). In practice, convergence happens much sooner.
 
-### Comparison: Level 3 Uses MinimumPoint Instead
+### Level 3 Differences
 
 Level 3 uses `MinimumPoint(["depth", "size"], prefix, backtrack_depth=5)`:
 
