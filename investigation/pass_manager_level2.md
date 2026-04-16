@@ -203,9 +203,113 @@ Removes any gate whose unitary is close to identity (within `approximation_degre
 
 5. **Per-pass timing**: Which pass in the loop is the bottleneck? CommutativeCancellation does commutativity analysis which can be expensive on large circuits.
 
+## Level 3 Optimization Loop Profiling Results
+
+**Setup**: 6 circuits (100Q each) on FakeTorino (133Q heavy-hex), optimization_level=3. Instrumented the DoWhileController loop pass-by-pass: timing, gate counts, 2Q deltas, MinimumPoint convergence.
+
+**Script**: `investigation/profile_optimization_loop.py`
+
+**Branch**: `pass-manager-investigation` (based on Qiskit main, commit `03c640f73`)
+
+### Circuits Tested
+
+| Circuit | Description | Input Gates |
+|---------|-------------|:-----------:|
+| QFT_100 | 100-qubit QFT — chain topology | ~5K |
+| QV_100 | 100-qubit Quantum Volume — dense random | ~100K |
+| EfficientSU2_100 | 100-qubit EfficientSU2, linear entanglement | ~700 |
+| QAOA_100 | 100-qubit QAOA (3 layers, random ZZ) | ~1.2K |
+| BV_100 | 100-qubit Bernstein-Vazirani | ~300 |
+| Heisenberg_100 | 100-qubit 10×10 square Heisenberg (3 Trotter steps) | ~3.2K |
+
+### Table 1: Loop Convergence & Timing
+
+| Circuit | Iters | Productive | Why Stopped | Opt (ms) | Pre-Opt (ms) | Opt % |
+|---------|:-----:|:----------:|-------------|:--------:|:------------:|:-----:|
+| QFT_100 | 6 | 1 | Backtrack (oscillation) | 8,255 | 4,679 | 63.8% |
+| QV_100 | 3 | 1 | Fixed point (iter 1-2) | 45,788 | 84,394 | 35.2% |
+| EfficientSU2_100 | 3 | 0 | Fixed point (iter 1-2) | 279 | 2,323 | 10.7% |
+| QAOA_100 | 3 | 1 | Fixed point (iter 1-2) | 6,207 | 10,334 | 37.5% |
+| BV_100 | 3 | 1 | Fixed point (iter 1-2) | 181 | 537,895 | 0.0% |
+| Heisenberg_100 | 6 | 1 | Backtrack (oscillation) | 7,119 | 2,552 | 73.6% |
+
+**Productive** = iterations that actually changed 2Q gate count. All useful work happens in iteration 1. Extra iterations are convergence confirmation or oscillation wait for MinimumPoint to trigger.
+
+### Table 2: Gate Quality (2Q Gates)
+
+| Circuit | Pre-Opt | After Iter 1 | Final | Iter 1 Reduction | Loop Extra | Total Reduction |
+|---------|:-------:|:------------:|:-----:|:----------------:|:----------:|:---------------:|
+| QFT_100 | 11,029 | 8,821 | 8,805 | 2,208 (20.0%) | 16 | 2,224 (20.2%) |
+| QV_100 | 98,292 | 96,153 | 96,153 | 2,139 (2.2%) | 0 | 2,139 (2.2%) |
+| EfficientSU2_100 | 297 | 297 | 297 | 0 (0.0%) | 0 | 0 (0.0%) |
+| QAOA_100 | 16,500 | 16,226 | 16,226 | 274 (1.7%) | 0 | 274 (1.7%) |
+| BV_100 | 390 | 196 | 196 | 194 (49.7%) | 0 | 194 (49.7%) |
+| Heisenberg_100 | 6,489 | 4,710 | 4,710 | 1,779 (27.4%) | 0 | 1,779 (27.4%) |
+
+**Loop Extra** = additional 2Q gate reduction from iterations 2+. Only QFT gets 16 extra gates (0.2% of total reduction) from the loop — all other circuits get **zero** benefit from iterating.
+
+### Table 3: Per-Pass Time (ms, cumulative across all iterations)
+
+| Pass | QFT | QV | SU2 | QAOA | BV | Heisenberg |
+|------|----:|---:|----:|-----:|---:|-----------:|
+| ConsolidateBlocks | 5,293 | 26,708 | 192 | 4,329 | 93 | 5,356 |
+| UnitarySynthesis | 1,265 | 9,588 | 0 | 748 | 50 | 813 |
+| Optimize1qGatesDecomposition | 808 | 4,631 | 41 | 564 | 19 | 458 |
+| CommutativeCancellation | 847 | 4,833 | 42 | 561 | 18 | 461 |
+| RemoveIdentityEquivalent | 42 | 28 | 3 | 5 | 1 | 30 |
+| ContractIdleWiresInControlFlow | 0 | 0 | 0 | 0 | 0 | 0 |
+
+### Table 4: Per-Pass Time (% of optimization stage)
+
+| Pass | QFT | QV | SU2 | QAOA | BV | Heisenberg |
+|------|----:|---:|----:|-----:|---:|-----------:|
+| ConsolidateBlocks | 64.1% | 58.3% | 68.8% | 69.7% | 51.3% | 75.2% |
+| UnitarySynthesis | 15.3% | 20.9% | 0.0% | 12.1% | 27.6% | 11.4% |
+| Optimize1qGatesDecomposition | 9.8% | 10.1% | 14.6% | 9.1% | 10.6% | 6.4% |
+| CommutativeCancellation | 10.3% | 10.6% | 15.2% | 9.0% | 10.0% | 6.5% |
+| RemoveIdentityEquivalent | 0.5% | 0.1% | 1.2% | 0.1% | 0.6% | 0.4% |
+| ContractIdleWiresInControlFlow | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% |
+
+### Table 5: Per-Pass 2Q Gate Delta (cumulative across all iterations)
+
+| Pass | QFT | QV | SU2 | QAOA | BV | Heisenberg |
+|------|----:|---:|----:|-----:|---:|-----------:|
+| ConsolidateBlocks | -4,380 | -31,861 | 0 | -646 | -291 | -3,355 |
+| UnitarySynthesis | +2,224 | +29,722 | 0 | +372 | +97 | +1,576 |
+| CommutativeCancellation | -68 | 0 | 0 | 0 | 0 | 0 |
+| Others | 0 | 0 | 0 | 0 | 0 | 0 |
+
+**Note**: ConsolidateBlocks collapses gate blocks into abstract unitaries (reducing gate count), then UnitarySynthesis expands those unitaries back into basis gates (adding gates back). The net reduction is ConsolidateBlocks removal minus UnitarySynthesis re-addition.
+
+### Key Takeaways
+
+1. **The loop does almost nothing after iteration 1.** Only QFT gets 16 extra 2Q gates (0.2% of total reduction) from the loop. All other circuits get zero benefit from iterating.
+
+2. **ConsolidateBlocks dominates** — 51-75% of optimization time. It also does most of the useful work (reducing 2Q gates by consolidating blocks into optimal unitaries via KAK/Weyl decomposition).
+
+3. **UnitarySynthesis adds gates back** — it resynthesizes the consolidated unitaries into basis gates. The net reduction = ConsolidateBlocks removal - UnitarySynthesis re-addition.
+
+4. **RemoveIdentityEquivalent and ContractIdleWiresInControlFlow are essentially free but also do nothing** on these circuits.
+
+5. **Iterations 2-6 are pure overhead** — they re-run ConsolidateBlocks (expensive) only to confirm nothing changed or to wait out MinimumPoint's backtrack_depth before convergence.
+
+### Answers to Key Questions
+
+1. **How many loop iterations?** 3-6, but only iteration 1 is productive. The extra iterations exist because MinimumPoint requires either a fixed point (same score twice) or `backtrack_depth=5` consecutive non-improvements before stopping.
+
+2. **Is the pre-loop ConsolidateBlocks redundant?** N/A for level 3 — ConsolidateBlocks is inside the loop, not pre-loop. At level 3 it runs every iteration, which means after iteration 1 converges, iterations 2+ re-run it for nothing.
+
+3. **Does the conditional BasisTranslator ever fire?** No — it never fired on any of the 6 test circuits. All optimization passes preserved the basis gate set.
+
+4. **Would MinimumPoint be better than FixedPoint at level 2?** MinimumPoint is more robust (handles oscillation) but also more expensive — it requires more iterations to confirm convergence (backtrack_depth=5). For these circuits, FixedPoint would converge faster since no oscillation was observed in the productive work.
+
+5. **Per-pass timing**: ConsolidateBlocks is the clear bottleneck at 51-75%. CommutativeCancellation and Optimize1qGatesDecomposition are roughly equal (6-15% each). UnitarySynthesis varies (11-28%) depending on how many unitaries ConsolidateBlocks produces.
+
 ## Next Steps
 
-- [ ] Instrument the optimization loop to count iterations per circuit on benchpress suite
-- [ ] Add per-pass timing to measure where time is spent
+- [x] Instrument the optimization loop to count iterations per circuit
+- [x] Add per-pass timing to measure where time is spent
 - [ ] Compare level 2 vs level 3 quality and speed on benchpress circuits
 - [ ] Test whether removing the loop (single iteration) degrades gate quality
+- [ ] Profile with real chemistry circuits (e.g., fe4s4 LUCJ) that may have different loop behavior
+- [ ] Investigate whether reducing MinimumPoint backtrack_depth (e.g., 2 instead of 5) would save time without losing quality
