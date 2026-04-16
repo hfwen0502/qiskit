@@ -1,10 +1,14 @@
-"""Profile the optimization loop at level 3 to understand iteration behavior.
+"""Profile the optimization loop at level 2 and 3 to understand iteration behavior.
 
 Instruments the DoWhileController loop in the optimization stage to measure:
 - Number of iterations before convergence
 - Per-pass wall time and gate count changes
-- Whether MinimumPoint triggers backtracking
+- Whether MinimumPoint (L3) or FixedPoint (L2) triggers convergence
 - Which passes actually contribute reductions
+
+Compares level 2 vs level 3 side-by-side:
+- Level 2: pre-loop (ConsolidateBlocks+UnitarySynthesis once), loop (4 passes), FixedPoint
+- Level 3: loop (6 passes including ConsolidateBlocks+UnitarySynthesis), MinimumPoint
 
 Usage:
     cd ~/IBMWORK/QCSC/qiskit
@@ -38,6 +42,9 @@ from qiskit.transpiler.passes import (
     Depth,
 )
 from qiskit.transpiler.passes.utils.minimum_point import MinimumPoint
+from qiskit.transpiler.passes.utils.fixed_point import FixedPoint
+from qiskit.converters import circuit_to_dag, dag_to_circuit
+from qiskit.passmanager import PropertySet
 from qiskit_ibm_runtime.fake_provider import FakeTorino
 
 
@@ -143,8 +150,6 @@ def get_circuit_stats(dag):
     """Get gate count and depth from a DAG."""
     size = dag.size()
     depth = dag.depth()
-    ops = dag.count_ops()
-    # Count 2Q gates by checking op_nodes
     n2q = 0
     for node in dag.op_nodes():
         if len(node.qargs) == 2:
@@ -152,20 +157,53 @@ def get_circuit_stats(dag):
     return {"size": size, "depth": depth, "2q_gates": n2q}
 
 
+def run_pass_instrumented(dag, pass_name, pass_inst, prop_set):
+    """Run a single pass with timing and gate tracking."""
+    pass_inst.property_set = prop_set
+    stats_before = get_circuit_stats(dag)
+    t_start = time.perf_counter()
+
+    try:
+        new_dag = pass_inst.run(dag)
+        if new_dag is not None:
+            dag = new_dag
+    except Exception as e:
+        return dag, {
+            "name": pass_name,
+            "time_ms": 0,
+            "error": str(e),
+        }
+
+    t_elapsed = time.perf_counter() - t_start
+    stats_after = get_circuit_stats(dag)
+
+    return dag, {
+        "name": pass_name,
+        "time_ms": t_elapsed * 1000,
+        "size_before": stats_before["size"],
+        "size_after": stats_after["size"],
+        "size_delta": stats_after["size"] - stats_before["size"],
+        "2q_before": stats_before["2q_gates"],
+        "2q_after": stats_after["2q_gates"],
+        "2q_delta": stats_after["2q_gates"] - stats_before["2q_gates"],
+        "depth_before": stats_before["depth"],
+        "depth_after": stats_after["depth"],
+        "depth_delta": stats_after["depth"] - stats_before["depth"],
+    }
+
+
 def profile_optimization_loop(circuit, backend, optimization_level=3):
     """Run transpilation and profile the optimization stage loop.
+
+    Supports both level 2 (pre-loop + FixedPoint loop) and level 3
+    (all-in-loop + MinimumPoint).
 
     Returns dict with per-iteration, per-pass timing and gate count data.
     """
     target = backend.target
     basis_gates = list(target.operation_names)
-    coupling_map = target.build_coupling_map()
 
     # Step 1: Run init + layout + routing + translation (everything before optimization)
-    pm = generate_preset_pass_manager(optimization_level, backend=backend)
-
-    # We'll use the full pass manager but intercept the optimization stage.
-    # First, run everything except optimization by setting optimization to None temporarily.
     pm_pre_opt = generate_preset_pass_manager(optimization_level, backend=backend)
     pm_pre_opt.optimization = PassManager()  # Empty — skip optimization
 
@@ -173,133 +211,160 @@ def profile_optimization_loop(circuit, backend, optimization_level=3):
     pre_opt_circuit = pm_pre_opt.run(circuit)
     pre_opt_time = time.perf_counter() - t0
 
-    # Convert to DAG for pass-by-pass execution
-    from qiskit.converters import circuit_to_dag, dag_to_circuit
     dag = circuit_to_dag(pre_opt_circuit)
-
     pre_opt_stats = get_circuit_stats(dag)
 
-    # Step 2: Build the level 3 optimization passes manually
-    passes_in_loop = [
-        ("ConsolidateBlocks", ConsolidateBlocks(
-            basis_gates=basis_gates, target=target,
-        )),
-        ("UnitarySynthesis", UnitarySynthesis(
-            basis_gates, target=target,
-        )),
-        ("RemoveIdentityEquivalent", RemoveIdentityEquivalent(target=target)),
-        ("Optimize1qGatesDecomposition", Optimize1qGatesDecomposition(
-            basis=basis_gates, target=target,
-        )),
-        ("CommutativeCancellation", CommutativeCancellation(target=target)),
-        ("ContractIdleWiresInControlFlow", ContractIdleWiresInControlFlow()),
-    ]
-
-    # Conditional unroll (BasisTranslator)
-    gates_in_basis = GatesInBasis(basis_gates, target=target)
-
-    # MinimumPoint tracking
-    size_pass = Size(recurse=True)
-    depth_pass = Depth(recurse=True)
-    min_point = MinimumPoint(["depth", "size"], "optimization_loop", backtrack_depth=5)
-
-    # Step 3: Run the loop manually with instrumentation
     results = {
+        "optimization_level": optimization_level,
         "pre_opt_time": pre_opt_time,
         "pre_opt_stats": pre_opt_stats,
+        "pre_loop_passes": [],
         "iterations": [],
     }
 
-    property_set = {}
-    # Initialize property set entries that passes expect
-    from qiskit.passmanager import PropertySet
     prop_set = PropertySet()
+    gates_in_basis = GatesInBasis(basis_gates, target=target)
 
-    max_iterations = 20  # Safety cap (real cap is 1000)
+    # Build passes
+    consolidate = ConsolidateBlocks(basis_gates=basis_gates, target=target)
+    unitary_synth = UnitarySynthesis(basis_gates, target=target)
+    remove_id = RemoveIdentityEquivalent(target=target)
+    opt_1q = Optimize1qGatesDecomposition(basis=basis_gates, target=target)
+    commutative = CommutativeCancellation(target=target)
+    contract_idle = ContractIdleWiresInControlFlow()
 
-    for iteration in range(max_iterations):
-        iter_data = {"iteration": iteration + 1, "passes": []}
+    if optimization_level == 2:
+        # Level 2: pre-loop runs ConsolidateBlocks + UnitarySynthesis once
+        pre_loop_passes = [
+            ("ConsolidateBlocks", consolidate),
+            ("UnitarySynthesis", unitary_synth),
+        ]
+        loop_passes = [
+            ("RemoveIdentityEquivalent", remove_id),
+            ("Optimize1qGatesDecomposition", opt_1q),
+            ("CommutativeCancellation", commutative),
+            ("ContractIdleWiresInControlFlow", contract_idle),
+        ]
 
-        for pass_name, pass_inst in passes_in_loop:
-            # Set up property set for the pass
-            pass_inst.property_set = prop_set
+        # Run pre-loop
+        for pass_name, pass_inst in pre_loop_passes:
+            dag, pass_data = run_pass_instrumented(dag, pass_name, pass_inst, prop_set)
+            results["pre_loop_passes"].append(pass_data)
 
-            stats_before = get_circuit_stats(dag)
-            t_start = time.perf_counter()
+        # Convergence: FixedPoint
+        size_pass = Size(recurse=True)
+        depth_pass = Depth(recurse=True)
+        fp_size = FixedPoint("size")
+        fp_depth = FixedPoint("depth")
 
-            try:
-                new_dag = pass_inst.run(dag)
-                if new_dag is not None:
-                    dag = new_dag
-            except Exception as e:
-                iter_data["passes"].append({
-                    "name": pass_name,
-                    "time_ms": 0,
-                    "error": str(e),
-                })
-                continue
+        max_iterations = 20
+        for iteration in range(max_iterations):
+            iter_data = {"iteration": iteration + 1, "passes": []}
 
-            t_elapsed = time.perf_counter() - t_start
-            stats_after = get_circuit_stats(dag)
+            for pass_name, pass_inst in loop_passes:
+                dag, pass_data = run_pass_instrumented(dag, pass_name, pass_inst, prop_set)
+                iter_data["passes"].append(pass_data)
 
-            iter_data["passes"].append({
-                "name": pass_name,
-                "time_ms": t_elapsed * 1000,
-                "size_before": stats_before["size"],
-                "size_after": stats_after["size"],
-                "size_delta": stats_after["size"] - stats_before["size"],
-                "2q_before": stats_before["2q_gates"],
-                "2q_after": stats_after["2q_gates"],
-                "2q_delta": stats_after["2q_gates"] - stats_before["2q_gates"],
-                "depth_before": stats_before["depth"],
-                "depth_after": stats_after["depth"],
-                "depth_delta": stats_after["depth"] - stats_before["depth"],
-            })
-
-        # Run GatesInBasis check
-        gates_in_basis.property_set = prop_set
-        gates_in_basis.run(dag)
-        needs_unroll = not prop_set.get("all_gates_in_basis", True)
-        iter_data["needs_unroll"] = needs_unroll
-
-        if needs_unroll:
-            # Run translation
-            translation_pm = generate_preset_pass_manager(
-                optimization_level, backend=backend
-            )
-            # Get just the translation stage
-            trans_dag = circuit_to_dag(translation_pm.translation.run(dag_to_circuit(dag)))
-            if trans_dag is not None:
-                dag = trans_dag
-            iter_data["ran_translation"] = True
-        else:
+            # Run GatesInBasis check
+            gates_in_basis.property_set = prop_set
+            gates_in_basis.run(dag)
+            needs_unroll = not prop_set.get("all_gates_in_basis", True)
+            iter_data["needs_unroll"] = needs_unroll
             iter_data["ran_translation"] = False
 
-        # Run Size/Depth/MinimumPoint
-        size_pass.property_set = prop_set
-        depth_pass.property_set = prop_set
-        min_point.property_set = prop_set
+            if needs_unroll:
+                translation_pm = generate_preset_pass_manager(
+                    optimization_level, backend=backend
+                )
+                trans_dag = circuit_to_dag(translation_pm.translation.run(dag_to_circuit(dag)))
+                if trans_dag is not None:
+                    dag = trans_dag
+                iter_data["ran_translation"] = True
 
-        size_pass.run(dag)
-        depth_pass.run(dag)
-        new_dag = min_point.run(dag)
-        if new_dag is not None:
-            dag = new_dag
+            # Run Size/Depth/FixedPoint
+            for p in [size_pass, depth_pass, fp_size, fp_depth]:
+                p.property_set = prop_set
+                p.run(dag)
 
-        iter_stats = get_circuit_stats(dag)
-        iter_data["end_stats"] = iter_stats
-        iter_data["minimum_point_reached"] = prop_set.get("optimization_loop_minimum_point", False)
+            iter_stats = get_circuit_stats(dag)
+            iter_data["end_stats"] = iter_stats
 
-        results["iterations"].append(iter_data)
+            size_fp = prop_set.get("size_fixed_point", False)
+            depth_fp = prop_set.get("depth_fixed_point", False)
+            converged = size_fp and depth_fp
+            iter_data["minimum_point_reached"] = converged
 
-        # Check convergence
-        if prop_set.get("optimization_loop_minimum_point", False):
-            results["converged_at"] = iteration + 1
-            results["convergence_reason"] = "minimum_point"
-            break
-    else:
-        results["converged_at"] = max_iterations
-        results["convergence_reason"] = "max_iterations"
+            results["iterations"].append(iter_data)
+
+            if converged:
+                results["converged_at"] = iteration + 1
+                results["convergence_reason"] = "fixed_point"
+                break
+        else:
+            results["converged_at"] = max_iterations
+            results["convergence_reason"] = "max_iterations"
+
+    elif optimization_level == 3:
+        # Level 3: all passes inside the loop, MinimumPoint convergence
+        loop_passes = [
+            ("ConsolidateBlocks", consolidate),
+            ("UnitarySynthesis", unitary_synth),
+            ("RemoveIdentityEquivalent", remove_id),
+            ("Optimize1qGatesDecomposition", opt_1q),
+            ("CommutativeCancellation", commutative),
+            ("ContractIdleWiresInControlFlow", contract_idle),
+        ]
+
+        size_pass = Size(recurse=True)
+        depth_pass = Depth(recurse=True)
+        min_point = MinimumPoint(["depth", "size"], "optimization_loop", backtrack_depth=5)
+
+        max_iterations = 20
+        for iteration in range(max_iterations):
+            iter_data = {"iteration": iteration + 1, "passes": []}
+
+            for pass_name, pass_inst in loop_passes:
+                dag, pass_data = run_pass_instrumented(dag, pass_name, pass_inst, prop_set)
+                iter_data["passes"].append(pass_data)
+
+            # Run GatesInBasis check
+            gates_in_basis.property_set = prop_set
+            gates_in_basis.run(dag)
+            needs_unroll = not prop_set.get("all_gates_in_basis", True)
+            iter_data["needs_unroll"] = needs_unroll
+            iter_data["ran_translation"] = False
+
+            if needs_unroll:
+                translation_pm = generate_preset_pass_manager(
+                    optimization_level, backend=backend
+                )
+                trans_dag = circuit_to_dag(translation_pm.translation.run(dag_to_circuit(dag)))
+                if trans_dag is not None:
+                    dag = trans_dag
+                iter_data["ran_translation"] = True
+
+            # Run Size/Depth/MinimumPoint
+            for p in [size_pass, depth_pass, min_point]:
+                p.property_set = prop_set
+                new_dag = p.run(dag)
+                if new_dag is not None:
+                    dag = new_dag
+
+            iter_stats = get_circuit_stats(dag)
+            iter_data["end_stats"] = iter_stats
+            iter_data["minimum_point_reached"] = prop_set.get(
+                "optimization_loop_minimum_point", False
+            )
+
+            results["iterations"].append(iter_data)
+
+            if prop_set.get("optimization_loop_minimum_point", False):
+                results["converged_at"] = iteration + 1
+                results["convergence_reason"] = "minimum_point"
+                break
+        else:
+            results["converged_at"] = max_iterations
+            results["convergence_reason"] = "max_iterations"
 
     results["final_stats"] = get_circuit_stats(dag)
     return results
@@ -311,20 +376,34 @@ def profile_optimization_loop(circuit, backend, optimization_level=3):
 
 def print_results(name, results):
     """Print profiling results for one circuit."""
+    level = results["optimization_level"]
     print(f"\n{'=' * 80}")
-    print(f"Circuit: {name}")
+    print(f"Circuit: {name} (Level {level})")
     print(f"{'=' * 80}")
     print(f"Pre-optimization: {results['pre_opt_time']*1000:.0f}ms "
           f"(size={results['pre_opt_stats']['size']}, "
           f"2q={results['pre_opt_stats']['2q_gates']}, "
           f"depth={results['pre_opt_stats']['depth']})")
+
+    # Print pre-loop passes (Level 2)
+    if results["pre_loop_passes"]:
+        print(f"\nPre-loop passes:")
+        for p in results["pre_loop_passes"]:
+            if "error" in p:
+                print(f"  {p['name']}: ERROR {p['error']}")
+            else:
+                print(f"  {p['name']}: {p['time_ms']:.1f}ms, "
+                      f"2Q: {p['2q_before']}→{p['2q_after']} ({p['2q_delta']:+d})")
+
     print(f"Converged at iteration {results['converged_at']} ({results['convergence_reason']})")
     print(f"Final: size={results['final_stats']['size']}, "
           f"2q={results['final_stats']['2q_gates']}, "
           f"depth={results['final_stats']['depth']}")
 
     # Per-iteration summary
-    print(f"\n{'Iter':>4s}  {'Size':>6s}  {'2Q':>6s}  {'Depth':>6s}  {'Time(ms)':>9s}  {'Unroll?':>7s}  {'MinPt?':>6s}")
+    conv_label = "FixPt?" if level == 2 else "MinPt?"
+    print(f"\n{'Iter':>4s}  {'Size':>6s}  {'2Q':>6s}  {'Depth':>6s}  {'Time(ms)':>9s}  "
+          f"{'Unroll?':>7s}  {conv_label:>6s}")
     print("-" * 55)
     for it in results["iterations"]:
         total_time = sum(p["time_ms"] for p in it["passes"] if "time_ms" in p)
@@ -334,31 +413,44 @@ def print_results(name, results):
               f"{'YES' if it.get('minimum_point_reached') else 'no':>6s}")
 
     # Per-pass cumulative time and total gate delta
-    print(f"\nPer-pass cumulative stats:")
-    print(f"{'Pass':>35s}  {'Total ms':>9s}  {'Avg ms':>8s}  {'Total size delta':>16s}  {'Total 2Q delta':>15s}")
+    print(f"\nPer-pass cumulative stats (loop only):")
+    print(f"{'Pass':>35s}  {'Total ms':>9s}  {'Avg ms':>8s}  "
+          f"{'Total size delta':>16s}  {'Total 2Q delta':>15s}")
     print("-" * 90)
-    pass_names = [p["name"] for p in results["iterations"][0]["passes"]]
-    for pname in pass_names:
-        times = []
-        size_deltas = []
-        twoq_deltas = []
-        for it in results["iterations"]:
-            for p in it["passes"]:
-                if p["name"] == pname and "time_ms" in p:
-                    times.append(p["time_ms"])
-                    size_deltas.append(p.get("size_delta", 0))
-                    twoq_deltas.append(p.get("2q_delta", 0))
-        total_t = sum(times)
-        avg_t = total_t / len(times) if times else 0
-        total_sd = sum(size_deltas)
-        total_2qd = sum(twoq_deltas)
-        print(f"{pname:>35s}  {total_t:9.1f}  {avg_t:8.1f}  {total_sd:16d}  {total_2qd:15d}")
+    if results["iterations"]:
+        pass_names = [p["name"] for p in results["iterations"][0]["passes"]]
+        for pname in pass_names:
+            times = []
+            size_deltas = []
+            twoq_deltas = []
+            for it in results["iterations"]:
+                for p in it["passes"]:
+                    if p["name"] == pname and "time_ms" in p:
+                        times.append(p["time_ms"])
+                        size_deltas.append(p.get("size_delta", 0))
+                        twoq_deltas.append(p.get("2q_delta", 0))
+            total_t = sum(times)
+            avg_t = total_t / len(times) if times else 0
+            total_sd = sum(size_deltas)
+            total_2qd = sum(twoq_deltas)
+            print(f"{pname:>35s}  {total_t:9.1f}  {avg_t:8.1f}  "
+                  f"{total_sd:16d}  {total_2qd:15d}")
 
 
-def print_summary(all_results):
-    """Print comparison summary across all circuits."""
+def get_total_opt_time(results):
+    """Total optimization time including pre-loop and loop passes."""
+    pre_loop_t = sum(p["time_ms"] for p in results["pre_loop_passes"] if "time_ms" in p)
+    loop_t = sum(
+        sum(p["time_ms"] for p in it["passes"] if "time_ms" in p)
+        for it in results["iterations"]
+    )
+    return pre_loop_t + loop_t
+
+
+def print_summary(all_results, level):
+    """Print comparison summary across all circuits for one level."""
     print(f"\n{'=' * 80}")
-    print("SUMMARY")
+    print(f"SUMMARY — Level {level}")
     print(f"{'=' * 80}")
 
     # Table 1: Loop Convergence & Timing
@@ -368,37 +460,36 @@ def print_summary(all_results):
     print("-" * 90)
     for name, results in all_results.items():
         n_iters = results["converged_at"]
-        opt_time = sum(
-            sum(p["time_ms"] for p in it["passes"] if "time_ms" in p)
-            for it in results["iterations"]
-        )
+        opt_time = get_total_opt_time(results)
         pre_time = results["pre_opt_time"] * 1000
         opt_pct = (opt_time / (opt_time + pre_time) * 100) if (opt_time + pre_time) > 0 else 0
 
-        # Determine productive iterations: how many iterations actually changed 2Q gate count
         productive = 0
         prev_2q = results["pre_opt_stats"]["2q_gates"]
+        # Count pre-loop as productive if it changed 2Q
+        if results["pre_loop_passes"]:
+            after_preloop = results["pre_loop_passes"][-1].get("2q_after", prev_2q)
+            if after_preloop != prev_2q:
+                productive += 1
+            prev_2q = after_preloop
         for it in results["iterations"]:
             cur_2q = it["end_stats"]["2q_gates"]
             if cur_2q != prev_2q:
                 productive += 1
             prev_2q = cur_2q
 
-        # Determine why it stopped
-        # Check if last iterations had same score (fixed point) or oscillated (backtrack)
-        if n_iters <= 3:
-            reason = "fixed point (iter 1-2)"
-        else:
-            # Check if iteration 1 result == final result
-            iter1_stats = results["iterations"][0]["end_stats"]
-            final_stats = results["final_stats"]
-            if (iter1_stats["2q_gates"] == final_stats["2q_gates"] and
-                    iter1_stats["depth"] == final_stats["depth"]):
-                reason = f"backtrack (oscillation)"
+        reason = results["convergence_reason"]
+        if reason == "fixed_point":
+            reason = f"fixed point (iter {n_iters})"
+        elif reason == "minimum_point":
+            if n_iters <= 3:
+                reason = "fixed point (iter 1-2)"
             else:
-                iter2_stats = results["iterations"][1]["end_stats"]
-                if (iter2_stats["2q_gates"] == final_stats["2q_gates"]):
-                    reason = f"backtrack (from iter 2)"
+                iter1_stats = results["iterations"][0]["end_stats"]
+                final_stats = results["final_stats"]
+                if (iter1_stats["2q_gates"] == final_stats["2q_gates"] and
+                        iter1_stats["depth"] == final_stats["depth"]):
+                    reason = "backtrack (oscillation)"
                 else:
                     reason = f"backtrack (depth={n_iters})"
 
@@ -412,7 +503,12 @@ def print_summary(all_results):
     print("-" * 95)
     for name, results in all_results.items():
         pre_2q = results["pre_opt_stats"]["2q_gates"]
-        iter1_2q = results["iterations"][0]["end_stats"]["2q_gates"]
+        # "After Iter 1" = after pre-loop (L2) or after first loop iter (L3)
+        if results["pre_loop_passes"]:
+            # Level 2: iter 1 work is the pre-loop
+            iter1_2q = results["pre_loop_passes"][-1].get("2q_after", pre_2q)
+        else:
+            iter1_2q = results["iterations"][0]["end_stats"]["2q_gates"]
         final_2q = results["final_stats"]["2q_gates"]
         iter1_red = pre_2q - iter1_2q
         iter1_pct = (iter1_red / pre_2q * 100) if pre_2q > 0 else 0
@@ -423,81 +519,57 @@ def print_summary(all_results):
               f"{iter1_red:6d} ({iter1_pct:4.1f}%)  {loop_extra:10d}  "
               f"{total_red:6d} ({total_pct:4.1f}%)")
 
-    # Table 3: Per-Pass Effectiveness (time and 2Q gate reduction)
-    print(f"\n--- Table 3: Per-Pass Effectiveness (cumulative across all iterations) ---\n")
-    pass_names = ["ConsolidateBlocks", "UnitarySynthesis", "RemoveIdentityEquivalent",
-                  "Optimize1qGatesDecomposition", "CommutativeCancellation",
-                  "ContractIdleWiresInControlFlow"]
-    # Header
-    header = f"{'Pass':>30s}"
-    for name in all_results:
-        short = name[:10]
-        header += f"  {short:>12s}"
-    print(header)
-    print("-" * (30 + 14 * len(all_results)))
 
-    # Time per pass
-    print("\n  Time (ms):")
-    for pname in pass_names:
-        row = f"  {pname:>28s}"
-        for name, results in all_results.items():
-            total_t = 0
-            for it in results["iterations"]:
-                for p in it["passes"]:
-                    if p["name"] == pname and "time_ms" in p:
-                        total_t += p["time_ms"]
-            row += f"  {total_t:12.0f}"
-        print(row)
+def print_comparison(l2_results, l3_results):
+    """Print side-by-side comparison of Level 2 vs Level 3."""
+    print(f"\n{'=' * 80}")
+    print("COMPARISON — Level 2 vs Level 3")
+    print(f"{'=' * 80}")
 
-    # 2Q delta per pass
-    print("\n  2Q Gate Delta:")
-    for pname in pass_names:
-        row = f"  {pname:>28s}"
-        for name, results in all_results.items():
-            total_2q = 0
-            for it in results["iterations"]:
-                for p in it["passes"]:
-                    if p["name"] == pname:
-                        total_2q += p.get("2q_delta", 0)
-            row += f"  {total_2q:12d}"
-        print(row)
+    # Convergence comparison
+    print(f"\n--- Convergence ---\n")
+    print(f"{'Circuit':>20s}  {'L2 Iters':>8s}  {'L3 Iters':>8s}  "
+          f"{'L2 Opt(ms)':>10s}  {'L3 Opt(ms)':>10s}  {'Speedup':>8s}")
+    print("-" * 75)
+    for name in l2_results:
+        r2 = l2_results[name]
+        r3 = l3_results[name]
+        t2 = get_total_opt_time(r2)
+        t3 = get_total_opt_time(r3)
+        speedup = t3 / t2 if t2 > 0 else float('inf')
+        print(f"{name:>20s}  {r2['converged_at']:8d}  {r3['converged_at']:8d}  "
+              f"{t2:10.0f}  {t3:10.0f}  {speedup:7.1f}x")
 
-    # Size delta per pass
-    print("\n  Total Gate Delta:")
-    for pname in pass_names:
-        row = f"  {pname:>28s}"
-        for name, results in all_results.items():
-            total_s = 0
-            for it in results["iterations"]:
-                for p in it["passes"]:
-                    if p["name"] == pname:
-                        total_s += p.get("size_delta", 0)
-            row += f"  {total_s:12d}"
-        print(row)
+    # Gate quality comparison
+    print(f"\n--- Gate Quality (Final 2Q Gates) ---\n")
+    print(f"{'Circuit':>20s}  {'Pre-Opt':>8s}  {'L2 Final':>8s}  {'L3 Final':>8s}  "
+          f"{'L2 Reduction':>12s}  {'L3 Reduction':>12s}  {'L3-L2 Diff':>10s}")
+    print("-" * 90)
+    for name in l2_results:
+        r2 = l2_results[name]
+        r3 = l3_results[name]
+        pre_2q = r2["pre_opt_stats"]["2q_gates"]
+        l2_final = r2["final_stats"]["2q_gates"]
+        l3_final = r3["final_stats"]["2q_gates"]
+        l2_red = pre_2q - l2_final
+        l3_red = pre_2q - l3_final
+        l2_pct = (l2_red / pre_2q * 100) if pre_2q > 0 else 0
+        l3_pct = (l3_red / pre_2q * 100) if pre_2q > 0 else 0
+        diff = l3_final - l2_final  # negative = L3 is better
+        print(f"{name:>20s}  {pre_2q:8d}  {l2_final:8d}  {l3_final:8d}  "
+              f"{l2_red:5d} ({l2_pct:4.1f}%)  {l3_red:5d} ({l3_pct:4.1f}%)  {diff:+10d}")
 
-    # Table 4: Time breakdown (% of optimization time per pass)
-    print(f"\n--- Table 4: Time Breakdown (% of optimization stage) ---\n")
-    header = f"{'Pass':>30s}"
-    for name in all_results:
-        short = name[:10]
-        header += f"  {short:>10s}"
-    print(header)
-    print("-" * (30 + 12 * len(all_results)))
-    for pname in pass_names:
-        row = f"  {pname:>28s}"
-        for name, results in all_results.items():
-            total_opt = sum(
-                sum(p["time_ms"] for p in it["passes"] if "time_ms" in p)
-                for it in results["iterations"]
-            )
-            pass_t = 0
-            for it in results["iterations"]:
-                for p in it["passes"]:
-                    if p["name"] == pname and "time_ms" in p:
-                        pass_t += p["time_ms"]
-            pct = (pass_t / total_opt * 100) if total_opt > 0 else 0
-            row += f"  {pct:9.1f}%"
-        print(row)
+    # Total time comparison (pre-opt + opt)
+    print(f"\n--- Total Transpile Time ---\n")
+    print(f"{'Circuit':>20s}  {'L2 Total(ms)':>12s}  {'L3 Total(ms)':>12s}  {'L3/L2':>8s}")
+    print("-" * 60)
+    for name in l2_results:
+        r2 = l2_results[name]
+        r3 = l3_results[name]
+        t2_total = r2["pre_opt_time"] * 1000 + get_total_opt_time(r2)
+        t3_total = r3["pre_opt_time"] * 1000 + get_total_opt_time(r3)
+        ratio = t3_total / t2_total if t2_total > 0 else float('inf')
+        print(f"{name:>20s}  {t2_total:12.0f}  {t3_total:12.0f}  {ratio:7.2f}x")
 
 
 # ---------------------------------------------------------------------------
@@ -507,30 +579,40 @@ def print_summary(all_results):
 def main():
     backend = FakeTorino()
     print(f"Backend: FakeTorino ({backend.num_qubits} qubits)")
-    print(f"Optimization level: 3")
     print(f"Basis gates: {list(backend.target.operation_names)[:5]}...")
 
-    all_results = {}
+    l2_results = {}
+    l3_results = {}
 
     for name, builder in CIRCUITS.items():
-        print(f"\n--- Building {name}...")
+        print(f"\n{'=' * 80}")
+        print(f"Building {name}...")
         t0 = time.perf_counter()
         circuit = builder()
         build_time = time.perf_counter() - t0
-        print(f"    Built in {build_time*1000:.0f}ms: {circuit.num_qubits}Q, "
+        print(f"  Built in {build_time*1000:.0f}ms: {circuit.num_qubits}Q, "
               f"{circuit.size()} gates")
 
-        print(f"    Profiling optimization loop...")
-        try:
-            results = profile_optimization_loop(circuit, backend, optimization_level=3)
-            all_results[name] = results
-            print_results(name, results)
-        except Exception as e:
-            print(f"    ERROR: {e}")
-            import traceback
-            traceback.print_exc()
+        for level in [2, 3]:
+            print(f"\n  Profiling Level {level}...")
+            try:
+                results = profile_optimization_loop(circuit, backend, optimization_level=level)
+                if level == 2:
+                    l2_results[name] = results
+                else:
+                    l3_results[name] = results
+                print_results(name, results)
+            except Exception as e:
+                print(f"    ERROR: {e}")
+                import traceback
+                traceback.print_exc()
 
-    print_summary(all_results)
+    # Per-level summaries
+    print_summary(l2_results, level=2)
+    print_summary(l3_results, level=3)
+
+    # Side-by-side comparison
+    print_comparison(l2_results, l3_results)
 
 
 if __name__ == "__main__":

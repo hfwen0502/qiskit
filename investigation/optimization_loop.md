@@ -307,11 +307,96 @@ Removes any gate whose unitary is close to identity (within `approximation_degre
 
 5. **Per-pass timing**: ConsolidateBlocks is the clear bottleneck at 51-75%. CommutativeCancellation and Optimize1qGatesDecomposition are roughly equal (6-15% each). UnitarySynthesis varies (11-28%) depending on how many unitaries ConsolidateBlocks produces.
 
+## Level 2 vs Level 3 Comparison
+
+Same 6 circuits (100Q, FakeTorino) profiled at both optimization levels to compare the two designs:
+
+- **Level 2**: ConsolidateBlocks + UnitarySynthesis in **pre-loop** (once), loop has 4 light passes, **FixedPoint** convergence
+- **Level 3**: ConsolidateBlocks + UnitarySynthesis **inside loop** (every iteration), loop has 6 passes, **MinimumPoint** convergence (backtrack_depth=5)
+
+**Note**: Pre-optimization stages (init, layout, routing, translation) also differ between levels, so the optimization loop starts from a different circuit. The comparison captures the end-to-end effect, not just the loop in isolation.
+
+### Convergence Speed
+
+| Circuit | L2 Iters | L3 Iters | L2 Opt (ms) | L3 Opt (ms) | L3/L2 |
+|---------|:--------:|:--------:|:-----------:|:-----------:|:-----:|
+| QFT_100 | 3 | 12 | 2,733 | 15,512 | 5.7x |
+| QV_100 | 2 | 3 | 18,281 | 45,605 | 2.5x |
+| EfficientSU2_100 | 2 | 3 | 124 | 276 | 2.2x |
+| QAOA_100 | 3 | 3 | 2,852 | 6,111 | 2.1x |
+| BV_100 | 2 | 3 | 117 | 178 | 1.5x |
+| Heisenberg_100 | 2 | 6 | 1,316 | 5,975 | 4.5x |
+
+**Level 2 optimization is 1.5-5.7x faster.** Two reasons:
+
+1. ConsolidateBlocks runs once (pre-loop) instead of every iteration — this alone saves 51-75% per iteration
+2. FixedPoint converges in 2 iterations (one productive + one confirmation) vs MinimumPoint needing up to backtrack_depth=5 non-improvements before stopping
+
+QFT is the worst case: Level 3 runs 12 iterations because MinimumPoint sees tiny depth oscillations (size stays flat) and waits 5 consecutive non-improvements before restoring the best DAG and stopping. Level 2's FixedPoint detects the exact fixed point in 3 iterations.
+
+### Level 2 Loop Detail
+
+| Circuit | Pre-Loop 2Q Delta | Loop Iters | Loop 2Q Delta | Total 2Q Reduction |
+|---------|:-----------------:|:----------:|:-------------:|:------------------:|
+| QFT_100 | -1,492 (14.0%) | 3 | -56 | -1,548 (14.5%) |
+| QV_100 | -2,184 (2.2%) | 2 | 0 | -2,184 (2.2%) |
+| EfficientSU2_100 | 0 (0.0%) | 2 | 0 | 0 (0.0%) |
+| QAOA_100 | -282 (1.7%) | 3 | 0 | -282 (1.7%) |
+| BV_100 | -194 (49.7%) | 2 | 0 | -194 (49.7%) |
+| Heisenberg_100 | -1,809 (26.5%) | 2 | 0 | -1,809 (26.5%) |
+
+At Level 2, the pre-loop (ConsolidateBlocks + UnitarySynthesis) does all the 2Q work. The loop contributes only 56 extra 2Q gates on QFT (CommutativeCancellation) and zero on everything else. The loop's main contribution is 1Q gate optimization (Optimize1qGatesDecomposition) and total gate count reduction — not 2Q gate reduction.
+
+### Gate Quality (Final 2Q Gates)
+
+| Circuit | Pre-Opt 2Q | L2 Final | L3 Final | L2 Reduction | L3 Reduction | L3-L2 Diff |
+|---------|:----------:|:--------:|:--------:|:------------:|:------------:|:----------:|
+| QFT_100 | 10,687 / 10,963 | 9,139 | 8,827 | 1,548 (14.5%) | 2,136 (19.5%) | **-312** |
+| QV_100 | 98,667 / 98,637 | 96,483 | 96,558 | 2,184 (2.2%) | 2,079 (2.1%) | +75 |
+| EfficientSU2_100 | 297 / 297 | 297 | 297 | 0 (0.0%) | 0 (0.0%) | 0 |
+| QAOA_100 | 16,302 / 16,551 | 16,020 | 16,317 | 282 (1.7%) | 234 (1.4%) | **+297** |
+| BV_100 | 390 / 390 | 196 | 200 | 194 (49.7%) | 190 (48.7%) | +4 |
+| Heisenberg_100 | 6,831 / 6,654 | 5,022 | 4,878 | 1,809 (26.5%) | 1,776 (26.7%) | **-144** |
+
+*Pre-Opt 2Q shows L2/L3 values (different because init/layout/routing differ between levels).*
+
+**Neither level consistently wins on gate quality:**
+- L3 is better on QFT (-312) and Heisenberg (-144) — re-consolidation inside the loop finds additional blocks
+- L2 is better on QAOA (+297) and QV (+75) — likely from different pre-opt routing, not the optimization loop itself
+- BV and EfficientSU2 are essentially tied
+
+### Total Transpile Time
+
+| Circuit | L2 Total (ms) | L3 Total (ms) | L3/L2 |
+|---------|:-------------:|:-------------:|:-----:|
+| QFT_100 | 7,026 | 20,128 | 2.9x |
+| QV_100 | 89,019 | 128,327 | 1.4x |
+| EfficientSU2_100 | 475 | 2,571 | 5.4x |
+| QAOA_100 | 10,303 | 14,784 | 1.4x |
+| BV_100 | 1,248 | 535,421 | 429x* |
+| Heisenberg_100 | 3,583 | 8,790 | 2.5x |
+
+*BV_100 at Level 3 has anomalous pre-opt time (535s vs 1.1s at L2) — this is from the pre-optimization stages (layout/routing), not the optimization loop.
+
+**Level 2 is 1.4-5.4x faster end-to-end** (excluding BV anomaly), with comparable gate quality.
+
+### Key Takeaways
+
+1. **Level 2's design is more efficient.** By running ConsolidateBlocks once in pre-loop instead of every iteration, it avoids the dominant bottleneck (51-75% of optimization time) in redundant iterations.
+
+2. **FixedPoint converges faster than MinimumPoint** for these circuits. FixedPoint needs 2-3 iterations; MinimumPoint needs 3-12. The extra iterations exist because MinimumPoint's backtrack mechanism waits for 5 consecutive non-improvements, even when the first iteration already found the optimum.
+
+3. **Gate quality is a wash between levels.** The differences come more from pre-optimization stages (different routing seeds, layout heuristics) than from the optimization loop design.
+
+4. **The loop body (excluding ConsolidateBlocks) is cheap.** At Level 2, the 4 light passes take 200-3,200ms total (2-3 iterations). The expensive part is ConsolidateBlocks, which Level 2 correctly runs only once.
+
+5. **Level 3's re-consolidation rarely helps.** Only QFT shows meaningful benefit from re-running ConsolidateBlocks (312 fewer 2Q gates). For most circuits, iteration 1 finds everything.
+
 ## Next Steps
 
 - [x] Instrument the optimization loop to count iterations per circuit
 - [x] Add per-pass timing to measure where time is spent
-- [ ] Compare level 2 vs level 3 quality and speed on benchpress circuits
-- [ ] Test whether removing the loop (single iteration) degrades gate quality
+- [x] Compare level 2 vs level 3 quality and speed
+- [ ] Test whether removing the loop entirely (single iteration) degrades gate quality
 - [ ] Profile with real chemistry circuits (e.g., fe4s4 LUCJ) that may have different loop behavior
 - [ ] Investigate whether reducing MinimumPoint backtrack_depth (e.g., 2 instead of 5) would save time without losing quality
