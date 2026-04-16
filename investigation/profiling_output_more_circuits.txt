@@ -1,0 +1,161 @@
+Backend: FakeTorino (133 qubits)
+Testing loop vs no-loop on additional circuit families
+
+
+======================================================================
+Building Grover_50...
+  Built in 8ms: 50Q, 564 gates
+
+  Level 2:
+    Pre-opt: 1141ms — size=13720, 2q=3059, depth=7491
+    Loop:    2 iters, 649ms opt, 2q=2809, size=11269, depth=5790
+      Pre-loop ConsolidateBlocks: 2q -405
+      Pre-loop UnitarySynthesis: 2q +155
+    NoLoop:  562ms opt, 2q=2809, size=11269, depth=5790
+    Diff:    2q=+0 (no), speedup=1.2x
+
+  Level 3:
+    Pre-opt: 1179ms — size=12829, 2q=2762, depth=7064
+    Loop:    3 iters, 1300ms opt, 2q=2468, size=10356, depth=5264
+      Iter 1: ConsolidateBlocks: 2q -462, UnitarySynthesis: 2q +168
+      Iter 2: ConsolidateBlocks: 2q -4, UnitarySynthesis: 2q +4
+    NoLoop:  520ms opt, 2q=2468, size=10348, depth=5262
+    Diff:    2q=+0 (no), speedup=2.5x
+
+======================================================================
+Building Adder_80...
+  Built in 24ms: 80Q, 108 gates
+
+  Level 2:
+    Pre-opt: 874ms — size=6615, 2q=1492, depth=4222
+    Loop:    2 iters, 362ms opt, 2q=1332, size=5668, depth=3497
+      Pre-loop ConsolidateBlocks: 2q -246
+      Pre-loop UnitarySynthesis: 2q +86
+    NoLoop:  317ms opt, 2q=1332, size=5668, depth=3497
+    Diff:    2q=+0 (no), speedup=1.1x
+
+  Level 3:
+    Pre-opt: 1045ms — size=6660, 2q=1507, depth=4288
+    Loop:    3 iters, 733ms opt, 2q=1351, size=5672, depth=3563
+      Iter 1: ConsolidateBlocks: 2q -236, UnitarySynthesis: 2q +80
+    NoLoop:  302ms opt, 2q=1351, size=5672, depth=3563
+    Diff:    2q=+0 (no), speedup=2.4x
+
+======================================================================
+Building Random_80...
+  Built in 39ms: 80Q, 2258 gates
+
+  Level 2:
+    Pre-opt: 9841ms — size=61929, 2q=15147, depth=6030
+    Loop:    3 iters, 3048ms opt, 2q=14808, size=50927, depth=4600
+      Pre-loop ConsolidateBlocks: 2q -909
+      Pre-loop UnitarySynthesis: 2q +570
+    NoLoop:  2295ms opt, 2q=14808, size=50950, depth=4601
+    Diff:    2q=+0 (no), speedup=1.3x
+
+  Level 3:
+    Pre-opt: 10629ms — size=61848, 2q=15120, depth=5568
+    Loop:    6 iters, 11770ms opt, 2q=14842, size=51047, depth=4304
+      Iter 1: ConsolidateBlocks: 2q -815, UnitarySynthesis: 2q +537
+      Iter 2: ConsolidateBlocks: 2q -27, UnitarySynthesis: 2q +27
+      Iter 3: ConsolidateBlocks: 2q -17, UnitarySynthesis: 2q +17
+      Iter 4: ConsolidateBlocks: 2q -9, UnitarySynthesis: 2q +9
+      Iter 5: ConsolidateBlocks: 2q -9, UnitarySynthesis: 2q +9
+      Iter 6: ConsolidateBlocks: 2q -7, UnitarySynthesis: 2q +7
+    NoLoop:  2252ms opt, 2q=14842, size=51010, depth=4296
+    Diff:    2q=+0 (no), speedup=5.2x
+
+======================================================================
+Building GHZ_100...
+  Built in 4ms: 100Q, 200 gates
+
+  Level 2:
+    Pre-opt: 262ms — size=797, 2q=99, depth=401
+    Loop:    2 iters, 39ms opt, 2q=99, size=698, depth=302
+    NoLoop:  32ms opt, 2q=99, size=698, depth=302
+    Diff:    2q=+0 (no), speedup=1.2x
+
+  Level 3:
+    Pre-opt: 2225ms — size=797, 2q=99, depth=401
+    Loop:    3 iters, 90ms opt, 2q=99, size=698, depth=302
+    NoLoop:  32ms opt, 2q=99, size=698, depth=302
+    Diff:    2q=+0 (no), speedup=2.9x
+
+======================================================================
+Building QPE_50...
+  Built in 24ms: 50Q, 1398 gates
+
+  Level 2:
+    Pre-opt: 1904ms — size=23584, 2q=4743, depth=4437
+    Loop:    4 iters, 1236ms opt, 2q=3721, size=16644, depth=2962
+      Pre-loop ConsolidateBlocks: 2q -1997
+      Pre-loop UnitarySynthesis: 2q +1005
+      Iter 1: CommutativeCancellation: 2q -30
+    NoLoop:  882ms opt, 2q=3721, size=16748, depth=2962
+    Diff:    2q=+0 (no), speedup=1.4x
+
+  Level 3:
+    Pre-opt: 1999ms — size=23341, 2q=4662, depth=4797
+    Loop:    4 iters, 2345ms opt, 2q=3832, size=16539, depth=3156
+      Iter 1: ConsolidateBlocks: 2q -1605, UnitarySynthesis: 2q +807, CommutativeCancellation: 2q -24
+      Iter 2: ConsolidateBlocks: 2q -9, UnitarySynthesis: 2q +1
+    NoLoop:  840ms opt, 2q=3840, size=16627, depth=3156
+    Diff:    2q=+8 (YES), speedup=2.8x
+
+======================================================================
+Building Toffoli_90...
+  Built in 5ms: 90Q, 210 gates
+
+  Level 2:
+    Pre-opt: 1848ms — size=6310, 2q=1413, depth=1116
+    Loop:    2 iters, 321ms opt, 2q=1111, size=5404, depth=1022
+      Pre-loop ConsolidateBlocks: 2q -482
+      Pre-loop UnitarySynthesis: 2q +180
+    NoLoop:  280ms opt, 2q=1111, size=5404, depth=1022
+    Diff:    2q=+0 (no), speedup=1.1x
+
+  Level 3:
+    Pre-opt: 555925ms — size=6175, 2q=1368, depth=1053
+    Loop:    3 iters, 629ms opt, 2q=1076, size=5261, depth=978
+      Iter 1: ConsolidateBlocks: 2q -467, UnitarySynthesis: 2q +175
+    NoLoop:  275ms opt, 2q=1076, size=5261, depth=978
+    Diff:    2q=+0 (no), speedup=2.3x
+
+======================================================================
+SUMMARY: Loop vs No-Loop on Additional Circuits
+======================================================================
+
+--- Level 2 ---
+
+             Circuit  Pre-Opt 2Q   Loop 2Q   NoLoop 2Q    Diff  Regress?   Loop(ms)  NoLoop(ms)   Speedup
+---------------------------------------------------------------------------------------------------------
+           Grover_50        3059      2809        2809      +0        no        649         562      1.2x
+            Adder_80        1492      1332        1332      +0        no        362         317      1.1x
+           Random_80       15147     14808       14808      +0        no       3048        2295      1.3x
+             GHZ_100          99        99          99      +0        no         39          32      1.2x
+              QPE_50        4743      3721        3721      +0        no       1236         882      1.4x
+          Toffoli_90        1413      1111        1111      +0        no        321         280      1.1x
+
+--- Level 3 ---
+
+             Circuit  Pre-Opt 2Q   Loop 2Q   NoLoop 2Q    Diff  Regress?   Loop(ms)  NoLoop(ms)   Speedup
+---------------------------------------------------------------------------------------------------------
+           Grover_50        2762      2468        2468      +0        no       1300         520      2.5x
+            Adder_80        1507      1351        1351      +0        no        733         302      2.4x
+           Random_80       15120     14842       14842      +0        no      11770        2252      5.2x
+             GHZ_100          99        99          99      +0        no         90          32      2.9x
+              QPE_50        4662      3832        3840      +8       YES       2345         840      2.8x
+          Toffoli_90        1368      1076        1076      +0        no        629         275      2.3x
+
+======================================================================
+ALL CIRCUITS TESTED (this run + previous)
+======================================================================
+
+Previous (from profile_optimization_loop.py):
+  QFT_100, QV_100, EfficientSU2_100, QAOA_100, BV_100, Heisenberg_100
+  + fe4s4 LUCJ (72Q)
+  Results: 0/7 regressed at L2, 1/7 regressed at L3 (QFT, +8 gates = 0.09%)
+
+This run:
+  Level 2: 0/6 regressed
+  Level 3: 1/6 regressed, max regression: 8 gates

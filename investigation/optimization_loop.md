@@ -512,19 +512,62 @@ Validated findings on a real production workload: the 72-qubit Local Unitary Clu
 
 Level 3 produces 5.5% fewer 2Q gates (3,993 vs 4,225). This difference comes from the pre-optimization stages (init/layout/routing differ between levels), not from the optimization loop design. Both levels' loops are equally unnecessary.
 
+## Additional Circuit Families
+
+To stress-test the no-loop finding, we tested 6 more circuit families covering different circuit structures:
+
+- **Grover_50** — Toffoli-heavy search oracle with small MCX(4-control) + CCX gates (564 gates)
+- **Adder_80** — CDKMRippleCarryAdder(39), structured arithmetic (108 gates)
+- **Random_80** — random_circuit(80, 40), worst-case dense stress test (2258 gates)
+- **GHZ_100** — H + chain of CX, simplest entangling circuit (200 gates)
+- **QPE_50** — Phase estimation with 49 counting qubits + IQFT, rotation-heavy (1398 gates)
+- **Toffoli_90** — Chain of CCX gates in 3 layers (210 gates)
+
+### Level 2: Loop vs No-Loop
+
+| Circuit | Pre-Opt 2Q | Loop 2Q | NoLoop 2Q | Diff | Speedup |
+|---------|-----------|---------|-----------|------|---------|
+| Grover_50 | 3,059 | 2,809 | 2,809 | +0 | 1.2x |
+| Adder_80 | 1,492 | 1,332 | 1,332 | +0 | 1.1x |
+| Random_80 | 15,147 | 14,808 | 14,808 | +0 | 1.3x |
+| GHZ_100 | 99 | 99 | 99 | +0 | 1.2x |
+| QPE_50 | 4,743 | 3,721 | 3,721 | +0 | 1.4x |
+| Toffoli_90 | 1,413 | 1,111 | 1,111 | +0 | 1.1x |
+
+**0/6 regressed.** Removing the loop at Level 2 produces identical 2Q gates.
+
+### Level 3: Loop vs No-Loop
+
+| Circuit | Pre-Opt 2Q | Loop 2Q | NoLoop 2Q | Diff | Speedup |
+|---------|-----------|---------|-----------|------|---------|
+| Grover_50 | 2,762 | 2,468 | 2,468 | +0 | 2.5x |
+| Adder_80 | 1,507 | 1,351 | 1,351 | +0 | 2.4x |
+| Random_80 | 15,120 | 14,842 | 14,842 | +0 | 5.2x |
+| GHZ_100 | 99 | 99 | 99 | +0 | 2.9x |
+| QPE_50 | 4,662 | 3,832 | 3,840 | **+8** | 2.8x |
+| Toffoli_90 | 1,368 | 1,076 | 1,076 | +0 | 2.3x |
+
+**1/6 regressed.** QPE lost 8 gates (0.2%) — same pattern as QFT. Both are rotation-heavy circuits where repeated ConsolidateBlocks finds a tiny number of additional blocks.
+
+### Notable Observations
+
+- **Random_80 at Level 3** ran **6 iterations** (the most of any circuit tested). ConsolidateBlocks/UnitarySynthesis oscillated every iteration (-27/+27, -17/+17, -9/+9, ...) but never netted any 2Q reduction — 5.2x overhead for zero benefit.
+- **QPE_50** is the only circuit where CommutativeCancellation found 2Q reductions (30 at L2, 24 at L3), likely from the controlled-P gate structure enabling commutation-based cancellations.
+- All other passes (RemoveIdentityEquivalent, Optimize1qGatesDecomposition, ContractIdleWiresInControlFlow) never changed 2Q gate counts — they only optimize 1Q gates.
+
 ## Conclusions
 
-Across **7 circuits** (6 synthetic + 1 real chemistry) at **both optimization levels**:
+Across **13 circuits** (12 synthetic + 1 real chemistry) at **both optimization levels**:
 
-1. **The optimization loop is unnecessary.** A single iteration produces identical or near-identical 2Q gate counts. The maximum regression observed was 8 gates on QFT at Level 3 (0.09%).
+1. **The optimization loop is unnecessary.** A single iteration produces identical or near-identical 2Q gate counts. The maximum regression observed was 8 gates on QFT and QPE at Level 3 (0.09-0.2%). Both are rotation-heavy circuits with dense controlled-rotation structure.
 
-2. **Removing the loop saves 1.1-4.7x optimization time** depending on circuit and level. The savings are larger at Level 3 because ConsolidateBlocks (51-75% of optimization time) runs inside the loop.
+2. **Removing the loop saves 1.1-5.2x optimization time** depending on circuit and level. The savings are larger at Level 3 (2.3-5.2x) because ConsolidateBlocks (51-75% of optimization time) runs inside the loop.
 
 3. **Level 3 sometimes produces better gate quality than Level 2**, but this comes from pre-optimization stages (layout/routing), not from the loop running more passes.
 
 4. **The current pass ordering is correct.** ConsolidateBlocks + UnitarySynthesis must run first; light passes clean up afterward.
 
-5. **Potential upstream recommendation**: At minimum, reduce MinimumPoint `backtrack_depth` from 5 to 1 or 2. More aggressively, consider removing the loop entirely and running the optimization passes once — the data shows no quality benefit from iterating.
+5. **Potential upstream recommendation**: Remove the loop entirely and run the optimization passes once. The data shows no meaningful quality benefit from iterating — 11/13 circuits are identical, 2/13 lose 8 gates (< 0.2%).
 
 ## Next Steps
 
@@ -535,4 +578,4 @@ Across **7 circuits** (6 synthetic + 1 real chemistry) at **both optimization le
 - [x] Test whether pass ordering matters — current order is optimal
 - [x] Profile with real chemistry circuit (fe4s4 LUCJ) — confirms loop is unnecessary
 - [x] ~~Investigate reducing MinimumPoint backtrack_depth~~ — moot if loop is removed entirely
-- [ ] Test on more circuit families (e.g., Grover, arithmetic, error correction) to check for edge cases where the loop may help
+- [x] Test on more circuit families (Grover, adder, random, GHZ, QPE, Toffoli cascade) — confirms 0/6 regressed at L2, 1/6 at L3
