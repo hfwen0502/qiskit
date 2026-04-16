@@ -188,9 +188,70 @@ Compare with 2Q: KAK produces at most 3 CX gates, so even a small 2Q block of 4 
 
 - **Weiden, Kalloor, Kubiatowicz, Younis, Iancu** — "Wide Quantum Circuit Optimization with Topology Aware Synthesis" (2206.13645, 2022). TopAS: partitions large circuits into blocks, applies numerical synthesis per block. Reduces CX by 30.3% and depth by 35.2% on 2D mesh.
 
+## Profiling Results: 3Q Block Statistics
+
+Profiled 12 benchmark circuits on FakeTorino (133Q heavy-hex), Level 2 pre-optimization (init + layout + routing + translation, no optimization stage). Compared `Collect2qBlocks` (current) vs `CollectMultiQBlocks(max_block_size=3)`.
+
+### Summary Table
+
+| Circuit | Post-Route 2Q | 2Q Blocks | 3Q Blocks | Max 3Q Size | Max 3Q 2Q | 2Q in 3Q Blocks | >20 CX | >15 CX |
+|---------|:------------:|:---------:|:---------:|:-----------:|:---------:|:---------------:|:------:|:------:|
+| QFT_100 | 10,945 | 3,171 | 1,302 | 82 | 15 | 10,643 (97%) | 0 | 0 |
+| QV_100 | 97,452 | 31,807 | 14,561 | 125 | 18 | 93,533 (96%) | 0 | 1 |
+| EfficientSU2_100 | 297 | 297 | 75 | 18 | 2 | 150 (51%) | 0 | 0 |
+| QAOA_100 | 16,239 | 5,563 | 2,529 | 64 | 13 | 15,559 (96%) | 0 | 0 |
+| BV_100 | 390 | 99 | 49 | 44 | 8 | 389 (100%) | 0 | 0 |
+| Heisenberg_100 | 6,480 | 1,563 | 695 | 157 | 18 | 6,219 (96%) | 0 | 11 |
+| Grover_50 | 3,011 | 1,409 | 495 | 82 | 14 | 2,862 (95%) | 0 | 0 |
+| Adder_80 | 1,471 | 745 | 160 | 87 | 19 | 1,435 (98%) | 0 | 19 |
+| Random_80 | 15,366 | 5,378 | 2,436 | 80 | 14 | 14,682 (96%) | 0 | 0 |
+| GHZ_100 | 99 | 99 | 49 | 17 | 2 | 98 (99%) | 0 | 0 |
+| QPE_50 | 4,716 | 1,335 | 538 | 82 | 15 | 4,527 (96%) | 0 | 0 |
+| Toffoli_90 | 1,419 | 650 | 126 | 105 | 24 | 1,405 (99%) | 1 | 17 |
+| **TOTAL** | **157,885** | **52,116** | **23,015** | | | **151,502 (96%)** | **1** | **48** |
+
+### Key Findings
+
+1. **3Q blocks are abundant.** CollectMultiQBlocks(max_block_size=3) finds 23,015 blocks across 12 circuits, absorbing most 2Q blocks. The 2Q block count drops from 52,116 → ~2,200 because most adjacent 2Q gates share a third qubit (via SWAP routing), forming natural 3Q groups.
+
+2. **3Q blocks capture 96% of all 2Q gates.** On heavy-hex after SABRE routing, the vast majority of 2Q interactions fall into 3-qubit neighborhoods (a qubit and its two neighbors in the heavy-hex lattice).
+
+3. **No 3Q blocks exceed the QSD break-even threshold.** Only **1 block** out of 23,015 has >20 CX gates (a single Toffoli_90 block with 24 CX). This means QSD resynthesis of 3Q blocks would almost always **increase** gate count.
+
+4. **Even near-optimal methods won't help.** Only **48 blocks** (0.2%) have >15 CX gates — the threshold for a hypothetical near-optimal 3Q synthesizer (Rakyta & Zimboras, 15 CX). These are concentrated in Heisenberg (11), Adder (19), and Toffoli (17) — circuits with dense local interactions.
+
+5. **The max 2Q gate count in any 3Q block is 24** (Toffoli_90). The median across all circuits is 6-9 2Q gates per block. QSD would replace 6-9 CX with ~20 CX — a severe regression.
+
+6. **Block sizes are large in total gates (20-50 gates) but most are 1Q gates.** After routing, many 1Q rotation gates get interleaved into blocks alongside 2Q gates, inflating block size without increasing 2Q content.
+
+### Why Are 3Q Blocks So Small in 2Q Gate Count?
+
+On heavy-hex topology, SABRE routing distributes interactions across the lattice. Each qubit has degree 2-3 in heavy-hex, so 3Q neighborhoods see limited interaction density. The 2Q gates in a 3Q block are typically:
+- 1-2 original circuit CX/CZ gates
+- 1-4 SWAP-inserted CX gates (each SWAP = 3 CX, split across 2Q pairs)
+
+This creates blocks with 2-15 CX gates — well below the 20 CX break-even for QSD.
+
+### Conclusion
+
+**3-qubit block synthesis via QSD is not viable** for circuits routed on heavy-hex topology. The blocks exist in large numbers but contain too few 2Q gates to benefit from resynthesis. Even a hypothetical optimal 3Q synthesizer (14 CX) would only help 48 out of 23,015 blocks (0.2%).
+
+The fundamental issue is **topology-limited interaction density**: heavy-hex's low degree (2-3) prevents dense 3Q interaction patterns from forming after routing. This finding might differ on denser topologies (e.g., square grid with degree 4) where 3Q neighborhoods would see more interactions.
+
+### Potential Alternative: 3Q Block Optimization Without Full Resynthesis
+
+Instead of full unitary resynthesis, a lighter optimization could:
+- Consolidate 3Q blocks into unitaries
+- Check if any 2Q gates in the block are removable (product-state decomposition, like `Split2QUnitaries` does for 2Q)
+- Apply peephole optimization within the 3-qubit subspace without full QSD
+
+This would avoid the 20-CX overhead of QSD while still exploiting the 3Q block structure. However, this is a more complex research direction.
+
 ## Next Steps
 
-- [ ] Profile benchpress circuits: how many 3Q blocks exist and how large are they?
-- [ ] Quick test: swap Collect2qBlocks → CollectMultiQBlocks(max_block_size=3) and measure impact
-- [ ] Evaluate QSD output quality on collected 3Q blocks vs original gate count
-- [ ] If promising: investigate implementing Krol & Al-Ars (2024) Block ZXZ in Rust for better 3Q synthesis
+- [x] Profile benchpress circuits: how many 3Q blocks exist and how large are they?
+- [ ] Quick test: swap Collect2qBlocks → CollectMultiQBlocks(max_block_size=3) and measure impact on final gate count (does the pipeline handle it gracefully?)
+- [ ] ~~Evaluate QSD output quality on collected 3Q blocks~~ — data shows QSD would regress 99.8% of blocks
+- [ ] ~~If promising: investigate implementing Krol & Al-Ars (2024) Block ZXZ in Rust~~ — not worth it given profiling results
+- [ ] Investigate whether denser topologies (square grid) produce 3Q blocks with higher CX density
+- [ ] Explore lightweight 3Q peephole optimization (no full resynthesis) as alternative
