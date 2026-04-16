@@ -1,0 +1,402 @@
+Backend: FakeNighthawk (120 qubits)
+Profiling 3Q block statistics on 12 circuits
+
+======================================================================
+Building QFT_100...
+  Built in 0ms: 100Q, 1 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 45949 gates, 8653 2Q, depth=8693, time=4070ms
+
+  Collect2qBlocks (105.2ms):
+     1Q blocks: 0
+     2Q blocks: 3015, avg=15.2 gates, max=29 gates, median=15 gates
+    2Q gates: avg=2.9, max=5, median=3
+     3Q blocks: 0
+
+  CollectMultiQBlocks(max_block_size=3) (793.0ms):
+     1Q blocks: 0
+     2Q blocks: 160, avg=16.0 gates, max=29 gates, median=15 gates
+    2Q gates: avg=3.1, max=5, median=3
+     3Q blocks: 1324, avg=32.8 gates, max=73 gates, median=32 gates
+    2Q gates: avg=6.2, max=13, median=6
+    >20 2Q gates (QSD break-even): 0/1324 (0%)
+    >15 2Q gates (near-optimal break-even): 0/1324 (0%)
+    >10 2Q gates: 9/1324 (1%)
+    Size distribution: 11-20: 160, 21-50: 1082, 51-100: 82
+
+  Summary:
+    2Q blocks (baseline): 3015
+    2Q blocks (with 3Q collection): 160
+    3Q blocks: 1324
+    2Q gates in 3Q blocks: 8162 / 8653 (94.3%)
+    3Q blocks >20 CX (QSD payoff): 0
+    3Q blocks >15 CX (near-optimal payoff): 0
+
+======================================================================
+Building QV_100...
+  Built in 653ms: 100Q, 1 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 346240 gates, 68745 2Q, depth=32637, time=63941ms
+
+  Collect2qBlocks (802.8ms):
+     1Q blocks: 0
+     2Q blocks: 22394, avg=15.5 gates, max=75 gates, median=13 gates
+    2Q gates: avg=3.1, max=9, median=3
+     3Q blocks: 0
+
+  CollectMultiQBlocks(max_block_size=3) (5673.9ms):
+     1Q blocks: 0
+     2Q blocks: 1134, avg=15.1 gates, max=66 gates, median=13 gates
+    2Q gates: avg=3.0, max=6, median=3
+     3Q blocks: 10367, avg=31.8 gates, max=117 gates, median=26 gates
+    2Q gates: avg=6.3, max=15, median=6
+    >20 2Q gates (QSD break-even): 0/10367 (0%)
+    >15 2Q gates (near-optimal break-even): 0/10367 (0%)
+    >10 2Q gates: 67/10367 (1%)
+    Size distribution: 11-20: 2623, 21-50: 6834, 51-100: 899, 101-9999: 11
+
+  Summary:
+    2Q blocks (baseline): 22394
+    2Q blocks (with 3Q collection): 1134
+    3Q blocks: 10367
+    2Q gates in 3Q blocks: 65299 / 68745 (95.0%)
+    3Q blocks >20 CX (QSD payoff): 0
+    3Q blocks >15 CX (near-optimal payoff): 0
+
+======================================================================
+Building EfficientSU2_100...
+  Built in 2ms: 100Q, 1 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 4479 gates, 297 2Q, depth=439, time=325ms
+
+  Collect2qBlocks (8.0ms):
+     1Q blocks: 0
+     2Q blocks: 297, avg=9.0 gates, max=11 gates, median=9 gates
+    2Q gates: avg=1.0, max=1, median=1
+     3Q blocks: 0
+
+  CollectMultiQBlocks(max_block_size=3) (101.9ms):
+     1Q blocks: 500, avg=2.0 gates, max=2 gates, median=2 gates
+     2Q blocks: 123, avg=9.0 gates, max=9 gates, median=9 gates
+    2Q gates: avg=1.0, max=1, median=1
+     3Q blocks: 87, avg=18.1 gates, max=20 gates, median=18 gates
+    2Q gates: avg=2.0, max=2, median=2
+    >20 2Q gates (QSD break-even): 0/87 (0%)
+    >15 2Q gates (near-optimal break-even): 0/87 (0%)
+    >10 2Q gates: 0/87 (0%)
+    Size distribution: 11-20: 87
+
+  Summary:
+    2Q blocks (baseline): 297
+    2Q blocks (with 3Q collection): 123
+    3Q blocks: 87
+    2Q gates in 3Q blocks: 174 / 297 (58.6%)
+    3Q blocks >20 CX (QSD payoff): 0
+    3Q blocks >15 CX (near-optimal payoff): 0
+
+======================================================================
+Building QAOA_100...
+  Built in 35ms: 100Q, 1400 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 41604 gates, 10536 2Q, depth=4574, time=6331ms
+
+  Collect2qBlocks (95.7ms):
+     1Q blocks: 0
+     2Q blocks: 3724, avg=11.1 gates, max=39 gates, median=9 gates
+    2Q gates: avg=2.8, max=5, median=3
+     3Q blocks: 0
+
+  CollectMultiQBlocks(max_block_size=3) (673.3ms):
+     1Q blocks: 0
+     2Q blocks: 217, avg=11.1 gates, max=28 gates, median=9 gates
+    2Q gates: avg=2.9, max=5, median=3
+     3Q blocks: 1699, avg=23.0 gates, max=63 gates, median=20 gates
+    2Q gates: avg=5.8, max=13, median=6
+    >20 2Q gates (QSD break-even): 0/1699 (0%)
+    >15 2Q gates (near-optimal break-even): 0/1699 (0%)
+    >10 2Q gates: 9/1699 (1%)
+    Size distribution: 11-20: 854, 21-50: 839, 51-100: 6
+
+  Summary:
+    2Q blocks (baseline): 3724
+    2Q blocks (with 3Q collection): 217
+    3Q blocks: 1699
+    2Q gates in 3Q blocks: 9914 / 10536 (94.1%)
+    3Q blocks >20 CX (QSD payoff): 0
+    3Q blocks >15 CX (near-optimal payoff): 0
+
+======================================================================
+Building BV_100...
+  Built in 5ms: 100Q, 399 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 2671 gates, 525 2Q, depth=1444, time=1092ms
+
+  Collect2qBlocks (6.0ms):
+     1Q blocks: 0
+     2Q blocks: 212, avg=12.1 gates, max=23 gates, median=11 gates
+    2Q gates: avg=2.5, max=4, median=3
+     3Q blocks: 0
+
+  CollectMultiQBlocks(max_block_size=3) (46.4ms):
+     1Q blocks: 0
+     2Q blocks: 3, avg=12.7 gates, max=15 gates, median=12 gates
+    2Q gates: avg=2.3, max=3, median=3
+     3Q blocks: 99, avg=25.6 gates, max=46 gates, median=24 gates
+    2Q gates: avg=5.2, max=10, median=5
+    >20 2Q gates (QSD break-even): 0/99 (0%)
+    >15 2Q gates (near-optimal break-even): 0/99 (0%)
+    >10 2Q gates: 0/99 (0%)
+    Size distribution: 11-20: 30, 21-50: 69
+
+  Summary:
+    2Q blocks (baseline): 212
+    2Q blocks (with 3Q collection): 3
+    3Q blocks: 99
+    2Q gates in 3Q blocks: 518 / 525 (98.7%)
+    3Q blocks >20 CX (QSD payoff): 0
+    3Q blocks >15 CX (near-optimal payoff): 0
+
+======================================================================
+Building Heisenberg_100...
+  Built in 36ms: 100Q, 1820 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 37661 gates, 3240 2Q, depth=2384, time=603ms
+
+  Collect2qBlocks (84.6ms):
+     1Q blocks: 0
+     2Q blocks: 540, avg=69.6 gates, max=81 gates, median=66 gates
+    2Q gates: avg=6.0, max=6, median=6
+     3Q blocks: 0
+
+  CollectMultiQBlocks(max_block_size=3) (635.6ms):
+     1Q blocks: 0
+     2Q blocks: 0
+     3Q blocks: 270, avg=139.1 gates, max=156 gates, median=138 gates
+    2Q gates: avg=12.0, max=12, median=12
+    >20 2Q gates (QSD break-even): 0/270 (0%)
+    >15 2Q gates (near-optimal break-even): 0/270 (0%)
+    >10 2Q gates: 270/270 (100%)
+    Size distribution: 101-9999: 270
+
+  Summary:
+    2Q blocks (baseline): 540
+    2Q blocks (with 3Q collection): 0
+    3Q blocks: 270
+    2Q gates in 3Q blocks: 3240 / 3240 (100.0%)
+    3Q blocks >20 CX (QSD payoff): 0
+    3Q blocks >15 CX (near-optimal payoff): 0
+
+======================================================================
+Building Grover_50...
+  Built in 8ms: 50Q, 564 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 10417 gates, 1958 2Q, depth=5956, time=1127ms
+
+  Collect2qBlocks (25.2ms):
+     1Q blocks: 0
+     2Q blocks: 1115, avg=9.3 gates, max=33 gates, median=8 gates
+    2Q gates: avg=1.8, max=5, median=1
+     3Q blocks: 0
+
+  CollectMultiQBlocks(max_block_size=3) (171.0ms):
+     1Q blocks: 0
+     2Q blocks: 44, avg=8.7 gates, max=14 gates, median=8 gates
+    2Q gates: avg=2.0, max=4, median=2
+     3Q blocks: 383, avg=26.1 gates, max=73 gates, median=21 gates
+    2Q gates: avg=4.9, max=12, median=4
+    >20 2Q gates (QSD break-even): 0/383 (0%)
+    >15 2Q gates (near-optimal break-even): 0/383 (0%)
+    >10 2Q gates: 20/383 (5%)
+    Size distribution: 6-10: 5, 11-20: 165, 21-50: 176, 51-100: 37
+
+  Summary:
+    2Q blocks (baseline): 1115
+    2Q blocks (with 3Q collection): 44
+    3Q blocks: 383
+    2Q gates in 3Q blocks: 1869 / 1958 (95.5%)
+    3Q blocks >20 CX (QSD payoff): 0
+    3Q blocks >15 CX (near-optimal payoff): 0
+
+======================================================================
+Building Adder_80...
+  Built in 27ms: 80Q, 108 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 6399 gates, 1420 2Q, depth=3795, time=1087ms
+
+  Collect2qBlocks (14.9ms):
+     1Q blocks: 0
+     2Q blocks: 739, avg=8.5 gates, max=19 gates, median=8 gates
+    2Q gates: avg=1.9, max=4, median=1
+     3Q blocks: 0
+
+  CollectMultiQBlocks(max_block_size=3) (104.8ms):
+     1Q blocks: 0
+     2Q blocks: 23, avg=8.3 gates, max=13 gates, median=8 gates
+    2Q gates: avg=2.3, max=3, median=3
+     3Q blocks: 192, avg=31.9 gates, max=88 gates, median=21 gates
+    2Q gates: avg=7.1, max=19, median=6
+    >20 2Q gates (QSD break-even): 0/192 (0%)
+    >15 2Q gates (near-optimal break-even): 6/192 (3%)
+    >10 2Q gates: 30/192 (16%)
+    Size distribution: 11-20: 88, 21-50: 57, 51-100: 47
+
+  Summary:
+    2Q blocks (baseline): 739
+    2Q blocks (with 3Q collection): 23
+    3Q blocks: 192
+    2Q gates in 3Q blocks: 1367 / 1420 (96.3%)
+    3Q blocks >20 CX (QSD payoff): 0
+    3Q blocks >15 CX (near-optimal payoff): 6
+
+======================================================================
+Building Random_80...
+  Built in 39ms: 80Q, 2258 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 46341 gates, 9951 2Q, depth=5192, time=7391ms
+
+  Collect2qBlocks (105.7ms):
+     1Q blocks: 0
+     2Q blocks: 3606, avg=12.8 gates, max=54 gates, median=9 gates
+    2Q gates: avg=2.8, max=5, median=3
+     3Q blocks: 0
+
+  CollectMultiQBlocks(max_block_size=3) (804.5ms):
+     1Q blocks: 0
+     2Q blocks: 184, avg=13.1 gates, max=45 gates, median=10 gates
+    2Q gates: avg=2.7, max=5, median=3
+     3Q blocks: 1666, avg=26.3 gates, max=79 gates, median=22 gates
+    2Q gates: avg=5.7, max=12, median=6
+    >20 2Q gates (QSD break-even): 0/1666 (0%)
+    >15 2Q gates (near-optimal break-even): 0/1666 (0%)
+    >10 2Q gates: 7/1666 (0%)
+    Size distribution: 1-5: 1, 6-10: 8, 11-20: 671, 21-50: 921, 51-100: 65
+
+  Summary:
+    2Q blocks (baseline): 3606
+    2Q blocks (with 3Q collection): 184
+    3Q blocks: 1666
+    2Q gates in 3Q blocks: 9459 / 9951 (95.1%)
+    3Q blocks >20 CX (QSD payoff): 0
+    3Q blocks >15 CX (near-optimal payoff): 0
+
+======================================================================
+Building GHZ_100...
+  Built in 4ms: 100Q, 200 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 797 gates, 99 2Q, depth=401, time=226ms
+
+  Collect2qBlocks (1.9ms):
+     1Q blocks: 0
+     2Q blocks: 99, avg=7.0 gates, max=10 gates, median=7 gates
+    2Q gates: avg=1.0, max=1, median=1
+     3Q blocks: 0
+
+  CollectMultiQBlocks(max_block_size=3) (15.3ms):
+     1Q blocks: 0
+     2Q blocks: 1, avg=7.0 gates, max=7 gates, median=7 gates
+    2Q gates: avg=1.0, max=1, median=1
+     3Q blocks: 49, avg=14.1 gates, max=17 gates, median=14 gates
+    2Q gates: avg=2.0, max=2, median=2
+    >20 2Q gates (QSD break-even): 0/49 (0%)
+    >15 2Q gates (near-optimal break-even): 0/49 (0%)
+    >10 2Q gates: 0/49 (0%)
+    Size distribution: 11-20: 49
+
+  Summary:
+    2Q blocks (baseline): 99
+    2Q blocks (with 3Q collection): 1
+    3Q blocks: 49
+    2Q gates in 3Q blocks: 98 / 99 (99.0%)
+    3Q blocks >20 CX (QSD payoff): 0
+    3Q blocks >15 CX (near-optimal payoff): 0
+
+======================================================================
+Building QPE_50...
+  Built in 24ms: 50Q, 1398 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 20587 gates, 3744 2Q, depth=5232, time=1588ms
+
+  Collect2qBlocks (47.2ms):
+     1Q blocks: 0
+     2Q blocks: 1342, avg=15.3 gates, max=32 gates, median=15 gates
+    2Q gates: avg=2.8, max=5, median=3
+     3Q blocks: 0
+
+  CollectMultiQBlocks(max_block_size=3) (344.5ms):
+     1Q blocks: 0
+     2Q blocks: 59, avg=15.6 gates, max=26 gates, median=15 gates
+    2Q gates: avg=2.9, max=5, median=3
+     3Q blocks: 597, avg=32.9 gates, max=71 gates, median=32 gates
+    2Q gates: avg=6.0, max=13, median=5
+    >20 2Q gates (QSD break-even): 0/597 (0%)
+    >15 2Q gates (near-optimal break-even): 0/597 (0%)
+    >10 2Q gates: 7/597 (1%)
+    Size distribution: 11-20: 53, 21-50: 515, 51-100: 29
+
+  Summary:
+    2Q blocks (baseline): 1342
+    2Q blocks (with 3Q collection): 59
+    3Q blocks: 597
+    2Q gates in 3Q blocks: 3571 / 3744 (95.4%)
+    3Q blocks >20 CX (QSD payoff): 0
+    3Q blocks >15 CX (near-optimal payoff): 0
+
+======================================================================
+Building Toffoli_90...
+  Built in 4ms: 90Q, 210 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 7525 gates, 1818 2Q, depth=1591, time=1274ms
+
+  Collect2qBlocks (17.6ms):
+     1Q blocks: 0
+     2Q blocks: 816, avg=9.1 gates, max=28 gates, median=8 gates
+    2Q gates: avg=2.2, max=6, median=2
+     3Q blocks: 0
+
+  CollectMultiQBlocks(max_block_size=3) (123.3ms):
+     1Q blocks: 0
+     2Q blocks: 28, avg=10.7 gates, max=26 gates, median=8 gates
+    2Q gates: avg=2.8, max=6, median=3
+     3Q blocks: 273, avg=26.1 gates, max=79 gates, median=21 gates
+    2Q gates: avg=6.4, max=18, median=6
+    >20 2Q gates (QSD break-even): 0/273 (0%)
+    >15 2Q gates (near-optimal break-even): 4/273 (1%)
+    >10 2Q gates: 36/273 (13%)
+    Size distribution: 11-20: 132, 21-50: 115, 51-100: 26
+
+  Summary:
+    2Q blocks (baseline): 816
+    2Q blocks (with 3Q collection): 28
+    3Q blocks: 273
+    2Q gates in 3Q blocks: 1740 / 1818 (95.7%)
+    3Q blocks >20 CX (QSD payoff): 0
+    3Q blocks >15 CX (near-optimal payoff): 4
+
+
+======================================================================
+SUMMARY: 3-Qubit Block Statistics
+======================================================================
+
+             Circuit  Post-Route   2Q Blks   3Q Blks   3Q Max   3Q Max    CX in   >20CX   >15CX
+                        2Q Gates                        Gates       2Q  3Q Blks                
+----------------------------------------------------------------------------------------------------
+             QFT_100        8653      3015      1324       73       13     8162       0       0
+              QV_100       68745     22394     10367      117       15    65299       0       0
+    EfficientSU2_100         297       297        87       20        2      174       0       0
+            QAOA_100       10536      3724      1699       63       13     9914       0       0
+              BV_100         525       212        99       46       10      518       0       0
+      Heisenberg_100        3240       540       270      156       12     3240       0       0
+           Grover_50        1958      1115       383       73       12     1869       0       0
+            Adder_80        1420       739       192       88       19     1367       0       6
+           Random_80        9951      3606      1666       79       12     9459       0       0
+             GHZ_100          99        99        49       17        2       98       0       0
+              QPE_50        3744      1342       597       71       13     3571       0       0
+          Toffoli_90        1818       816       273       79       18     1740       0       4
+----------------------------------------------------------------------------------------------------
+               TOTAL      110986     37899     17006                     105411       0      10
+
+Bottom line:
+  Total 3Q blocks across all circuits: 17006
+  3Q blocks with >20 CX (would benefit from QSD): 0 (0.0%)
+  3Q blocks with >15 CX (would benefit from near-optimal): 10 (0.1%)
+  2Q gates captured in 3Q blocks: 105411 / 110986 (95.0%)

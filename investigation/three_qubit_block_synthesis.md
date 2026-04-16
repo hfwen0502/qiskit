@@ -236,7 +236,27 @@ This creates blocks with 2-15 CX gates — well below the 20 CX break-even for Q
 
 **3-qubit block synthesis via QSD is not viable** for circuits routed on heavy-hex topology. The blocks exist in large numbers but contain too few 2Q gates to benefit from resynthesis. Even a hypothetical optimal 3Q synthesizer (14 CX) would only help 48 out of 23,015 blocks (0.2%).
 
-The fundamental issue is **topology-limited interaction density**: heavy-hex's low degree (2-3) prevents dense 3Q interaction patterns from forming after routing. This finding might differ on denser topologies (e.g., square grid with degree 4) where 3Q neighborhoods would see more interactions.
+The fundamental issue is **topology-limited interaction density**: heavy-hex's low degree (2-3) prevents dense 3Q interaction patterns from forming after routing.
+
+### NightHawk (Rectangular Grid, Degree 4) — Even Worse
+
+To test whether a denser topology helps, we repeated the profiling on FakeNighthawk (120Q, 10x12 rectangular grid, avg degree 3.63).
+
+| Metric | Heavy-Hex (Torino) | Rectangular Grid (NightHawk) |
+|--------|:------------------:|:----------------------------:|
+| Total 3Q blocks | 23,015 | 17,006 |
+| Max 2Q in any 3Q block | **24** | **19** |
+| Blocks >20 CX (QSD payoff) | 1 (0.004%) | **0 (0%)** |
+| Blocks >15 CX (near-optimal) | 48 (0.2%) | **10 (0.06%)** |
+| 2Q gates in 3Q blocks | 96.0% | 95.0% |
+
+**Counterintuitively, NightHawk makes 3Q synthesis less viable.** The higher connectivity means SABRE inserts fewer SWAPs, producing circuits with fewer 2Q gates overall. Fewer 2Q gates per 3Q block pushes them further below the resynthesis break-even. Heisenberg is the clearest example: Torino 6,480 2Q gates (max 18 CX/block) vs NightHawk 3,240 2Q gates (max 12 CX/block) — the square lattice maps natively to NightHawk's grid.
+
+The max 2Q count in any 3Q block across all 12 circuits on NightHawk is **19** — below QSD break-even for every single block.
+
+### Conclusion
+
+3-qubit block synthesis via QSD is not viable on **any current or upcoming IBM topology**. The result is topology-independent: denser topologies produce fewer SWAPs, which means sparser 3Q blocks. The only scenario where 3Q resynthesis could help is on very constrained topologies with very high SWAP overhead — but on those topologies, better routing is a more effective optimization.
 
 ### Potential Alternative: 3Q Block Optimization Without Full Resynthesis
 
@@ -250,8 +270,8 @@ This would avoid the 20-CX overhead of QSD while still exploiting the 3Q block s
 ## Next Steps
 
 - [x] Profile benchpress circuits: how many 3Q blocks exist and how large are they?
-- [ ] Quick test: swap Collect2qBlocks → CollectMultiQBlocks(max_block_size=3) and measure impact on final gate count (does the pipeline handle it gracefully?)
-- [ ] ~~Evaluate QSD output quality on collected 3Q blocks~~ — data shows QSD would regress 99.8% of blocks
-- [ ] ~~If promising: investigate implementing Krol & Al-Ars (2024) Block ZXZ in Rust~~ — not worth it given profiling results
-- [ ] Investigate whether denser topologies (square grid) produce 3Q blocks with higher CX density
+- [x] ~~Investigate whether denser topologies (square grid) produce 3Q blocks with higher CX density~~ — NightHawk (degree 4) makes it worse, not better
+- [ ] ~~Quick test: swap Collect2qBlocks → CollectMultiQBlocks(max_block_size=3)~~ — not worth pursuing given profiling results
+- [ ] ~~Evaluate QSD output quality on collected 3Q blocks~~ — data shows QSD would regress 99.8%+ of blocks
+- [ ] ~~If promising: investigate implementing Krol & Al-Ars (2024) Block ZXZ in Rust~~ — not worth it
 - [ ] Explore lightweight 3Q peephole optimization (no full resynthesis) as alternative

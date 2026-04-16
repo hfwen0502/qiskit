@@ -277,8 +277,16 @@ def print_block_summary(label, blocks_by_nq):
 # ---------------------------------------------------------------------------
 
 def main():
-    backend = FakeTorino()
-    print(f"Backend: FakeTorino ({backend.num_qubits} qubits)")
+    # Select backend from CLI arg
+    backend_name = sys.argv[1] if len(sys.argv) > 1 else "torino"
+    if backend_name.lower() == "nighthawk":
+        from qiskit_ibm_runtime.fake_provider import FakeNighthawk
+        backend = FakeNighthawk()
+        backend_label = "FakeNighthawk"
+    else:
+        backend = FakeTorino()
+        backend_label = "FakeTorino"
+    print(f"Backend: {backend_label} ({backend.num_qubits} qubits)")
     print(f"Profiling 3Q block statistics on {len(CIRCUITS)} circuits\n")
 
     # Collect summary data for final table
