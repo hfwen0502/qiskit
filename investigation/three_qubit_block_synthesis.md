@@ -335,14 +335,62 @@ SQUANDER (Rakyta & Zimboras) achieves 15 CX for arbitrary 3Q unitaries using gra
 **Expected benefit**: Negligible — too few qualifying blocks.
 **Effort**: High — would need C++ integration or Rust reimplementation.
 
+## Separability Profiling: 5.4% CX Savings Available
+
+Profiled all 12 benchmark circuits to check how many 3Q blocks are tensor products (bipartite separable as 2Q ⊗ 1Q). Uses SVD-based rank-1 check on the reshaped unitary matrix, then Weyl decomposition to count CX gates in the 2Q factor.
+
+### Results
+
+| Circuit | 3Q Blocks | Bipartite | Entangled | CX Savings | Total 2Q | Save % |
+|---------|:---------:|:---------:|:---------:|:----------:|:--------:|:------:|
+| QFT_100 | 1,259 | 61 (4.8%) | 1,198 | 488 | 11,050 | 4.4% |
+| QV_100 | 14,641 | 94 (4.7%)* | 1,906 | 5,351 | 97,797 | 5.5% |
+| EfficientSU2_100 | 75 | 0 (0%) | 75 | 0 | 297 | 0% |
+| QAOA_100 | 2,568 | 99 (5.0%)* | 1,901 | 1,011 | 16,308 | 6.2% |
+| BV_100 | 49 | 0 (0%) | 49 | 0 | 390 | 0% |
+| Heisenberg_100 | 724 | 37 (5.1%) | 687 | 322 | 6,723 | 4.8% |
+| Grover_50 | 453 | 12 (2.6%) | 441 | 82 | 2,930 | 2.8% |
+| Adder_80 | 164 | 2 (1.2%) | 162 | 15 | 1,471 | 1.0% |
+| Random_80 | 2,409 | 112 (5.6%)* | 1,888 | 1,035 | 15,171 | 6.8% |
+| GHZ_100 | 49 | 0 (0%) | 49 | 0 | 99 | 0% |
+| QPE_50 | 591 | 31 (5.2%) | 560 | 242 | 4,851 | 5.0% |
+| Toffoli_90 | 119 | 1 (0.8%) | 118 | 24 | 1,368 | 1.8% |
+| **TOTAL** | **23,101** | **449 (1.9%)** | **9,034** | **8,570** | **158,455** | **5.4%** |
+
+*Sampled 2,000 blocks; results extrapolated.
+
+### Key Findings
+
+1. **~5% of 3Q blocks are bipartite separable.** Across all circuits, about 1.9% of 3Q blocks factor as (2Q ⊗ 1Q). This is a consistent signal: most circuits with SWAP routing show 2.6-6.8% separability.
+
+2. **The 2Q factor typically needs only 1 CX gate.** When a 3Q block is separable, the 2Q sub-unitary almost always needs just 1 CX (occasionally 2-3). This means splitting saves the other original 2Q gates in the block (typically 7-10 CX → 1 CX = 6-9 CX saved per block).
+
+3. **5.4% total CX savings across all circuits.** This is a meaningful reduction — comparable to what the entire optimization loop achieves (and we just showed the loop is unnecessary).
+
+4. **Three circuit families see zero benefit**: EfficientSU2 (very sparse 2Q gates), BV (chain structure), GHZ (chain structure). These have simple connectivity patterns where 3Q blocks are truly entangled.
+
+5. **Why does this happen?** SWAP routing inserts CX gates that create interaction paths through a third qubit that isn't actually entangled with the other two. The 3Q block collector groups these gates together, but the unitary is actually separable along one cut — one qubit is just a "bystander" in the block.
+
+### What Would an Implementation Look Like?
+
+Extension of `Split2QUnitaries` to 3Q:
+
+1. In `CollectMultiQBlocks(max_block_size=3)`, identify 3Q blocks
+2. For each 3Q block, compute the 8x8 unitary
+3. Check bipartite separability via SVD (rank-1 check on reshaped matrix) — 3 cuts to check
+4. If separable: replace the block with a 2Q unitary + 1Q unitary
+5. The existing `UnitarySynthesis` (KAK for 2Q) handles the rest
+
+**Runtime overhead**: ~2ms per block for the SVD check. On QV_100 (14,641 blocks) that's ~30s. Could be optimized with a Rust implementation or by pre-filtering blocks (e.g., skip blocks with ≤3 CX gates since they can't benefit).
+
+**Effort**: Medium. The SVD separability check is straightforward math. The integration requires modifying `ConsolidateBlocks` or adding a new pass after `CollectMultiQBlocks`.
+
 ## Next Steps
 
 - [x] Profile benchpress circuits: how many 3Q blocks exist and how large are they?
-- [x] ~~Investigate whether denser topologies (square grid) produce 3Q blocks with higher CX density~~ — NightHawk (degree 4) makes it worse, not better
+- [x] ~~Investigate whether denser topologies produce 3Q blocks with higher CX density~~ — NightHawk makes it worse
 - [x] Research literature: full 3Q unitary resynthesis is not viable; alternative approaches identified
-- [ ] ~~Quick test: swap Collect2qBlocks → CollectMultiQBlocks(max_block_size=3)~~ — not worth pursuing
-- [ ] ~~Evaluate QSD output quality~~ — would regress 99.8%+ of blocks
-- [ ] ~~Krol & Al-Ars Block ZXZ~~ — 19 CX still above most block thresholds
-- [ ] Profile 3Q block separability — how many 3Q unitaries are tensor products? (Split2QUnitaries extension)
+- [x] Profile 3Q block separability — **5.4% CX savings available from splitting separable blocks**
+- [ ] Prototype: implement 3Q block splitting as a transpiler pass and measure end-to-end gate count improvement
 - [ ] Profile phase polynomial structure — how many 3Q blocks are phase polynomial chains?
 - [ ] Evaluate BQSKit integration as optional high-effort pass (not default pipeline)

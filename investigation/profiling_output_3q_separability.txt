@@ -1,0 +1,179 @@
+Backend: FakeTorino (133 qubits)
+Profiling 3Q block separability on 12 circuits
+
+======================================================================
+Building QFT_100...
+  Built: 100Q, 1 gates
+  Post-routing: 11050 2Q gates, 1259 3Q blocks
+  Analysis time: 3396ms (2.7ms/block)
+  Fully separable (1Q⊗1Q⊗1Q): 2/1259 (0.2%)
+  Bipartite separable (2Q⊗1Q): 59/1259 (4.7%)
+  Entangled (not separable): 1198/1259 (95.2%)
+  Bipartite 2Q part CX count: avg=1.1, max=2, dist={np.int64(1): np.int64(53), np.int64(2): np.int64(6)}
+  Original 2Q in bipartite blocks: avg=9.2
+  Potential CX savings from splitting: 488
+  As fraction of total 2Q gates: 4.42%
+
+======================================================================
+Building QV_100...
+  Built: 100Q, 1 gates
+  Post-routing: 97797 2Q gates, 14641 3Q blocks
+  Sampling 2000/14641 blocks for analysis
+  Analysis time: 4112ms (2.1ms/block)
+  Fully separable (1Q⊗1Q⊗1Q): 0/2000 (0.0%)
+  Bipartite separable (2Q⊗1Q): 94/2000 (4.7%)
+  Entangled (not separable): 1906/2000 (95.3%)
+  Bipartite 2Q part CX count: avg=1.4, max=3, dist={np.int64(1): np.int64(76), np.int64(3): np.int64(18)}
+  Original 2Q in bipartite blocks: avg=9.2
+  Potential CX savings from splitting: 5351 (extrapolated from 2000 samples)
+  As fraction of total 2Q gates: 5.47%
+
+======================================================================
+Building EfficientSU2_100...
+  Built: 100Q, 1 gates
+  Post-routing: 297 2Q gates, 75 3Q blocks
+  Analysis time: 110ms (1.5ms/block)
+  Fully separable (1Q⊗1Q⊗1Q): 0/75 (0.0%)
+  Bipartite separable (2Q⊗1Q): 0/75 (0.0%)
+  Entangled (not separable): 75/75 (100.0%)
+  Potential CX savings from splitting: 0
+  As fraction of total 2Q gates: 0.00%
+
+======================================================================
+Building QAOA_100...
+  Built: 100Q, 1400 gates
+  Post-routing: 16308 2Q gates, 2568 3Q blocks
+  Sampling 2000/2568 blocks for analysis
+  Analysis time: 3266ms (1.6ms/block)
+  Fully separable (1Q⊗1Q⊗1Q): 0/2000 (0.0%)
+  Bipartite separable (2Q⊗1Q): 99/2000 (5.0%)
+  Entangled (not separable): 1901/2000 (95.0%)
+  Bipartite 2Q part CX count: avg=1.1, max=2, dist={np.int64(1): np.int64(94), np.int64(2): np.int64(5)}
+  Original 2Q in bipartite blocks: avg=9.0
+  Potential CX savings from splitting: 1011 (extrapolated from 2000 samples)
+  As fraction of total 2Q gates: 6.20%
+
+======================================================================
+Building BV_100...
+  Built: 100Q, 399 gates
+  Post-routing: 390 2Q gates, 49 3Q blocks
+  Analysis time: 139ms (2.8ms/block)
+  Fully separable (1Q⊗1Q⊗1Q): 0/49 (0.0%)
+  Bipartite separable (2Q⊗1Q): 0/49 (0.0%)
+  Entangled (not separable): 49/49 (100.0%)
+  Potential CX savings from splitting: 0
+  As fraction of total 2Q gates: 0.00%
+
+======================================================================
+Building Heisenberg_100...
+  Built: 100Q, 1820 gates
+  Post-routing: 6723 2Q gates, 724 3Q blocks
+  Analysis time: 3030ms (4.2ms/block)
+  Fully separable (1Q⊗1Q⊗1Q): 0/724 (0.0%)
+  Bipartite separable (2Q⊗1Q): 37/724 (5.1%)
+  Entangled (not separable): 687/724 (94.9%)
+  Bipartite 2Q part CX count: avg=2.1, max=3, dist={np.int64(1): np.int64(17), np.int64(3): np.int64(20)}
+  Original 2Q in bipartite blocks: avg=10.8
+  Potential CX savings from splitting: 322
+  As fraction of total 2Q gates: 4.79%
+
+======================================================================
+Building Grover_50...
+  Built: 50Q, 564 gates
+  Post-routing: 2930 2Q gates, 453 3Q blocks
+  Analysis time: 894ms (2.0ms/block)
+  Fully separable (1Q⊗1Q⊗1Q): 0/453 (0.0%)
+  Bipartite separable (2Q⊗1Q): 12/453 (2.6%)
+  Entangled (not separable): 441/453 (97.4%)
+  Bipartite 2Q part CX count: avg=1.0, max=1, dist={np.int64(1): np.int64(12)}
+  Original 2Q in bipartite blocks: avg=7.8
+  Potential CX savings from splitting: 82
+  As fraction of total 2Q gates: 2.80%
+
+======================================================================
+Building Adder_80...
+  Built: 80Q, 108 gates
+  Post-routing: 1471 2Q gates, 164 3Q blocks
+  Analysis time: 420ms (2.6ms/block)
+  Fully separable (1Q⊗1Q⊗1Q): 0/164 (0.0%)
+  Bipartite separable (2Q⊗1Q): 2/164 (1.2%)
+  Entangled (not separable): 162/164 (98.8%)
+  Bipartite 2Q part CX count: avg=1.0, max=1, dist={np.int64(1): np.int64(2)}
+  Original 2Q in bipartite blocks: avg=8.5
+  Potential CX savings from splitting: 15
+  As fraction of total 2Q gates: 1.02%
+
+======================================================================
+Building Random_80...
+  Built: 80Q, 2258 gates
+  Post-routing: 15171 2Q gates, 2409 3Q blocks
+  Sampling 2000/2409 blocks for analysis
+  Analysis time: 3705ms (1.9ms/block)
+  Fully separable (1Q⊗1Q⊗1Q): 0/2000 (0.0%)
+  Bipartite separable (2Q⊗1Q): 112/2000 (5.6%)
+  Entangled (not separable): 1888/2000 (94.4%)
+  Bipartite 2Q part CX count: avg=1.1, max=3, dist={np.int64(1): np.int64(100), np.int64(2): np.int64(11), np.int64(3): np.int64(1)}
+  Original 2Q in bipartite blocks: avg=8.8
+  Potential CX savings from splitting: 1035 (extrapolated from 2000 samples)
+  As fraction of total 2Q gates: 6.82%
+
+======================================================================
+Building GHZ_100...
+  Built: 100Q, 200 gates
+  Post-routing: 99 2Q gates, 49 3Q blocks
+  Analysis time: 56ms (1.1ms/block)
+  Fully separable (1Q⊗1Q⊗1Q): 0/49 (0.0%)
+  Bipartite separable (2Q⊗1Q): 0/49 (0.0%)
+  Entangled (not separable): 49/49 (100.0%)
+  Potential CX savings from splitting: 0
+  As fraction of total 2Q gates: 0.00%
+
+======================================================================
+Building QPE_50...
+  Built: 50Q, 1398 gates
+  Post-routing: 4851 2Q gates, 591 3Q blocks
+  Analysis time: 1577ms (2.7ms/block)
+  Fully separable (1Q⊗1Q⊗1Q): 0/591 (0.0%)
+  Bipartite separable (2Q⊗1Q): 31/591 (5.2%)
+  Entangled (not separable): 560/591 (94.8%)
+  Bipartite 2Q part CX count: avg=1.3, max=2, dist={np.int64(1): np.int64(23), np.int64(2): np.int64(8)}
+  Original 2Q in bipartite blocks: avg=9.1
+  Potential CX savings from splitting: 242
+  As fraction of total 2Q gates: 4.99%
+
+======================================================================
+Building Toffoli_90...
+  Built: 90Q, 210 gates
+  Post-routing: 1368 2Q gates, 119 3Q blocks
+  Analysis time: 389ms (3.3ms/block)
+  Fully separable (1Q⊗1Q⊗1Q): 1/119 (0.8%)
+  Bipartite separable (2Q⊗1Q): 0/119 (0.0%)
+  Entangled (not separable): 118/119 (99.2%)
+  Potential CX savings from splitting: 24
+  As fraction of total 2Q gates: 1.75%
+
+
+======================================================================
+SUMMARY: 3Q Block Separability
+======================================================================
+
+             Circuit   3Q Blks   Full Sep   Bipartite   Entangled   CX Save   Total 2Q   Save %
+-----------------------------------------------------------------------------------------------
+             QFT_100      1259          2          59        1198       488      11050    4.42%
+              QV_100     14641          0          94        1906      5351      97797    5.47%
+    EfficientSU2_100        75          0           0          75         0        297    0.00%
+            QAOA_100      2568          0          99        1901      1011      16308    6.20%
+              BV_100        49          0           0          49         0        390    0.00%
+      Heisenberg_100       724          0          37         687       322       6723    4.79%
+           Grover_50       453          0          12         441        82       2930    2.80%
+            Adder_80       164          0           2         162        15       1471    1.02%
+           Random_80      2409          0         112        1888      1035      15171    6.82%
+             GHZ_100        49          0           0          49         0         99    0.00%
+              QPE_50       591          0          31         560       242       4851    4.99%
+          Toffoli_90       119          1           0         118        24       1368    1.75%
+-----------------------------------------------------------------------------------------------
+               TOTAL     23101          3         446        9034      8570     158455    5.41%
+
+Bottom line:
+  Separable 3Q blocks: 449 / 23101 (1.9%)
+  Potential CX savings: 8570 / 158455 (5.41%)
