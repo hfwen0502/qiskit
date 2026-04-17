@@ -10,7 +10,7 @@ The Qiskit team suggested exploring 3-qubit block synthesis as an optimization d
 
 ## Key Result: Sequential 2Q + 3Q Strategy
 
-**Script**: `investigation/profile_sequential_strategy.py`
+**Script and reference implementation**: [`profile_sequential_strategy.py`](investigation/profile_sequential_strategy.py) — contains the full working prototype including separability detection (ported from Pytket's `ThreeQubitConversion.cpp`), heuristic QSD guard, and end-to-end comparison. Runs on top of Qiskit without modifying any Qiskit source. Key functions: `check_separable()`, `run_3q_pass_simulated()`.
 
 The optimal pipeline runs 2Q optimization first (existing Qiskit), then applies 3Q optimization on remaining blocks:
 
@@ -172,10 +172,6 @@ Check if 3Q unitary factors as 2Q ⊗ 1Q. If so, split and use existing KAK. Thi
 Only attempt QSD on blocks with >14 original CX. This avoids expensive synthesis on the vast majority of blocks while capturing dense arithmetic blocks.
 
 **Effort**: Small — CX count threshold check. **Impact**: additional -1% on arithmetic circuits (Multiplier: 181 blocks improved, 998 CX saved).
-
-### Reference Implementation
-
-Both directions are implemented together in [`profile_sequential_strategy.py`](investigation/profile_sequential_strategy.py). The key functions are `check_separable()` (separability detection, ported from Pytket's `ThreeQubitConversion.cpp`) and `run_3q_pass_simulated()` (the full 3Q pass with separability + heuristic guard). This script runs entirely on top of Qiskit without modifying any Qiskit source.
 
 ### 3. ~~Full CSD Implementation~~ (Not Recommended)
 
