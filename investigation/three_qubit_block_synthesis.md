@@ -212,9 +212,43 @@ In `FullPeepholeOptimise`, ThreeQubitSquash runs after two rounds of 2Q optimiza
 
 The max CX counts are similar (~20), but Pytket's practical CX count is often lower due to conjugation optimization + separability shortcut. And critically, the gate guard ensures it never regresses.
 
+## CSD vs QSD Synthesis Quality Comparison
+
+Ported Pytket's CSD algorithm to Python and compared against Qiskit's QSD on 3Q blocks from 8 circuits. Both methods use a gate guard (only substitute if CX count improves).
+
+**Script**: `investigation/profile_csd_vs_qsd.py`
+
+**Note**: Our Python CSD is ~3 CX pessimistic vs the real Pytket implementation (no diagonal extraction optimization). CSD max is 23 CX in our implementation vs 20 CX in Pytket. This primarily affects the non-separable block counts; separable block results are exact.
+
+| Circuit | Blocks | Med Orig | CSD saves | QSD saves | Separable |
+|---------|:------:|:--------:|:---------:|:---------:|:---------:|
+| QFT_100 | 200 | 7 | 38 (2.6%) | 7 (0.5%) | 5 (2.5%) |
+| QV_100 | 200 | 6 | 78 (6.0%) | 10 (0.8%) | 13 (6.5%) |
+| QAOA_100 | 200 | 6 | 42 (3.4%) | 8 (0.7%) | 7 (3.5%) |
+| Random_100 | 200 | 6 | 60 (4.9%) | 6 (0.5%) | 10 (5.0%) |
+| Toffoli_90 | 58 | 10 | 0 (0%) | 36 (6.1%) | 0 (0%) |
+| **Multiplier_10** | **200** | **8** | **150 (7.6%)** | **295 (14.9%)** | **2 (1.0%)** |
+| CDKM_Adder_40 | 192 | 6 | 30 (1.8%) | 6 (0.4%) | 5 (2.6%) |
+| EfficientSU2_100 | 75 | 2 | 0 (0%) | 0 (0%) | 0 (0%) |
+| **Total** | | | **398 (4.2%)** | **368 (3.8%)** | |
+
+### Key Findings
+
+1. **CSD's advantage is almost entirely from separability detection.** For standard benchmarks (QFT, QV, QAOA, Random), CSD saves 2.6-6.0% vs QSD's 0.5-0.8%. Nearly all CSD savings come from separable blocks being decomposed as 2Q KAK (0-3 CX) instead of full 3Q synthesis (18-19 CX).
+
+2. **For dense arithmetic circuits, QSD actually wins.** On the Multiplier, QSD saves 14.9% vs CSD's 7.6%. QSD produces ~19 CX (after Clifford simplification) vs our CSD's ~20-23 CX. The real Pytket CSD (~20 CX with diagonal extraction) would be closer but still not better than QSD on non-separable blocks.
+
+3. **Separability splitting does not require CSD.** The 4.2% savings from CSD can be achieved by adding a separability check as a pre-pass before existing QSD — no CSD implementation needed.
+
+4. **Neither method helps EfficientSU2** (blocks too small at 2 CX) or **Toffoli** (CSD produces 20+ CX, QSD gets down to 10 CX for Toffoli-like structures).
+
+### Conclusion
+
+**Implementing full CSD in Qiskit is not worth the effort.** The only advantage CSD has over QSD is separability detection, which can be added as a lightweight pre-pass (~50 lines of Rust). For non-separable blocks, QSD is at least as good as CSD. The optimal path is: **gate guard + separability splitting + existing QSD**.
+
 ## Viable Optimization Directions
 
-Informed by Pytket's design and our profiling. Ranked by expected impact:
+Informed by Pytket's design, our profiling, and CSD vs QSD comparison. Ranked by expected impact:
 
 ### 1. Gate Guard for >2Q ConsolidateBlocks (Low Effort, Critical)
 
@@ -230,19 +264,11 @@ Before full synthesis, check if the 8×8 unitary factors as 4×4 ⊗ 2×2 via SV
 
 **Effort**: Small — SVD rank-1 check (3 bipartitions). **Impact**: 5.4% CX reduction on all routed circuits.
 
-### 3. Conjugation Optimization (Medium Effort, Improves Synthesis Quality)
+### 3. ~~CSD-Based 3Q Synthesis~~ (Not Recommended)
 
-Pytket tries 6 conjugation variants when synthesizing the multiplexor blocks and picks the one with fewest CX. This often reduces the practical CX count well below the 20 CX maximum. Could be added to Qiskit's QSD or implemented as a CSD-based alternative.
+Our CSD vs QSD comparison shows CSD provides no advantage over QSD on non-separable blocks. CSD's only win is separability detection, which is captured by Direction #2 above. Implementing full CSD in Rust would be significant effort (SVD + QR + multiplexor + conjugation loop) for no measurable benefit.
 
-**Effort**: Medium — implement conjugation loop in `qsd.rs` or add CSD synthesis. **Impact**: reduces CX count on blocks where synthesis fires (arithmetic circuits).
-
-### 4. CSD-Based 3Q Synthesis (Medium-High Effort, Parity with Pytket)
-
-Replace or supplement QSD with a CSD-based 3Q synthesis (as Pytket uses). Combined with the gate guard and conjugation optimization, this would bring Qiskit's 3Q synthesis to feature parity with Pytket's ThreeQubitSquash.
-
-**Effort**: Medium-high — implement CSD (SVD + QR + multiplexor synthesis) in Rust. **Impact**: comparable to Pytket's FullPeepholeOptimise for 3Q blocks.
-
-### 5. Near-Optimal 3Q Synthesis (High Effort, Best Quality)
+### 4. Near-Optimal 3Q Synthesis (High Effort, Best Quality)
 
 For maximum benefit on arithmetic circuits, a 14-15 CX synthesizer (AQC or SQUANDER-style variational) would capture blocks in the 15-20 CX range that even CSD misses. Our profiling shows 12% of Multiplier blocks and 9.5% of CDKM Adder blocks have >14 CX.
 
@@ -288,7 +314,7 @@ For maximum benefit on arithmetic circuits, a 14-15 CX synthesizer (AQC or SQUAN
 - [x] Document 2Q vs 3Q code path comparison
 - [x] Profile adversarial circuits: Multiplier has 12% blocks >14 CX, max 33
 - [x] Analyze Pytket's ThreeQubitSquash: CSD-based, gate guard, separability check, conjugation optimization
+- [x] Evaluate CSD vs QSD synthesis quality: CSD's only advantage is separability detection; QSD ≥ CSD on non-separable blocks. Full CSD implementation not recommended.
 - [ ] Prototype gate guard for >2Q ConsolidateBlocks path
 - [ ] Prototype 3Q separability splitting pass
-- [ ] Run end-to-end 2Q vs 3Q on Multiplier with gate guard
-- [ ] Evaluate CSD vs QSD synthesis quality on our benchmark blocks
+- [ ] Run end-to-end 2Q vs 3Q on Multiplier with gate guard + separability

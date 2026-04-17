@@ -1,0 +1,188 @@
+======================================================================
+CSD vs QSD 3Q Synthesis Comparison
+Backend: FakeTorino (133 qubits)
+======================================================================
+
+============================================================
+Circuit: QFT_100
+  Built: 100Q, 1 gates
+  3Q blocks: 1370
+  Sampled 200 blocks
+  Time: 4.5s (22.4ms/block)
+  Separable: 5/200 (2.5%)
+  Errors: 0
+
+                   Median    Mean   Max   Total
+      Original CX       7     7.3    13    1465
+           CSD CX      19    19.2    23    3842
+           QSD CX      18    17.3    19    3462
+
+  Head-to-head: CSD wins 12 | QSD wins 170 | Tie 18
+  With gate guard:
+    CSD replaces 5/200 blocks, saves 38 CX (2.6% of total)
+    QSD replaces 3/200 blocks, saves 7 CX (0.5% of total)
+
+  CSD CX distribution: {3: 5, 13: 1, 14: 1, 17: 8, 18: 4, 19: 82, 20: 47, 21: 51, 23: 1}
+
+============================================================
+Circuit: QV_100
+  Built: 100Q, 1 gates
+  3Q blocks: 14547
+  Sampled 200 blocks
+  Time: 4.8s (24.1ms/block)
+  Separable: 13/200 (6.5%)
+  Errors: 0
+
+                   Median    Mean   Max   Total
+      Original CX       6     6.5    12    1302
+           CSD CX      19    17.9    23    3581
+           QSD CX      18    17.8    19    3561
+
+  Head-to-head: CSD wins 32 | QSD wins 137 | Tie 31
+  With gate guard:
+    CSD replaces 13/200 blocks, saves 78 CX (6.0% of total)
+    QSD replaces 5/200 blocks, saves 10 CX (0.8% of total)
+
+  CSD CX distribution: {3: 13, 15: 1, 16: 7, 17: 11, 18: 2, 19: 131, 20: 34, 23: 1}
+
+============================================================
+Circuit: QAOA_100
+  Built: 100Q, 1400 gates
+  3Q blocks: 2545
+  Sampled 200 blocks
+  Time: 4.3s (21.7ms/block)
+  Separable: 7/200 (3.5%)
+  Errors: 0
+
+                   Median    Mean   Max   Total
+      Original CX       6     6.1    10    1223
+           CSD CX      19    18.4    21    3674
+           QSD CX      18    17.9    19    3585
+
+  Head-to-head: CSD wins 23 | QSD wins 158 | Tie 19
+  With gate guard:
+    CSD replaces 7/200 blocks, saves 42 CX (3.4% of total)
+    QSD replaces 4/200 blocks, saves 8 CX (0.7% of total)
+
+  CSD CX distribution: {3: 7, 12: 1, 13: 2, 14: 1, 15: 2, 16: 5, 17: 4, 18: 2, 19: 140, 20: 29, 21: 7}
+
+============================================================
+Circuit: Random_100
+  Built: 100Q, 6688 gates
+  3Q blocks: 9326
+  Sampled 200 blocks
+  Time: 4.7s (23.4ms/block)
+  Separable: 10/200 (5.0%)
+  Errors: 0
+
+                   Median    Mean   Max   Total
+      Original CX       6     6.2    10    1232
+           CSD CX      19    18.2    21    3646
+           QSD CX      18    17.7    19    3538
+
+  Head-to-head: CSD wins 20 | QSD wins 166 | Tie 14
+  With gate guard:
+    CSD replaces 10/200 blocks, saves 60 CX (4.9% of total)
+    QSD replaces 3/200 blocks, saves 6 CX (0.5% of total)
+
+  CSD CX distribution: {2: 2, 3: 8, 14: 2, 16: 1, 17: 4, 18: 5, 19: 147, 20: 28, 21: 3}
+
+============================================================
+Circuit: Toffoli_90
+  Built: 90Q, 58 gates
+  3Q blocks: 58
+  Time: 1.2s (20.1ms/block)
+  Separable: 0/58 (0.0%)
+  Errors: 0
+
+                   Median    Mean   Max   Total
+      Original CX      10    10.2    12     589
+           CSD CX      20    19.6    21    1138
+           QSD CX      10    11.6    19     673
+
+  Head-to-head: CSD wins 0 | QSD wins 58 | Tie 0
+  With gate guard:
+    CSD replaces 0/58 blocks, saves 0 CX (0.0% of total)
+    QSD replaces 17/58 blocks, saves 36 CX (6.1% of total)
+
+  CSD CX distribution: {14: 1, 15: 1, 16: 7, 18: 1, 19: 8, 20: 13, 21: 27}
+
+============================================================
+Circuit: Multiplier_10
+  Built: 41Q, 1 gates
+  3Q blocks: 2290
+  Sampled 200 blocks
+  Time: 4.5s (22.5ms/block)
+  Separable: 2/200 (1.0%)
+  Errors: 0
+
+                   Median    Mean   Max   Total
+      Original CX       8     9.9    33    1977
+           CSD CX      20    19.4    23    3877
+           QSD CX      18    15.6    19    3117
+
+  Head-to-head: CSD wins 21 | QSD wins 171 | Tie 8
+  With gate guard:
+    CSD replaces 15/200 blocks, saves 150 CX (7.6% of total)
+    QSD replaces 60/200 blocks, saves 295 CX (14.9% of total)
+
+  CSD CX distribution: {1: 1, 3: 1, 13: 2, 16: 18, 18: 7, 19: 62, 20: 37, 21: 70, 22: 1, 23: 1}
+
+============================================================
+Circuit: CDKM_Adder_40
+  Built: 82Q, 1 gates
+  3Q blocks: 192
+  Time: 4.6s (23.9ms/block)
+  Separable: 5/192 (2.6%)
+  Errors: 0
+
+                   Median    Mean   Max   Total
+      Original CX       6     8.5    19    1626
+           CSD CX      19    18.9    23    3635
+           QSD CX      18    17.3    19    3327
+
+  Head-to-head: CSD wins 14 | QSD wins 170 | Tie 8
+  With gate guard:
+    CSD replaces 5/192 blocks, saves 30 CX (1.8% of total)
+    QSD replaces 3/192 blocks, saves 6 CX (0.4% of total)
+
+  CSD CX distribution: {1: 3, 3: 2, 13: 4, 14: 1, 15: 2, 16: 3, 17: 1, 18: 5, 19: 102, 20: 21, 21: 41, 22: 5, 23: 2}
+
+============================================================
+Circuit: EfficientSU2_100
+  Built: 100Q, 1 gates
+  3Q blocks: 75
+  Time: 1.7s (22.4ms/block)
+  Separable: 0/75 (0.0%)
+  Errors: 0
+
+                   Median    Mean   Max   Total
+      Original CX       2     2.0     2     150
+           CSD CX      21    20.7    21    1556
+           QSD CX      19    18.7    19    1399
+
+  Head-to-head: CSD wins 0 | QSD wins 75 | Tie 0
+  With gate guard:
+    CSD replaces 0/75 blocks, saves 0 CX (0.0% of total)
+    QSD replaces 0/75 blocks, saves 0 CX (0.0% of total)
+
+  CSD CX distribution: {19: 4, 20: 11, 21: 60}
+
+
+==========================================================================================
+SUMMARY: CSD vs QSD with Gate Guard
+==========================================================================================
+Circuit                 N  Med  CSD  QSD CSD>QSD QSD>CSD  Sep CSD save QSD save   Orig
+------------------------------------------------------------------------------------------
+QFT_100               200    7   19   18      12     170    5       38        7   1465
+QV_100                200    6   19   18      32     137   13       78       10   1302
+QAOA_100              200    6   19   18      23     158    7       42        8   1223
+Random_100            200    6   19   18      20     166   10       60        6   1232
+Toffoli_90             58   10   20   10       0      58    0        0       36    589
+Multiplier_10         200    8   20   18      21     171    2      150      295   1977
+CDKM_Adder_40         192    6   19   18      14     170    5       30        6   1626
+EfficientSU2_100       75    2   21   19       0      75    0        0        0    150
+------------------------------------------------------------------------------------------
+TOTAL                                                              398      368   9564
+
+  Overall CX savings: CSD 4.2% | QSD 3.8%
