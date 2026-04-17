@@ -173,6 +173,10 @@ Only attempt QSD on blocks with >14 original CX. This avoids expensive synthesis
 
 **Effort**: Small — CX count threshold check. **Impact**: additional -1% on arithmetic circuits (Multiplier: 181 blocks improved, 998 CX saved).
 
+### Reference Implementation
+
+Both directions are implemented together in [`profile_sequential_strategy.py`](investigation/profile_sequential_strategy.py). The key functions are `check_separable()` (separability detection, ported from Pytket's `ThreeQubitConversion.cpp`) and `run_3q_pass_simulated()` (the full 3Q pass with separability + heuristic guard). This script runs entirely on top of Qiskit without modifying any Qiskit source.
+
 ### 3. ~~Full CSD Implementation~~ (Not Recommended)
 
 CSD provides no advantage over QSD on non-separable blocks. Separability detection (Direction #1) captures CSD's only win.
