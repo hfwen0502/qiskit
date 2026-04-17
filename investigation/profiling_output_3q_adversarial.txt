@@ -1,0 +1,203 @@
+Backend: FakeTorino (133 qubits)
+Profiling 3Q block statistics on 8 adversarial circuits
+Goal: find circuits that produce 3Q blocks with >14 CX gates
+======================================================================
+
+======================================================================
+Building DeepToffoliChain_60...
+  Built in 6ms: 60Q, 294 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 14158 gates, 3441 2Q, depth=2898, time=2225ms
+
+  CollectMultiQBlocks(max_block_size=3) (225.9ms):
+     1Q blocks: 0
+     2Q blocks: 107, avg=11.5 gates, max=22 gates, median=12 gates
+    2Q gates: avg=2.3, max=5, median=2
+     3Q blocks: 384, avg=33.5 gates, max=67 gates, median=38 gates
+    2Q gates: avg=8.3, max=15, median=8
+    >20 2Q gates (QSD break-even): 0/384 (0.0%)
+    >15 2Q gates (near-optimal break-even): 0/384 (0.0%)
+    >14 2Q gates (theoretical minimum): 10/384 (2.6%)
+    >10 2Q gates: 77/384 (20.1%)
+    2Q gate distribution: 1-5: 55, 6-10: 252, 11-14: 67, 15-20: 10
+
+  Summary:
+    3Q blocks: 384
+    2Q gates in 3Q blocks: 3194 / 3441 (92.8%)
+    3Q blocks >20 CX: 0, >15 CX: 0, >14 CX: 10
+
+======================================================================
+Building RepeatedToffoli_60...
+  Built in 8ms: 60Q, 510 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 8691 gates, 1770 2Q, depth=660, time=2021ms
+
+  CollectMultiQBlocks(max_block_size=3) (140.0ms):
+     1Q blocks: 0
+     2Q blocks: 0
+     3Q blocks: 10, avg=863.0 gates, max=863 gates, median=863 gates
+    2Q gates: avg=177.0, max=177, median=177
+    >20 2Q gates (QSD break-even): 10/10 (100.0%)
+    >15 2Q gates (near-optimal break-even): 10/10 (100.0%)
+    >14 2Q gates (theoretical minimum): 10/10 (100.0%)
+    >10 2Q gates: 10/10 (100.0%)
+    2Q gate distribution: 51+: 10
+
+  Summary:
+    3Q blocks: 10
+    2Q gates in 3Q blocks: 1770 / 1770 (100.0%)
+    3Q blocks >20 CX: 10, >15 CX: 10, >14 CX: 10
+
+======================================================================
+Building CDKM_Adder_40...
+  Built in 25ms: 82Q, 123 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 7143 gates, 1619 2Q, depth=4449, time=802ms
+
+  CollectMultiQBlocks(max_block_size=3) (113.5ms):
+     1Q blocks: 0
+     2Q blocks: 17, avg=11.1 gates, max=20 gates, median=10 gates
+    2Q gates: avg=2.4, max=4, median=3
+     3Q blocks: 190, avg=36.2 gates, max=88 gates, median=22 gates
+    2Q gates: avg=8.3, max=19, median=6
+    >20 2Q gates (QSD break-even): 0/190 (0.0%)
+    >15 2Q gates (near-optimal break-even): 18/190 (9.5%)
+    >14 2Q gates (theoretical minimum): 18/190 (9.5%)
+    >10 2Q gates: 51/190 (26.8%)
+    2Q gate distribution: 1-5: 38, 6-10: 101, 11-14: 33, 15-20: 18
+
+  Summary:
+    3Q blocks: 190
+    2Q gates in 3Q blocks: 1579 / 1619 (97.5%)
+    3Q blocks >20 CX: 0, >15 CX: 18, >14 CX: 18
+
+======================================================================
+Building VBE_Adder_20...
+  Built in 20ms: 60Q, 81 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 5416 gates, 1215 2Q, depth=2857, time=932ms
+
+  CollectMultiQBlocks(max_block_size=3) (87.7ms):
+     1Q blocks: 0
+     2Q blocks: 11, avg=7.1 gates, max=9 gates, median=7 gates
+    2Q gates: avg=2.2, max=3, median=2
+     3Q blocks: 149, avg=35.4 gates, max=75 gates, median=27 gates
+    2Q gates: avg=8.0, max=15, median=7
+    >20 2Q gates (QSD break-even): 0/149 (0.0%)
+    >15 2Q gates (near-optimal break-even): 0/149 (0.0%)
+    >14 2Q gates (theoretical minimum): 3/149 (2.0%)
+    >10 2Q gates: 45/149 (30.2%)
+    2Q gate distribution: 1-5: 39, 6-10: 65, 11-14: 42, 15-20: 3
+
+  Summary:
+    3Q blocks: 149
+    2Q gates in 3Q blocks: 1191 / 1215 (98.0%)
+    3Q blocks >20 CX: 0, >15 CX: 0, >14 CX: 3
+
+======================================================================
+Building Multiplier_10...
+  Built in 481ms: 41Q, 62 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 122724 gates, 24407 2Q, depth=89473, time=7951ms
+
+  CollectMultiQBlocks(max_block_size=3) (2007.6ms):
+     1Q blocks: 0
+     2Q blocks: 261, avg=17.0 gates, max=44 gates, median=11 gates
+    2Q gates: avg=3.3, max=6, median=3
+     3Q blocks: 2267, avg=52.2 gates, max=174 gates, median=47 gates
+    2Q gates: avg=10.4, max=33, median=9
+    >20 2Q gates (QSD break-even): 197/2267 (8.7%)
+    >15 2Q gates (near-optimal break-even): 234/2267 (10.3%)
+    >14 2Q gates (theoretical minimum): 273/2267 (12.0%)
+    >10 2Q gates: 981/2267 (43.3%)
+    2Q gate distribution: 1-5: 485, 6-10: 801, 11-14: 708, 15-20: 76, 21-50: 197
+
+  Summary:
+    3Q blocks: 2267
+    2Q gates in 3Q blocks: 23539 / 24407 (96.4%)
+    3Q blocks >20 CX: 197, >15 CX: 234, >14 CX: 273
+
+======================================================================
+Building MCX_Cascade_60...
+  Built in 4ms: 60Q, 148 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 7738 gates, 1929 2Q, depth=3623, time=1282ms
+
+  CollectMultiQBlocks(max_block_size=3) (123.3ms):
+     1Q blocks: 0
+     2Q blocks: 38, avg=9.4 gates, max=21 gates, median=8 gates
+    2Q gates: avg=2.8, max=4, median=3
+     3Q blocks: 326, avg=22.4 gates, max=68 gates, median=19 gates
+    2Q gates: avg=5.6, max=15, median=6
+    >20 2Q gates (QSD break-even): 0/326 (0.0%)
+    >15 2Q gates (near-optimal break-even): 0/326 (0.0%)
+    >14 2Q gates (theoretical minimum): 2/326 (0.6%)
+    >10 2Q gates: 13/326 (4.0%)
+    2Q gate distribution: 1-5: 137, 6-10: 176, 11-14: 11, 15-20: 2
+
+  Summary:
+    3Q blocks: 326
+    2Q gates in 3Q blocks: 1822 / 1929 (94.5%)
+    3Q blocks >20 CX: 0, >15 CX: 0, >14 CX: 2
+
+======================================================================
+Building StabilizerSyndrome_60...
+  Built in 15ms: 60Q, 990 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 151 gates, 0 2Q, depth=5, time=83ms
+
+  CollectMultiQBlocks(max_block_size=3) (3.6ms):
+     1Q blocks: 30, avg=3.0 gates, max=3 gates, median=3 gates
+     2Q blocks: 0
+     3Q blocks: 0
+
+  Summary:
+    3Q blocks: 0
+    2Q gates in 3Q blocks: 0 / 0 (0.0%)
+    3Q blocks >20 CX: 0, >15 CX: 0, >14 CX: 0
+
+======================================================================
+Building ControlledRotation_60...
+  Built in 10ms: 60Q, 600 gates
+  Pre-optimizing (level 2, skip optimization)...
+  Post-routing: 9901 gates, 1620 2Q, depth=375, time=1858ms
+
+  CollectMultiQBlocks(max_block_size=3) (164.9ms):
+     1Q blocks: 0
+     2Q blocks: 0
+     3Q blocks: 20, avg=492.0 gates, max=492 gates, median=492 gates
+    2Q gates: avg=81.0, max=81, median=81
+    >20 2Q gates (QSD break-even): 20/20 (100.0%)
+    >15 2Q gates (near-optimal break-even): 20/20 (100.0%)
+    >14 2Q gates (theoretical minimum): 20/20 (100.0%)
+    >10 2Q gates: 20/20 (100.0%)
+    2Q gate distribution: 51+: 20
+
+  Summary:
+    3Q blocks: 20
+    2Q gates in 3Q blocks: 1620 / 1620 (100.0%)
+    3Q blocks >20 CX: 20, >15 CX: 20, >14 CX: 20
+
+
+======================================================================
+SUMMARY: Adversarial 3Q Block Statistics (FakeTorino, Heavy-Hex)
+======================================================================
+
+                  Circuit  Post-Route   3Q Blks   Median      Avg    Max   >20CX   >15CX   >14CX
+                             2Q Gates                 2Q       2Q     2Q                        
+----------------------------------------------------------------------------------------------------
+      DeepToffoliChain_60        3441       384        8      8.3     15       0       0      10
+       RepeatedToffoli_60        1770        10      177    177.0    177      10      10      10
+            CDKM_Adder_40        1619       190        6      8.3     19       0      18      18
+             VBE_Adder_20        1215       149        7      8.0     15       0       0       3
+            Multiplier_10       24407      2267        9     10.4     33     197     234     273
+           MCX_Cascade_60        1929       326        6      5.6     15       0       0       2
+    StabilizerSyndrome_60           0         0        0      0.0      0       0       0       0
+    ControlledRotation_60        1620        20       81     81.0     81      20      20      20
+----------------------------------------------------------------------------------------------------
+                    TOTAL                  3346                              227     282     336
+
+Conclusion:
+  336/3346 blocks (10.0%) exceed 14 CX.
+  These blocks could benefit from near-optimal 3Q synthesis.
+  Further investigation needed to assess if this is worth pursuing.

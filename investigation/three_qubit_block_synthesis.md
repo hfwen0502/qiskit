@@ -507,20 +507,47 @@ Most circuits have median 6-9 CX per 3Q block. Even Toffoli_90, with the densest
 1. A gate guard in `ConsolidateBlocks` for >2Q blocks (like the 2Q path has)
 2. A near-optimal 3Q synthesizer producing fewer CX than the typical block — but the theoretical minimum for arbitrary 3Q unitary is **14 CX**, which exceeds the median block size for all 12 circuits
 
-### Open Question: Benchmark Selection Bias
+### Benchmark Selection Bias — Adversarial Profiling
 
-Our 12 benchmark circuits are diverse (QFT, QV, QAOA, Grover, arithmetic, random, Hamiltonian simulation, GHZ, QPE, Toffoli) but share a common trait: they are all built from 1Q and 2Q gates. No circuit natively contains 3Q operations.
+Our 12 benchmark circuits all showed median 2-12 CX per 3Q block. We initially attributed this to topology constraints (heavy-hex degree 2-3 limits interaction density). But this argument assumes SABRE distributes interactions evenly, which may not hold for circuits with highly localized multi-qubit structure.
 
-We argue the small block size is topology-driven: a 3-qubit block on heavy-hex (degree 2-3) spans exactly 2 edges, and SABRE routing distributes interactions across the lattice, limiting how many 2Q gates accumulate in any single 3-qubit neighborhood.
+**Script**: `investigation/profile_3q_adversarial.py`
 
-However, this argument assumes SABRE distributes interactions relatively evenly, which may not hold for circuits with **highly localized multi-qubit structure**. Circuit families we have not yet profiled that could produce denser 3Q blocks:
+We constructed 8 adversarial circuits designed to maximize 3Q block density:
 
-- **Deep modular arithmetic** (Shor's algorithm) — cascading Toffoli-like structures with repeated interactions on the same qubits
-- **Surface code encoding/syndrome extraction** — repetitive stabilizer measurements on fixed local qubit groups
-- **Chemistry ansatze with localized orbital interactions** — e.g., UCCSD with few active orbitals mapping to adjacent qubits
-- **Quantum error correction circuits** — repeated CNOT patterns between data and ancilla qubits
+| Circuit | Description | Post-Route 2Q | 3Q Blocks | Median 2Q | Max 2Q | >14 CX | >20 CX |
+|---------|-------------|:------------:|:---------:|:---------:|:------:|:------:|:------:|
+| DeepToffoliChain_60 | Overlapping CCX on sliding 3Q windows, 4 sweeps | 3,441 | 384 | **8** | 15 | 10 (2.6%) | 0 |
+| RepeatedToffoli_60 | 15 CCX per group on same 3 qubits | 1,770 | 10 | **177** | 177 | 10 (100%) | 10 (100%) |
+| CDKM_Adder_40 | Qiskit CDKMRippleCarryAdder (real arithmetic) | 1,619 | 190 | **6** | 19 | 18 (9.5%) | 0 |
+| VBE_Adder_20 | Qiskit VBERippleCarryAdder | 1,215 | 149 | **7** | 15 | 3 (2.0%) | 0 |
+| **Multiplier_10** | **Qiskit HRSCumulativeMultiplier (real arithmetic)** | **24,407** | **2,267** | **9** | **33** | **273 (12.0%)** | **197 (8.7%)** |
+| MCX_Cascade_60 | Sliding MCX(4-ctrl) windows | 1,929 | 326 | **6** | 15 | 2 (0.6%) | 0 |
+| StabilizerSyndrome_60 | Repeated CX syndrome extraction | 0 | 0 | — | — | 0 | 0 |
+| ControlledRotation_60 | Repeated CRZ on fixed 3Q groups | 1,620 | 20 | **81** | 81 | 20 (100%) | 20 (100%) |
+| **TOTAL** | | | **3,346** | | | **336 (10.0%)** | **227 (6.8%)** |
 
-To settle this question, we will construct adversarial test circuits specifically designed to produce dense 3Q blocks and re-profile.
+### Key Findings
+
+1. **The Multiplier is the critical finding.** `HRSCumulativeMultiplier(10)` — a real Qiskit arithmetic circuit — produces 2,267 3Q blocks, of which **273 (12%) exceed 14 CX** and **197 (8.7%) exceed 20 CX** (max 33). This is a real workload where 3Q synthesis could genuinely help. The controlled adder chains create many overlapping 3-qubit neighborhoods with deep interaction sequences.
+
+2. **CDKM Adder also shows opportunity.** 18/190 blocks (9.5%) at 15-19 CX — right at the near-optimal threshold. With a 15-CX synthesizer (Rakyta & Zimboras), these blocks would benefit.
+
+3. **Deeply localized circuits break the topology argument.** RepeatedToffoli (median 177 CX) and ControlledRotation (median 81 CX) prove that heavy-hex topology does not inherently prevent dense 3Q blocks — the key factor is **circuit locality**, not topology degree. When a circuit repeatedly hammers the same 3 qubits, SABRE places them as neighbors and blocks accumulate.
+
+4. **Distributed circuits remain unaffected.** DeepToffoliChain (overlapping windows that slide across 60 qubits) has median 8 CX — consistent with our earlier benchmarks. The topology argument holds when interactions are spread across the lattice.
+
+5. **Stabilizer syndrome collapsed to trivial.** The CX-only syndrome extraction circuit was optimized away by the init/translation stages, producing 0 2Q gates post-routing.
+
+### Revised Conclusion
+
+Our earlier conclusion — "3Q synthesis is not viable on any IBM topology" — was **too strong**. It holds for the common circuit families (QFT, QV, QAOA, random, Hamiltonian simulation) but **breaks down for arithmetic circuits** with deeply localized multi-qubit structure.
+
+Specifically:
+- **For distributed circuits** (our original 12 benchmarks): 3Q blocks have median 2-12 CX, well below the 14 CX floor. 3Q synthesis cannot help. **This covers most common workloads.**
+- **For arithmetic circuits** (multipliers, adders with deep carry chains): 8-12% of 3Q blocks exceed 14 CX. A near-optimal 3Q synthesizer (15 CX) or QSD with a gate guard (skip blocks <20 CX) could produce meaningful savings on these circuits.
+
+The practical question is whether arithmetic circuits (Shor's, multiplication, modular exponentiation) are a sufficient use case to justify the engineering effort. These circuits are among the most important for fault-tolerant quantum computing.
 
 ## Next Steps
 
@@ -528,9 +555,10 @@ To settle this question, we will construct adversarial test circuits specificall
 - [x] ~~Investigate whether denser topologies produce 3Q blocks with higher CX density~~ — NightHawk makes it worse
 - [x] Research literature: full 3Q unitary resynthesis is not viable; alternative approaches identified
 - [x] Profile 3Q block separability — **5.4% CX savings available from splitting separable blocks**
-- [x] End-to-end experiment: 2Q-only vs 3Q synthesis — **confirmed +167% regression**
+- [x] End-to-end experiment: 2Q-only vs 3Q synthesis — **confirmed +167% regression without gate guard**
 - [x] Document 2Q vs 3Q code path comparison and missing gate guard
-- [ ] **Profile adversarial circuits**: construct circuits with highly localized 3Q interactions (deep Toffoli chains, modular arithmetic, repetitive stabilizer patterns, UCCSD) and check if they produce 3Q blocks with >14 CX — to rule out benchmark selection bias
+- [x] Profile adversarial circuits — **Multiplier produces 12% of blocks >14 CX, max 33 CX**
+- [ ] Run end-to-end 2Q vs 3Q experiment on Multiplier with gate guard (synthesize, count CX, only substitute if fewer)
 - [ ] Prototype: implement 3Q block splitting as a transpiler pass and measure end-to-end gate count improvement
 - [ ] Profile phase polynomial structure — how many 3Q blocks are phase polynomial chains?
 - [ ] Evaluate BQSKit integration as optional high-effort pass (not default pipeline)
