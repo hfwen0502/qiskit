@@ -1,0 +1,238 @@
+================================================================================
+Collect2qBlocks vs CollectMultiQBlocks(max_block_size=3)
+Backend: FakeTorino (133 qubits)
+Both strategies use gate guard: only replace block if synthesis CX < original CX
+================================================================================
+
+======================================================================
+Circuit: QFT_100
+  Built: 100Q, 1 gates
+  Pre-optimized: 10975 2Q gates
+
+  Strategy A: Collect2qBlocks
+    Blocks: 3552 (all 2Q)
+    Uncollected 2Q gates: 0
+    Block 2Q gates: 10975 original → 9019 after KAK (978 replaced)
+    Total 2Q: 10975 → 9019
+    Time: 6.19s
+
+  Strategy B: CollectMultiQBlocks(max_block_size=3)
+    Blocks: 106 2Q + 1402 3Q = 1508 total
+    Uncollected 2Q gates: 0
+    2Q block CX: 978 → 17 replaced by KAK
+    3Q blocks: 1402 blocks, 10641 original CX, 29 replaced by QSD, saves 40 CX
+    Total 2Q: 10975 → 10901
+    Time: 15.51s
+
+  Comparison: A=9019, B=10901, delta=+1882 (+20.9%) → A (2Q)
+
+  3Q block detail:
+    Original CX: median=7, mean=7.6, max=15
+    QSD CX:      median=18, mean=17.5, max=20
+    Savings distribution: {0: 1373, 1: 23, 2: 4, 4: 1, 5: 1}
+
+======================================================================
+Circuit: QV_100
+  Built: 100Q, 1 gates
+  Pre-optimized: 98289 2Q gates
+
+  Strategy A: Collect2qBlocks
+    Blocks: 32036 (all 2Q)
+    Uncollected 2Q gates: 0
+    Block 2Q gates: 98289 original → 96108 after KAK (725 replaced)
+    Total 2Q: 98289 → 96108
+    Time: 53.33s
+
+  Strategy B: CollectMultiQBlocks(max_block_size=3)
+    Blocks: 1291 2Q + 14677 3Q = 15968 total
+    Uncollected 2Q gates: 0
+    2Q block CX: 725 → 37 replaced by KAK
+    3Q blocks: 14677 blocks, 94308 original CX, 380 replaced by QSD, saves 760 CX
+    Total 2Q: 98289 → 97418
+    Time: 160.93s
+
+  Comparison: A=96108, B=97418, delta=+1310 (+1.4%) → A (2Q)
+
+  3Q block detail:
+    Original CX: median=6, mean=6.4, max=15
+    QSD CX:      median=18, mean=17.8, max=20
+    Savings distribution: {0: 14297, 2: 380}
+
+======================================================================
+Circuit: QAOA_100
+  Built: 100Q, 1400 gates
+  Pre-optimized: 16386 2Q gates
+
+  Strategy A: Collect2qBlocks
+    Blocks: 5609 (all 2Q)
+    Uncollected 2Q gates: 0
+    Block 2Q gates: 16386 original → 16080 after KAK (153 replaced)
+    Total 2Q: 16386 → 16080
+    Time: 8.34s
+
+  Strategy B: CollectMultiQBlocks(max_block_size=3)
+    Blocks: 253 2Q + 2545 3Q = 2798 total
+    Uncollected 2Q gates: 0
+    2Q block CX: 153 → 9 replaced by KAK
+    3Q blocks: 2545 blocks, 15649 original CX, 76 replaced by QSD, saves 136 CX
+    Total 2Q: 16386 → 16232
+    Time: 26.48s
+
+  Comparison: A=16080, B=16232, delta=+152 (+0.9%) → A (2Q)
+
+  3Q block detail:
+    Original CX: median=6, mean=6.1, max=11
+    QSD CX:      median=18, mean=17.6, max=19
+    Savings distribution: {0: 2469, 1: 16, 2: 60}
+
+======================================================================
+Circuit: Random_100
+  Built: 100Q, 6688 gates
+  Pre-optimized: 58689 2Q gates
+
+  Strategy A: Collect2qBlocks
+    Blocks: 20352 (all 2Q)
+    Uncollected 2Q gates: 0
+    Block 2Q gates: 58689 original → 57652 after KAK (469 replaced)
+    Total 2Q: 58689 → 57652
+    Time: 33.64s
+
+  Strategy B: CollectMultiQBlocks(max_block_size=3)
+    Blocks: 799 2Q + 9346 3Q = 10145 total
+    Uncollected 2Q gates: 0
+    2Q block CX: 469 → 16 replaced by KAK
+    3Q blocks: 9346 blocks, 56393 original CX, 252 replaced by QSD, saves 494 CX
+    Total 2Q: 58689 → 58159
+    Time: 100.73s
+
+  Comparison: A=57652, B=58159, delta=+507 (+0.9%) → A (2Q)
+
+  3Q block detail:
+    Original CX: median=6, mean=6.0, max=14
+    QSD CX:      median=18, mean=17.6, max=19
+    Savings distribution: {0: 9094, 1: 15, 2: 234, 3: 1, 4: 2}
+
+======================================================================
+Circuit: Toffoli_90
+  Built: 90Q, 58 gates
+  Pre-optimized: 609 2Q gates
+
+  Strategy A: Collect2qBlocks
+    Blocks: 338 (all 2Q)
+    Uncollected 2Q gates: 0
+    Block 2Q gates: 609 original → 531 after KAK (39 replaced)
+    Total 2Q: 609 → 531
+    Time: 0.59s
+
+  Strategy B: CollectMultiQBlocks(max_block_size=3)
+    Blocks: 9 2Q + 60 3Q = 69 total
+    Uncollected 2Q gates: 0
+    2Q block CX: 39 → 1 replaced by KAK
+    3Q blocks: 60 blocks, 589 original CX, 17 replaced by QSD, saves 36 CX
+    Total 2Q: 609 → 571
+    Time: 0.61s
+
+  Comparison: A=531, B=571, delta=+40 (+7.5%) → A (2Q)
+
+  3Q block detail:
+    Original CX: median=9, mean=9.8, max=12
+    QSD CX:      median=10, mean=11.3, max=19
+    Savings distribution: {0: 43, 2: 16, 4: 1}
+
+======================================================================
+Circuit: Multiplier_10
+  Built: 41Q, 1 gates
+  Pre-optimized: 24725 2Q gates
+
+  Strategy A: Collect2qBlocks
+    Blocks: 10955 (all 2Q)
+    Uncollected 2Q gates: 0
+    Block 2Q gates: 24725 original → 19425 after KAK (2804 replaced)
+    Total 2Q: 24725 → 19425
+    Time: 16.43s
+
+  Strategy B: CollectMultiQBlocks(max_block_size=3)
+    Blocks: 222 2Q + 2334 3Q = 2556 total
+    Uncollected 2Q gates: 0
+    2Q block CX: 2804 → 82 replaced by KAK
+    3Q blocks: 2334 blocks, 24003 original CX, 741 replaced by QSD, saves 3757 CX
+    Total 2Q: 24725 → 20819
+    Time: 27.75s
+
+  Comparison: A=19425, B=20819, delta=+1394 (+7.2%) → A (2Q)
+
+  3Q block detail:
+    Original CX: median=9, mean=10.3, max=36
+    QSD CX:      median=18, mean=15.6, max=19
+    Savings distribution: {0: 1593, 1: 233, 2: 76, 3: 104, 4: 59, 5: 47, 6: 37, 7: 5, 8: 2, 9: 14, 10: 19, 11: 36, 12: 8, 13: 7, 14: 48, 15: 31, 16: 3, 17: 4, 18: 2, 20: 3, 22: 1, 23: 2}
+
+======================================================================
+Circuit: CDKM_Adder_40
+  Built: 82Q, 1 gates
+  Pre-optimized: 1451 2Q gates
+
+  Strategy A: Collect2qBlocks
+    Blocks: 751 (all 2Q)
+    Uncollected 2Q gates: 0
+    Block 2Q gates: 1451 original → 1291 after KAK (80 replaced)
+    Total 2Q: 1451 → 1291
+    Time: 1.06s
+
+  Strategy B: CollectMultiQBlocks(max_block_size=3)
+    Blocks: 18 2Q + 155 3Q = 173 total
+    Uncollected 2Q gates: 0
+    2Q block CX: 80 → 1 replaced by KAK
+    3Q blocks: 155 blocks, 1410 original CX, 6 replaced by QSD, saves 7 CX
+    Total 2Q: 1451 → 1442
+    Time: 2.02s
+
+  Comparison: A=1291, B=1442, delta=+151 (+11.7%) → A (2Q)
+
+  3Q block detail:
+    Original CX: median=8, mean=9.1, max=19
+    QSD CX:      median=18, mean=17.3, max=19
+    Savings distribution: {0: 149, 1: 5, 2: 1}
+
+======================================================================
+Circuit: EfficientSU2_100
+  Built: 100Q, 1 gates
+  Pre-optimized: 297 2Q gates
+
+  Strategy A: Collect2qBlocks
+    Blocks: 297 (all 2Q)
+    Uncollected 2Q gates: 0
+    Block 2Q gates: 297 original → 297 after KAK (0 replaced)
+    Total 2Q: 297 → 297
+    Time: 0.43s
+
+  Strategy B: CollectMultiQBlocks(max_block_size=3)
+    Blocks: 147 2Q + 75 3Q = 222 total
+    Uncollected 2Q gates: 0
+    2Q block CX: 0 → 0 replaced by KAK
+    3Q blocks: 75 blocks, 150 original CX, 0 replaced by QSD, saves 0 CX
+    Total 2Q: 297 → 297
+    Time: 1.08s
+
+  Comparison: A=297, B=297, delta=+0 (+0.0%) → TIE
+
+  3Q block detail:
+    Original CX: median=2, mean=2.0, max=2
+    QSD CX:      median=19, mean=18.7, max=19
+    Savings distribution: {0: 75}
+
+
+==========================================================================================
+SUMMARY: Collect2qBlocks (A) vs CollectMultiQBlocks (B) with Gate Guard
+==========================================================================================
+Circuit              Total2Q A final B final   Delta      % A blks  B 2Q  B 3Q A unc B unc 3Q save
+------------------------------------------------------------------------------------------
+QFT_100                10975    9019   10901   +1882 +20.9%   3552   106  1402     0     0      40
+QV_100                 98289   96108   97418   +1310  +1.4%  32036  1291 14677     0     0     760
+QAOA_100               16386   16080   16232    +152  +0.9%   5609   253  2545     0     0     136
+Random_100             58689   57652   58159    +507  +0.9%  20352   799  9346     0     0     494
+Toffoli_90               609     531     571     +40  +7.5%    338     9    60     0     0      36
+Multiplier_10          24725   19425   20819   +1394  +7.2%  10955   222  2334     0     0    3757
+CDKM_Adder_40           1451    1291    1442    +151 +11.7%    751    18   155     0     0       7
+EfficientSU2_100         297     297     297      +0  +0.0%    297   147    75     0     0       0
+------------------------------------------------------------------------------------------
+TOTAL                         200403  205839   +5436  +2.7%

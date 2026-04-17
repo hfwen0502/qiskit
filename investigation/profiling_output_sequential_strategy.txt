@@ -1,0 +1,128 @@
+================================================================================
+Sequential Strategy: 2Q squash + 3Q squash (separability + heuristic guard)
+Backend: FakeTorino (133 qubits)
+3Q heuristic: skip QSD for blocks with ≤14 CX
+================================================================================
+
+======================================================================
+Circuit: QFT_100
+  Built: 100Q, 1 gates
+  Pre-optimized:      10981 2Q gates
+  After 2Q (KAK):      9185 2Q gates  (2.6s)
+  After 2Q + 3Q:       8949 2Q gates  (+3.8s)
+    3Q blocks:       1370
+    Separable:       43 blocks, saved 236 CX
+    QSD attempted:   4 blocks (>14 CX)
+    QSD replaced:    0 blocks, saved 0 CX
+    Skipped (≤14):  1323 blocks
+    Total saved:     236 CX (2.57%)
+
+======================================================================
+Circuit: QV_100
+  Built: 100Q, 1 gates
+  Pre-optimized:      97992 2Q gates
+  After 2Q (KAK):     95799 2Q gates  (18.6s)
+  After 2Q + 3Q:      91347 2Q gates  (+35.9s)
+    3Q blocks:       14666
+    Separable:       742 blocks, saved 4452 CX
+    QSD attempted:   2 blocks (>14 CX)
+    QSD replaced:    0 blocks, saved 0 CX
+    Skipped (≤14):  13922 blocks
+    Total saved:     4452 CX (4.65%)
+
+======================================================================
+Circuit: QAOA_100
+  Built: 100Q, 1400 gates
+  Pre-optimized:      16308 2Q gates
+  After 2Q (KAK):     16014 2Q gates  (2.6s)
+  After 2Q + 3Q:      15108 2Q gates  (+5.0s)
+    3Q blocks:       2554
+    Separable:       151 blocks, saved 906 CX
+    QSD attempted:   0 blocks (>14 CX)
+    QSD replaced:    0 blocks, saved 0 CX
+    Skipped (≤14):  2403 blocks
+    Total saved:     906 CX (5.66%)
+
+======================================================================
+Circuit: Random_100
+  Built: 100Q, 6688 gates
+  Pre-optimized:      58605 2Q gates
+  After 2Q (KAK):     57623 2Q gates  (9.8s)
+  After 2Q + 3Q:      54467 2Q gates  (+18.3s)
+    3Q blocks:       9306
+    Separable:       526 blocks, saved 3156 CX
+    QSD attempted:   0 blocks (>14 CX)
+    QSD replaced:    0 blocks, saved 0 CX
+    Skipped (≤14):  8780 blocks
+    Total saved:     3156 CX (5.48%)
+
+======================================================================
+Circuit: Toffoli_90
+  Built: 90Q, 58 gates
+  Pre-optimized:        609 2Q gates
+  After 2Q (KAK):       511 2Q gates  (0.2s)
+  After 2Q + 3Q:        511 2Q gates  (+0.2s)
+    3Q blocks:       60
+    Separable:       0 blocks, saved 0 CX
+    QSD attempted:   0 blocks (>14 CX)
+    QSD replaced:    0 blocks, saved 0 CX
+    Skipped (≤14):  60 blocks
+    Total saved:     0 CX (0.00%)
+
+======================================================================
+Circuit: Multiplier_10
+  Built: 41Q, 1 gates
+  Pre-optimized:      24287 2Q gates
+  After 2Q (KAK):     18831 2Q gates  (5.9s)
+  After 2Q + 3Q:      17641 2Q gates  (+10.5s)
+    3Q blocks:       2214
+    Separable:       32 blocks, saved 192 CX
+    QSD attempted:   196 blocks (>14 CX)
+    QSD replaced:    181 blocks, saved 998 CX
+    Skipped (≤14):  1986 blocks
+    Total saved:     1190 CX (6.32%)
+
+======================================================================
+Circuit: CDKM_Adder_40
+  Built: 82Q, 1 gates
+  Pre-optimized:       1523 2Q gates
+  After 2Q (KAK):      1369 2Q gates  (0.3s)
+  After 2Q + 3Q:       1345 2Q gates  (+0.7s)
+    3Q blocks:       178
+    Separable:       4 blocks, saved 24 CX
+    QSD attempted:   11 blocks (>14 CX)
+    QSD replaced:    0 blocks, saved 0 CX
+    Skipped (≤14):  163 blocks
+    Total saved:     24 CX (1.75%)
+
+======================================================================
+Circuit: EfficientSU2_100
+  Built: 100Q, 1 gates
+  Pre-optimized:        297 2Q gates
+  After 2Q (KAK):       297 2Q gates  (0.2s)
+  After 2Q + 3Q:        297 2Q gates  (+0.3s)
+    3Q blocks:       75
+    Separable:       0 blocks, saved 0 CX
+    QSD attempted:   0 blocks (>14 CX)
+    QSD replaced:    0 blocks, saved 0 CX
+    Skipped (≤14):  75 blocks
+    Total saved:     0 CX (0.00%)
+
+
+====================================================================================================
+SUMMARY
+====================================================================================================
+Circuit              After2Q   Final  Saved      %   Sep   QSD 3Q blk Tried  Skip  t_2Q  t_3Q
+----------------------------------------------------------------------------------------------------
+QFT_100                 9185    8949    236  2.57%    43     0   1370     4  1323  2.6s  3.8s
+QV_100                 95799   91347   4452  4.65%   742     0  14666     2 13922 18.6s 35.9s
+QAOA_100               16014   15108    906  5.66%   151     0   2554     0  2403  2.6s  5.0s
+Random_100             57623   54467   3156  5.48%   526     0   9306     0  8780  9.8s 18.3s
+Toffoli_90               511     511      0  0.00%     0     0     60     0    60  0.2s  0.2s
+Multiplier_10          18831   17641   1190  6.32%    32   181   2214   196  1986  5.9s 10.5s
+CDKM_Adder_40           1369    1345     24  1.75%     4     0    178    11   163  0.3s  0.7s
+EfficientSU2_100         297     297      0  0.00%     0     0     75     0    75  0.2s  0.3s
+----------------------------------------------------------------------------------------------------
+TOTAL                 199629  189665   9964  4.99%
+
+  Savings breakdown: separability=8966 CX, QSD=998 CX (from 213 attempts)
