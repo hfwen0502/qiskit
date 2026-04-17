@@ -6,44 +6,98 @@ The Qiskit team suggested exploring 3-qubit block detection and synthesis as a p
 
 **Branch**: `pass-manager-investigation` (based on Qiskit main, commit `03c640f73`)
 
-## Current Pipeline: How 2Q Block Synthesis Works
+## Code Paths: 2Q vs 3Q Block Synthesis
 
 The 2Q block optimization pipeline runs in two places:
 
 1. **Init stage** (before routing): `Collect2qBlocks → Collect1qRuns → ConsolidateBlocks → Split2QUnitaries`
 2. **Optimization pre-loop** (after routing): `ConsolidateBlocks → UnitarySynthesis`
 
-### Step 1: Block Collection
+All pieces for 3Q block synthesis already exist in the codebase. The key difference is that the 3Q path lacks the cost-prediction and gate-guard that make the 2Q path effective.
 
-**Pass**: `Collect2qBlocks` (`qiskit/transpiler/passes/optimization/collect_2q_blocks.py`)
+### 2Q Call Chain (Current Pipeline)
 
-Calls `dag.collect_2q_runs()` — a Rust bicolor graph algorithm that finds maximal runs of gates acting on ≤2 qubits. Gates must be non-parameterized and unitary. The algorithm groups adjacent gates that share the same qubit pair.
+```
+Collect2qBlocks
+  → dag.collect_2q_runs()                          // Rust bicolor graph algorithm
+  → writes block_list to property_set
 
-Example: `CX(0,1) → RZ(1) → CX(0,1)` on qubits {0,1} → one block of 3 gates.
+ConsolidateBlocks (consolidate_blocks.rs:404-452)
+  → block_qargs.len() == 2 branch
+  ① blocks_to_matrix(dag, &block, block_index_map)  // Pure Rust: Matrix4 multiplication
+                                                     // (crates/synthesis/src/matrix/two_qubit.rs:221)
+  ② num_basis_gates_inner(matrix)                    // Weyl coordinates → trace → argmax
+     → __weyl_coordinates(unitary)                   // compute [a, b, c] Weyl parameters
+     → traces[0..3] → fidelity comparison            // (weyl_decomposition.rs:232-262)
+     → returns 0, 1, 2, or 3 CX needed              // CHEAP: just matrix math, microseconds
+  ③ GATE GUARD:                                      // ← THE KEY DIFFERENCE
+        if num_basis_gates < basis_count             // synthesis cheaper than original?
+        || force_consolidate
+        || block.len() > MAX_2Q_DEPTH (20)
+        || outside_basis
+     THEN consolidate, ELSE skip (keep original)
+  ④ UnitaryGate { array: TwoQ(matrix) }             // 4×4 Matrix4<Complex64>
+  → dag.replace_block()
 
-### Step 2: Consolidation
+UnitarySynthesis (unitary_synthesis/mod.rs:401-404)
+  → match [q1, q2] branch
+  → synthesize_2q_matrix_onto()                      // (mod.rs:489)
+    ① decomposer_cache.get_2q(qargs_phys, ...)      // get decomposer(s) for this qubit pair
+    ② decomposer.decompose(unitary)                  // KAK/Weyl: OPTIMAL 0-3 CX + 1Q gates
+    ③ fidelity scoring across multiple decomposers    // picks best if multiple options
+    ④ splice best sequence into DAG                   // typically 1-7 gates total
+```
 
-**Pass**: `ConsolidateBlocks` (`crates/transpiler/src/passes/consolidate_blocks.rs`)
+**Why it works**: Weyl decomposition predicts the exact CX count for any 2Q unitary in microseconds, without performing synthesis. The gate guard ensures blocks are only replaced when synthesis produces fewer CX gates. KAK synthesis is provably optimal — it always produces the minimum possible CX count (0-3).
 
-For each 2Q block:
-1. Multiplies gate matrices → single 4×4 unitary
-2. Uses KAK/Weyl decomposition to compute optimal CX count (0, 1, 2, or 3)
-3. If decomposed gate count < original block size → replaces the block
+### 3Q Call Chain (What Happens When You Enable 3Q Collection)
 
-Decision criteria (line 410-426 of consolidate_blocks.rs):
-- `force_consolidate` flag set, OR
-- `num_basis_gates < basis_count` (synthesis is more efficient), OR
-- block depth > `MAX_2Q_DEPTH` (20), OR
-- block contains gates outside the target basis
+```
+CollectMultiQBlocks(max_block_size=3)
+  → DSU-based block grouping
+  → writes block_list to property_set
 
-### Step 3: Synthesis
+ConsolidateBlocks (consolidate_blocks.rs:347-403)
+  → block_qargs.len() > 2 branch
+  ① CircuitData::from_packed_operations()            // build sub-circuit from block gates
+  ② Python: Operator(circuit).data                   // Rust→Python→NumPy roundtrip for 8×8 unitary
+                                                     // (consolidate_blocks.rs:373-383)
+  ③ NO GATE GUARD                                    // ← MISSING: no cost prediction, no comparison
+  ④ UnitaryGate { array: NDArray(matrix) }           // 8×8 ndarray
+  → dag.replace_block()                              // UNCONDITIONAL replacement
 
-**Pass**: `UnitarySynthesis` (`crates/transpiler/src/passes/unitary_synthesis/mod.rs`)
+UnitarySynthesis (unitary_synthesis/mod.rs:406-422)
+  → match _ (3Q+ catch-all) branch
+  → quantum_shannon_decomposition(matrix, None, None, None, None)  // (qsd.rs:95)
+    ① block_zxz_decomp(8×8 matrix)                   // Block ZXZ: A1, A2, B, C (each 4×4)
+    ② demultiplex(I, C) → qsd_inner(4×4)             // recurse → 2Q KAK decomposition
+    ③ demultiplex(A1, A2) → qsd_inner(4×4)           // recurse → 2Q KAK decomposition
+    ④ middle CX/CZ multiplexing gates                 // structural overhead from QSD
+    → returns ~20 CX + ~40 1Q gates                   // ALWAYS, regardless of input block size
+  → splice into DAG                                    // replaces 1 UnitaryGate with ~60 gates
+```
 
-Dispatches by qubit count (line 389-423):
-- **1Q**: `OneQubitEulerDecomposer` — Euler angle decomposition
-- **2Q**: `TwoQubitBasisDecomposer` — KAK/Weyl decomposition (0-3 CX gates)
-- **3Q+**: `quantum_shannon_decomposition()` — QSD recursive decomposition
+**Why it fails**: No cost prediction exists for 3Q unitaries. There is no 3Q equivalent of Weyl coordinates that can cheaply predict the optimal CX count. ConsolidateBlocks unconditionally packages every 3Q block as a UnitaryGate, then QSD unconditionally resynthesizes it at ~20 CX — even when the original block had only 6-9 CX.
+
+### Side-by-Side Comparison
+
+| Capability | 2Q Path | 3Q Path |
+|---|---|---|
+| **Unitary computation** | `blocks_to_matrix()` — pure Rust, `Matrix4` math, no Python | `Operator(circuit).data` — Rust→Python→NumPy roundtrip |
+| **Cost prediction** | `num_basis_gates_inner()` — Weyl decomposition gives exact CX count (0-3) in microseconds | **None** — no way to predict QSD output cost without running full synthesis |
+| **Gate guard** | `num_basis_gates < basis_count` — only consolidates when synthesis is cheaper | **None** — unconditionally consolidates every block |
+| **Synthesis quality** | KAK/Weyl — **provably optimal** (0-3 CX for any 2Q unitary) | QSD — general-purpose recursive, ~20 CX for 3Q (**6 CX above theoretical minimum** of 14) |
+| **Synthesis speed** | Microseconds per block | ~1ms per block (QSD) |
+
+### Could a Gate Guard Fix the 3Q Path?
+
+Adding a gate guard to the >2Q branch of ConsolidateBlocks would prevent the regression. Two approaches:
+
+1. **Run QSD, then compare**: Synthesize the block via QSD, count the output CX gates, and only substitute if fewer than the original block. This is correct but wasteful — you pay the full synthesis cost (~1ms/block × 23,000 blocks = ~23s) even though 99.8% of results would be discarded.
+
+2. **Cheap cost predictor**: Analogous to `num_basis_gates_inner()` for 2Q, compute an upper bound on the optimal 3Q CX count without running synthesis. No such predictor currently exists. Developing one would require new mathematical results (a 3Q analogue of Weyl coordinates), which is an open research problem.
+
+Either approach would prevent the regression, but neither would make 3Q synthesis productive — because the synthesis floor (14 CX theoretical minimum) exceeds the typical block size (median 2-12 CX across our benchmarks).
 
 ## What Exists for 3Q Today
 
@@ -61,19 +115,20 @@ Tests confirm this: `test/python/transpiler/test_collect_multiq_blocks.py` uses 
 
 ### Consolidation: Partial
 
-`ConsolidateBlocks` already handles >2Q blocks (line 347 of consolidate_blocks.rs):
-1. Extracts block as N-qubit circuit
-2. Computes full unitary matrix via `quantum_info.Operator` (Python call)
-3. Wraps as a single `UnitaryGate`
+`ConsolidateBlocks` already handles >2Q blocks (consolidate_blocks.rs:347-403):
+1. Builds a sub-circuit from block gates via `CircuitData::from_packed_operations()`
+2. Crosses into Python to compute the full unitary: `Operator(circuit).data` → 8×8 matrix
+3. Wraps as a single `UnitaryGate { array: NDArray(matrix) }`
+4. Unconditionally replaces the block in the DAG
 
-But it does **not** attempt synthesis — it just packages the unitary and leaves it for downstream `UnitarySynthesis` to handle. There is no `ThreeQubitBasisDecomposer` analogous to `TwoQubitBasisDecomposer`.
+It does **not** predict synthesis cost or compare against the original block. There is no `ThreeQubitBasisDecomposer` analogous to `TwoQubitBasisDecomposer`.
 
 ### Synthesis: QSD Only
 
-For 3Q+ unitaries, `UnitarySynthesis` always routes to Quantum Shannon Decomposition:
+For 3Q+ unitaries, `UnitarySynthesis` (mod.rs:406-422) always routes to Quantum Shannon Decomposition:
 
-- **Rust**: `crates/synthesis/src/qsd.rs` — recursive Block ZXZ decomposition
-- **Python fallback**: `qiskit/synthesis/unitary/qsd.py`
+- **Rust**: `crates/synthesis/src/qsd.rs` — Block ZXZ decomposition, recursing into 2Q KAK at the base case
+- QSD is called with all `None` arguments (no custom decomposer, no custom basis), using defaults: CX basis, U gates, fidelity 1.0
 
 QSD is a general-purpose recursive algorithm. For 3Q, it produces ~**20 CX gates** (Shende et al., 2004). This is not optimal — the theoretical minimum is **14 CX gates**.
 
@@ -385,12 +440,97 @@ Extension of `Split2QUnitaries` to 3Q:
 
 **Effort**: Medium. The SVD separability check is straightforward math. The integration requires modifying `ConsolidateBlocks` or adding a new pass after `CollectMultiQBlocks`.
 
+## End-to-End Experiment: 2Q-Only vs 3Q Block Synthesis
+
+To empirically confirm that 3Q block synthesis regresses gate counts, we ran a controlled A/B comparison across all 12 benchmark circuits.
+
+**Methodology:**
+1. Shared pre-optimization: init + layout + routing + translation at Level 2 (no optimization)
+2. **Variant A (2Q-only)**: `Collect2qBlocks` → `ConsolidateBlocks` → `UnitarySynthesis` → optimization loop
+3. **Variant B (2Q+3Q)**: `CollectMultiQBlocks(max_block_size=3)` → `ConsolidateBlocks` → `UnitarySynthesis` → optimization loop
+4. Both start from the identical pre-optimized circuit; only the block collection pass differs
+
+**Script**: `investigation/profile_2q_vs_3q_synthesis.py`
+
+### Results
+
+| Circuit | Pre-Opt 2Q | 2Q-Only | 2Q+3Q | Delta | Delta % | Time 2Q | Time 3Q |
+|---------|:----------:|:-------:|:-----:|:-----:|:-------:|:-------:|:-------:|
+| QFT_100 | 10,954 | 8,914 | 23,136 | +14,222 | +159.5% | 3.3s | 19.9s |
+| QV_100 | 8,217 | 8,073 | 21,564 | +13,491 | +167.1% | 2.2s | 18.5s |
+| EfficientSU2_100 | 99 | 99 | 789 | +690 | +697.0% | 0.1s | 0.7s |
+| QAOA_100 | 9,777 | 9,631 | 26,073 | +16,442 | +170.7% | 2.9s | 20.0s |
+| BV_100 | 390 | 196 | 909 | +713 | +363.8% | 0.2s | 0.8s |
+| Heisenberg_100 | 10,461 | 7,539 | 19,434 | +11,895 | +157.8% | 3.1s | 18.7s |
+| Grover_50 | 2,957 | 2,659 | 7,793 | +5,134 | +193.1% | 0.8s | 5.8s |
+| Adder_80 | 1,603 | 1,447 | 3,058 | +1,611 | +111.3% | 0.4s | 2.4s |
+| Random_80 | 15,246 | 14,947 | 41,705 | +26,758 | +179.0% | 3.7s | 31.0s |
+| GHZ_100 | 99 | 99 | 406 | +307 | +310.1% | 0.1s | 0.3s |
+| QPE_50 | 4,719 | 3,941 | 10,305 | +6,364 | +161.5% | 1.5s | 8.7s |
+| Toffoli_90 | 1,368 | 1,078 | 1,529 | +451 | +41.8% | 0.4s | 1.3s |
+| **TOTAL** | **65,890** | **58,623** | **156,701** | **+98,078** | **+167.3%** | **18.7s** | **128.1s** |
+
+### Analysis
+
+1. **3Q block synthesis regresses every single circuit.** No exceptions. The minimum regression is +41.8% (Toffoli_90), the maximum is +697% (EfficientSU2_100), and the average is +167%.
+
+2. **The regression comes from the pre-loop.** Comparing "after pre-loop" numbers confirms that QSD immediately inflates 2Q gate counts (e.g., QFT: 8,964 → 24,042 after pre-loop). The optimization loop partially recovers but cannot undo the damage.
+
+3. **The root cause is confirmed: no size guard for >2Q blocks.** `ConsolidateBlocks` unconditionally packages 3Q blocks as `UnitaryGate` (consolidate_blocks.rs:347-403). For 2Q blocks, it compares `num_basis_gates < basis_count` and skips consolidation when synthesis would be worse. For >2Q blocks, no such check exists.
+
+4. **3Q path is 5-8x slower.** Total optimization time increases from 18.7s to 128.1s — the cost of synthesizing ~20 CX per block via QSD, plus additional optimization loop iterations needed to partially recover.
+
+5. **Even Toffoli_90 regresses (+41.8%)** despite having the highest-CX 3Q blocks (max 24 CX). This is because only 1 block exceeds the QSD break-even of 20 CX, while the other 125 blocks are well below it.
+
+### Conclusion
+
+This experiment definitively confirms that simply switching to 3Q block collection with existing QSD synthesis is a severe regression. The profiling data (Section "Profiling Results") predicted this — median block size is 2-12 CX (see below) while QSD produces ~20 CX — and the end-to-end experiment validates it.
+
+### Median 2Q Gates per 3Q Block (from Profiling)
+
+| Circuit | 3Q Blocks | Median 2Q | Avg 2Q | Max 2Q |
+|---------|:---------:|:---------:|:------:|:------:|
+| QFT_100 | 1,302 | **8** | 8.2 | 15 |
+| QV_100 | 14,561 | **6** | 6.4 | 18 |
+| EfficientSU2_100 | 75 | **2** | 2.0 | 2 |
+| QAOA_100 | 2,529 | **6** | 6.2 | 13 |
+| BV_100 | 49 | **8** | 7.9 | 8 |
+| Heisenberg_100 | 695 | **9** | 8.9 | 18 |
+| Grover_50 | 495 | **6** | 5.8 | 14 |
+| Adder_80 | 160 | **8** | 9.0 | 19 |
+| Random_80 | 2,436 | **6** | 6.0 | 14 |
+| GHZ_100 | 49 | **2** | 2.0 | 2 |
+| QPE_50 | 538 | **9** | 8.4 | 15 |
+| Toffoli_90 | 126 | **12** | 11.2 | 24 |
+
+Most circuits have median 6-9 CX per 3Q block. Even Toffoli_90, with the densest blocks (median 12, max 24), is mostly below the theoretical minimum of 14 CX. For 3Q block synthesis to be viable, it would need **both**:
+1. A gate guard in `ConsolidateBlocks` for >2Q blocks (like the 2Q path has)
+2. A near-optimal 3Q synthesizer producing fewer CX than the typical block — but the theoretical minimum for arbitrary 3Q unitary is **14 CX**, which exceeds the median block size for all 12 circuits
+
+### Open Question: Benchmark Selection Bias
+
+Our 12 benchmark circuits are diverse (QFT, QV, QAOA, Grover, arithmetic, random, Hamiltonian simulation, GHZ, QPE, Toffoli) but share a common trait: they are all built from 1Q and 2Q gates. No circuit natively contains 3Q operations.
+
+We argue the small block size is topology-driven: a 3-qubit block on heavy-hex (degree 2-3) spans exactly 2 edges, and SABRE routing distributes interactions across the lattice, limiting how many 2Q gates accumulate in any single 3-qubit neighborhood.
+
+However, this argument assumes SABRE distributes interactions relatively evenly, which may not hold for circuits with **highly localized multi-qubit structure**. Circuit families we have not yet profiled that could produce denser 3Q blocks:
+
+- **Deep modular arithmetic** (Shor's algorithm) — cascading Toffoli-like structures with repeated interactions on the same qubits
+- **Surface code encoding/syndrome extraction** — repetitive stabilizer measurements on fixed local qubit groups
+- **Chemistry ansatze with localized orbital interactions** — e.g., UCCSD with few active orbitals mapping to adjacent qubits
+- **Quantum error correction circuits** — repeated CNOT patterns between data and ancilla qubits
+
+To settle this question, we will construct adversarial test circuits specifically designed to produce dense 3Q blocks and re-profile.
+
 ## Next Steps
 
 - [x] Profile benchpress circuits: how many 3Q blocks exist and how large are they?
 - [x] ~~Investigate whether denser topologies produce 3Q blocks with higher CX density~~ — NightHawk makes it worse
 - [x] Research literature: full 3Q unitary resynthesis is not viable; alternative approaches identified
 - [x] Profile 3Q block separability — **5.4% CX savings available from splitting separable blocks**
+- [x] End-to-end experiment: 2Q-only vs 3Q synthesis — **confirmed +167% regression**
+- [x] Document 2Q vs 3Q code path comparison and missing gate guard
+- [ ] **Profile adversarial circuits**: construct circuits with highly localized 3Q interactions (deep Toffoli chains, modular arithmetic, repetitive stabilizer patterns, UCCSD) and check if they produce 3Q blocks with >14 CX — to rule out benchmark selection bias
 - [ ] Prototype: implement 3Q block splitting as a transpiler pass and measure end-to-end gate count improvement
 - [ ] Profile phase polynomial structure — how many 3Q blocks are phase polynomial chains?
 - [ ] Evaluate BQSKit integration as optional high-effort pass (not default pipeline)

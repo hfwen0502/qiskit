@@ -1,0 +1,148 @@
+Backend: FakeTorino (133 qubits)
+Experiment: 2Q-only vs 3Q block synthesis at Level 2
+================================================================================
+
+
+================================================================================
+Building QFT_100...
+  Built: 100Q, 1 gates
+  Pre-opt (4148ms): 52852 gates, 10954 2Q, depth 8220
+  2Q-only:   8914 2Q gates,  37246 total, depth  5231, 3331ms (3 iters)
+    After pre-loop: 8964 2Q gates
+  2Q+3Q:   23136 2Q gates, 153819 total, depth 26915, 19901ms (4 iters)
+    After pre-loop: 24042 2Q gates
+  Delta:  +14222 2Q gates (+159.5%), +116573 total, +21684 depth
+
+================================================================================
+Building QV_100...
+  Built: 100Q, 1 gates
+  Pre-opt (7208ms): 38651 gates, 8217 2Q, depth 2462
+  2Q-only:   8073 2Q gates,  34274 total, depth  2172, 2154ms (2 iters)
+    After pre-loop: 8073 2Q gates
+  2Q+3Q:   21564 2Q gates, 143282 total, depth 14103, 18510ms (3 iters)
+    After pre-loop: 22460 2Q gates
+  Delta:  +13491 2Q gates (+167.1%), +109008 total, +11931 depth
+
+================================================================================
+Building EfficientSU2_100...
+  Built: 100Q, 1 gates
+  Pre-opt (285ms): 1893 gates, 99 2Q, depth 411
+  2Q-only:     99 2Q gates,   1194 total, depth   304, 99ms (2 iters)
+    After pre-loop: 99 2Q gates
+  2Q+3Q:     789 2Q gates,   5676 total, depth  2710, 722ms (3 iters)
+    After pre-loop: 875 2Q gates
+  Delta:    +690 2Q gates (+697.0%),  +4482 total, +2406 depth
+
+================================================================================
+Building QAOA_100...
+  Built: 100Q, 2191 gates
+  Pre-opt (5285ms): 36305 gates, 9777 2Q, depth 9445
+  2Q-only:   9631 2Q gates,  33025 total, depth  7921, 2883ms (3 iters)
+    After pre-loop: 9631 2Q gates
+  2Q+3Q:   26073 2Q gates, 172151 total, depth 42616, 19962ms (3 iters)
+    After pre-loop: 27363 2Q gates
+  Delta:  +16442 2Q gates (+170.7%), +139126 total, +34695 depth
+
+================================================================================
+Building BV_100...
+  Built: 100Q, 400 gates
+  Pre-opt (1255ms): 2268 gates, 390 2Q, depth 1284
+  2Q-only:    196 2Q gates,   1080 total, depth   447, 192ms (2 iters)
+    After pre-loop: 196 2Q gates
+  2Q+3Q:     909 2Q gates,   6519 total, depth  3124, 809ms (3 iters)
+    After pre-loop: 911 2Q gates
+  Delta:    +713 2Q gates (+363.8%),  +5439 total, +2677 depth
+
+================================================================================
+Building Heisenberg_100...
+  Built: 100Q, 2800 gates
+  Pre-opt (4370ms): 77384 gates, 10461 2Q, depth 8339
+  2Q-only:   7539 2Q gates,  31927 total, depth  2881, 3050ms (2 iters)
+    After pre-loop: 7539 2Q gates
+  2Q+3Q:   19434 2Q gates, 131203 total, depth 15409, 18701ms (4 iters)
+    After pre-loop: 20614 2Q gates
+  Delta:  +11895 2Q gates (+157.8%), +99276 total, +12528 depth
+
+================================================================================
+Building Grover_50...
+  Built: 50Q, 564 gates
+  Pre-opt (1512ms): 13414 gates, 2957 2Q, depth 7408
+  2Q-only:   2659 2Q gates,  11002 total, depth  5600, 813ms (2 iters)
+    After pre-loop: 2659 2Q gates
+  2Q+3Q:    7793 2Q gates,  52888 total, depth 24400, 5804ms (3 iters)
+    After pre-loop: 8267 2Q gates
+  Delta:   +5134 2Q gates (+193.1%), +41886 total, +18800 depth
+
+================================================================================
+Building Adder_80...
+  Built: 80Q, 108 gates
+  Pre-opt (1265ms): 6948 gates, 1603 2Q, depth 4288
+  2Q-only:   1447 2Q gates,   5995 total, depth  3556, 437ms (2 iters)
+    After pre-loop: 1447 2Q gates
+  2Q+3Q:    3058 2Q gates,  20461 total, depth  9127, 2373ms (3 iters)
+    After pre-loop: 3168 2Q gates
+  Delta:   +1611 2Q gates (+111.3%), +14466 total, +5571 depth
+
+================================================================================
+Building Random_80...
+  Built: 80Q, 2258 gates
+  Pre-opt (8579ms): 62226 gates, 15246 2Q, depth 5671
+  2Q-only:  14947 2Q gates,  51312 total, depth  4390, 3694ms (3 iters)
+    After pre-loop: 14947 2Q gates
+  2Q+3Q:   41705 2Q gates, 272673 total, depth 32874, 30954ms (3 iters)
+    After pre-loop: 43479 2Q gates
+  Delta:  +26758 2Q gates (+179.0%), +221361 total, +28484 depth
+
+================================================================================
+Building GHZ_100...
+  Built: 100Q, 200 gates
+  Pre-opt (259ms): 797 gates, 99 2Q, depth 401
+  2Q-only:     99 2Q gates,    698 total, depth   302, 60ms (2 iters)
+    After pre-loop: 99 2Q gates
+  2Q+3Q:     406 2Q gates,   3257 total, depth  1115, 301ms (3 iters)
+    After pre-loop: 452 2Q gates
+  Delta:    +307 2Q gates (+310.1%),  +2559 total,  +813 depth
+
+================================================================================
+Building QPE_50...
+  Built: 50Q, 1398 gates
+  Pre-opt (1907ms): 23512 gates, 4719 2Q, depth 4821
+  2Q-only:   3941 2Q gates,  16689 total, depth  3228, 1507ms (4 iters)
+    After pre-loop: 3971 2Q gates
+  2Q+3Q:   10305 2Q gates,  70195 total, depth 13379, 8705ms (4 iters)
+    After pre-loop: 10871 2Q gates
+  Delta:   +6364 2Q gates (+161.5%), +53506 total, +10151 depth
+
+================================================================================
+Building Toffoli_90...
+  Built: 90Q, 210 gates
+  Pre-opt (1815ms): 6175 gates, 1368 2Q, depth 1053
+  2Q-only:   1078 2Q gates,   5266 total, depth   978, 388ms (2 iters)
+    After pre-loop: 1078 2Q gates
+  2Q+3Q:    1529 2Q gates,  10999 total, depth  2280, 1252ms (3 iters)
+    After pre-loop: 1531 2Q gates
+  Delta:    +451 2Q gates (+41.8%),  +5733 total, +1302 depth
+
+
+================================================================================
+SUMMARY: 2Q-Only vs 3Q Block Synthesis (Level 2, FakeTorino)
+================================================================================
+
+             Circuit  Pre-Opt 2Q   2Q-Only     2Q+3Q     Delta    Delta%   Time 2Q   Time 3Q
+--------------------------------------------------------------------------------------------
+             QFT_100       10954      8914     23136    +14222   +159.5%     3331ms    19901ms
+              QV_100        8217      8073     21564    +13491   +167.1%     2154ms    18510ms
+    EfficientSU2_100          99        99       789      +690   +697.0%       99ms      722ms
+            QAOA_100        9777      9631     26073    +16442   +170.7%     2883ms    19962ms
+              BV_100         390       196       909      +713   +363.8%      192ms      809ms
+      Heisenberg_100       10461      7539     19434    +11895   +157.8%     3050ms    18701ms
+           Grover_50        2957      2659      7793     +5134   +193.1%      813ms     5804ms
+            Adder_80        1603      1447      3058     +1611   +111.3%      437ms     2373ms
+           Random_80       15246     14947     41705    +26758   +179.0%     3694ms    30954ms
+             GHZ_100          99        99       406      +307   +310.1%       60ms      301ms
+              QPE_50        4719      3941     10305     +6364   +161.5%     1507ms     8705ms
+          Toffoli_90        1368      1078      1529      +451    +41.8%      388ms     1252ms
+--------------------------------------------------------------------------------------------
+               TOTAL       65890     58623    156701    +98078   +167.3%
+
+Conclusion: 3Q block synthesis REGRESSES gate count by 98078 2Q gates (167.3%) overall.
