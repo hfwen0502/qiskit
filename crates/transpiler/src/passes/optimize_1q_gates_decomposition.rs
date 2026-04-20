@@ -352,7 +352,7 @@ pub fn run_optimize_1q_gates_decomposition(
     target: Option<&Target>,
     basis_gates: Option<HashSet<String>>,
     global_decomposers: Option<Vec<String>>,
-) -> PyResult<()> {
+) -> PyResult<bool> {
     let runs: Vec<Vec<NodeIndex>> = dag.collect_1q_runs().unwrap().collect();
     let process_run =
         |raw_run: &[NodeIndex], dag: &DAGCircuit| -> PyResult<Option<OneQubitGateSequence>> {
@@ -452,15 +452,23 @@ pub fn run_optimize_1q_gates_decomposition(
                 Ok(None)
             }
         };
-    if getenv_use_multiple_threads() {
+    // `changed` tracks whether this pass modified the DAG, so the Level-2
+    // optimization loop can decide whether to re-iterate. We set it at the
+    // actual mutation site (the sequential application step) — note the
+    // `par_iter` above only parallelizes the analysis (`process_run`); the
+    // application below is sequential, so a plain `&mut bool` is correct and
+    // captures any run from any thread whose sequence gets applied.
+    let changed = if getenv_use_multiple_threads() {
         let sequences = runs
             .par_iter()
             .map(|raw_run| process_run(raw_run, dag))
             .collect::<PyResult<Vec<_>>>()?;
+        let mut changed = false;
         runs.into_iter()
             .zip(sequences)
             .filter_map(|(raw_run, sequence)| sequence.map(|x| (raw_run, x)))
             .try_for_each(|(raw_run, sequence)| -> PyResult<()> {
+                changed = true;
                 for gate in sequence.gates {
                     dag.insert_1q_on_incoming_qubit((gate.0, &gate.1), raw_run[0]);
                 }
@@ -468,10 +476,13 @@ pub fn run_optimize_1q_gates_decomposition(
                 dag.remove_1q_sequence(&raw_run);
                 Ok(())
             })?;
+        changed
     } else {
+        let mut changed = false;
         for raw_run in runs {
             let sequence = process_run(&raw_run, dag)?;
             if let Some(sequence) = sequence {
+                changed = true;
                 for gate in sequence.gates {
                     dag.insert_1q_on_incoming_qubit((gate.0, &gate.1), raw_run[0]);
                 }
@@ -479,8 +490,9 @@ pub fn run_optimize_1q_gates_decomposition(
                 dag.remove_1q_sequence(&raw_run);
             }
         }
-    }
-    Ok(())
+        changed
+    };
+    Ok(changed)
 }
 
 #[inline(always)]
