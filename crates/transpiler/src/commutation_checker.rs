@@ -419,7 +419,7 @@ impl CommutationChecker {
 
     #[allow(clippy::too_many_arguments)]
     pub fn commute<T>(
-        &mut self,
+        &self,
         op1: &OperationRef,
         params1: Option<&Parameters<T>>,
         qargs1: &[Qubit],

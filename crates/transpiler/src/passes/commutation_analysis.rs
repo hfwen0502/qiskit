@@ -17,11 +17,13 @@ use pyo3::types::{PyDict, PyList};
 use pyo3::{Bound, PyResult, Python, pyfunction, wrap_pyfunction};
 
 use indexmap::IndexMap;
+use rayon::prelude::*;
 use rustworkx_core::petgraph::stable_graph::NodeIndex;
 
 use crate::commutation_checker::CommutationChecker;
 use qiskit_circuit::Qubit;
 use qiskit_circuit::dag_circuit::{DAGCircuit, NodeType, Wire};
+use qiskit_util::getenv_use_multiple_threads;
 
 // Custom types to store the commutation sets and node indices,
 // see the docstring below for more information.
@@ -30,6 +32,95 @@ type NodeIndices = IndexMap<(NodeIndex, Wire), usize, ::ahash::RandomState>;
 
 // the maximum number of qubits we check commutativity for
 const MAX_NUM_QUBITS: u32 = 3;
+
+// Minimum number of qubits before we parallelize the per-qubit analysis.
+const PARALLEL_THRESHOLD: usize = 100;
+
+/// Analyze commutation relations for a single qubit wire.
+///
+/// Returns the commutation sets and node indices for this wire.
+fn analyze_commutations_for_wire(
+    dag: &DAGCircuit,
+    commutation_checker: &CommutationChecker,
+    approximation_degree: f64,
+    qubit: u32,
+) -> Result<
+    (Wire, Vec<Vec<NodeIndex>>, Vec<((NodeIndex, Wire), usize)>),
+    PyErr,
+> {
+    let wire = Wire::Qubit(Qubit(qubit));
+    let mut wire_commutation_set: Vec<Vec<NodeIndex>> = Vec::new();
+    let mut wire_node_indices: Vec<((NodeIndex, Wire), usize)> = Vec::new();
+
+    for current_gate_idx in dag.nodes_on_wire(wire, false) {
+        // Initialize if this is the first gate on the wire
+        if wire_commutation_set.is_empty() {
+            wire_commutation_set.push(vec![current_gate_idx]);
+            wire_node_indices.push(((current_gate_idx, wire), 0));
+            continue;
+        }
+
+        let last = wire_commutation_set.last_mut().unwrap();
+
+        if !last.contains(&current_gate_idx) {
+            let mut all_commute = true;
+
+            for prev_gate_idx in last.iter() {
+                if let (NodeType::Operation(packed_inst0), NodeType::Operation(packed_inst1)) =
+                    (&dag[current_gate_idx], &dag[*prev_gate_idx])
+                {
+                    let op1 = packed_inst0.op.view();
+                    let op2 = packed_inst1.op.view();
+
+                    if packed_inst0.op.try_control_flow().is_some()
+                        || packed_inst1.op.try_control_flow().is_some()
+                    {
+                        all_commute = false;
+                        break;
+                    }
+
+                    let qargs1 = dag.get_qargs(packed_inst0.qubits);
+                    let qargs2 = dag.get_qargs(packed_inst1.qubits);
+                    let cargs1 = dag.get_cargs(packed_inst0.clbits);
+                    let cargs2 = dag.get_cargs(packed_inst1.clbits);
+
+                    all_commute = commutation_checker.commute(
+                        &op1,
+                        packed_inst0.params.as_deref(),
+                        qargs1,
+                        cargs1,
+                        &op2,
+                        packed_inst1.params.as_deref(),
+                        qargs2,
+                        cargs2,
+                        None,
+                        MAX_NUM_QUBITS,
+                        approximation_degree,
+                    )?;
+                    if !all_commute {
+                        break;
+                    }
+                } else {
+                    all_commute = false;
+                    break;
+                }
+            }
+
+            if all_commute {
+                last.push(current_gate_idx);
+            } else {
+                wire_commutation_set.push(vec![current_gate_idx]);
+            }
+        }
+
+        wire_node_indices.push((
+            (current_gate_idx, wire),
+            wire_commutation_set.len() - 1,
+        ));
+    }
+
+    Ok((wire, wire_commutation_set, wire_node_indices))
+}
 
 /// Compute the commutation sets for a given DAG.
 ///
@@ -51,84 +142,56 @@ const MAX_NUM_QUBITS: u32 = 3;
 ///     node_indices = {(0, 0): 0, (1, 0): 3, (2, 0): 1, (3, 0): 1, (4, 0): 2}
 ///
 pub fn analyze_commutations(
-    dag: &mut DAGCircuit,
-    commutation_checker: &mut CommutationChecker,
+    dag: &DAGCircuit,
+    commutation_checker: &CommutationChecker,
     approximation_degree: f64,
 ) -> PyResult<(CommutationSet, NodeIndices)> {
-    let mut commutation_set: CommutationSet = Default::default();
-    let mut node_indices: NodeIndices = Default::default();
+    let num_qubits = dag.num_qubits();
+    let run_in_parallel = getenv_use_multiple_threads();
 
-    for qubit in 0..dag.num_qubits() {
-        let wire = Wire::Qubit(Qubit(qubit as u32));
+    // Compute per-qubit commutation analysis — parallel for large circuits
+    let per_qubit_results: Vec<(Wire, Vec<Vec<NodeIndex>>, Vec<((NodeIndex, Wire), usize)>)> =
+        if num_qubits >= PARALLEL_THRESHOLD && run_in_parallel {
+            (0..num_qubits as u32)
+                .into_par_iter()
+                .map(|qubit| {
+                    analyze_commutations_for_wire(
+                        dag,
+                        commutation_checker,
+                        approximation_degree,
+                        qubit,
+                    )
+                })
+                .collect::<PyResult<Vec<_>>>()?
+        } else {
+            (0..num_qubits as u32)
+                .map(|qubit| {
+                    analyze_commutations_for_wire(
+                        dag,
+                        commutation_checker,
+                        approximation_degree,
+                        qubit,
+                    )
+                })
+                .collect::<PyResult<Vec<_>>>()?
+        };
 
-        for current_gate_idx in dag.nodes_on_wire(wire, false) {
-            // get the commutation set associated with the current wire, or create a new
-            // index set containing the current gate
-            let commutation_entry = commutation_set
-                .entry(wire)
-                .or_insert_with(|| vec![vec![current_gate_idx]]);
+    // Merge per-qubit results into final maps
+    let total_indices: usize = per_qubit_results
+        .iter()
+        .map(|(_, _, indices)| indices.len())
+        .sum();
+    let mut commutation_set: CommutationSet =
+        IndexMap::with_capacity_and_hasher(num_qubits, ::ahash::RandomState::default());
+    let mut node_indices: NodeIndices =
+        IndexMap::with_capacity_and_hasher(total_indices, ::ahash::RandomState::default());
 
-            // we can unwrap as we know the commutation entry has at least one element
-            let last = commutation_entry.last_mut().unwrap();
-
-            // if the current gate index is not in the set, check whether it commutes with
-            // the previous nodes -- if yes, add it to the commutation set
-            if !last.contains(&current_gate_idx) {
-                let mut all_commute = true;
-
-                for prev_gate_idx in last.iter() {
-                    // if the node is an input/output node, they do not commute, so we only
-                    // continue if the nodes are operation nodes
-                    if let (NodeType::Operation(packed_inst0), NodeType::Operation(packed_inst1)) =
-                        (&dag[current_gate_idx], &dag[*prev_gate_idx])
-                    {
-                        let op1 = packed_inst0.op.view();
-                        let op2 = packed_inst1.op.view();
-
-                        if packed_inst0.op.try_control_flow().is_some()
-                            || packed_inst1.op.try_control_flow().is_some()
-                        {
-                            all_commute = false;
-                            break;
-                        }
-
-                        let qargs1 = dag.get_qargs(packed_inst0.qubits);
-                        let qargs2 = dag.get_qargs(packed_inst1.qubits);
-                        let cargs1 = dag.get_cargs(packed_inst0.clbits);
-                        let cargs2 = dag.get_cargs(packed_inst1.clbits);
-
-                        all_commute = commutation_checker.commute(
-                            &op1,
-                            packed_inst0.params.as_deref(),
-                            qargs1,
-                            cargs1,
-                            &op2,
-                            packed_inst1.params.as_deref(),
-                            qargs2,
-                            cargs2,
-                            None,
-                            MAX_NUM_QUBITS,
-                            approximation_degree,
-                        )?;
-                        if !all_commute {
-                            break;
-                        }
-                    } else {
-                        all_commute = false;
-                        break;
-                    }
-                }
-
-                if all_commute {
-                    // all commute, add to current list
-                    last.push(current_gate_idx);
-                } else {
-                    // does not commute, create new list
-                    commutation_entry.push(vec![current_gate_idx]);
-                }
-            }
-
-            node_indices.insert((current_gate_idx, wire), commutation_entry.len() - 1);
+    for (wire, sets, indices) in per_qubit_results {
+        if !sets.is_empty() {
+            commutation_set.insert(wire, sets);
+        }
+        for (key, val) in indices {
+            node_indices.insert(key, val);
         }
     }
 
