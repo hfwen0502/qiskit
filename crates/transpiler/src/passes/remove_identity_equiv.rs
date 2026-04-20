@@ -241,7 +241,7 @@ pub fn py_remove_identity_equiv(
     dag: &mut DAGCircuit,
     approx_degree: Option<f64>,
     target: Option<&Target>,
-) -> PyResult<()> {
+) -> PyResult<bool> {
     // Explicitly release GIL because threads may call Python to get
     // the matrix for a PyGate
     py.detach(|| run_remove_identity_equiv(dag, approx_degree, target))
@@ -251,7 +251,7 @@ pub fn run_remove_identity_equiv(
     dag: &mut DAGCircuit,
     approx_degree: Option<f64>,
     target: Option<&Target>,
-) -> PyResult<()> {
+) -> PyResult<bool> {
     // Minimum threshold to compare average gate fidelity to 1. This is chosen to account
     // for roundoff errors and to be consistent with other places.
     let get_error_cutoff = |inst: &PackedInstruction| -> f64 {
@@ -319,12 +319,16 @@ pub fn run_remove_identity_equiv(
                 .collect::<PyResult<Vec<(NodeIndex, f64)>>>()?
         };
 
+    let mut multi_qubit_changed = false;
     for (node, phase_update) in remove_list {
+        if dag.get_qargs(dag[node].unwrap_operation().qubits).len() > 1 {
+            multi_qubit_changed = true;
+        }
         dag.remove_op_node(node);
         dag.add_global_phase(&Param::Float(phase_update))
             .expect("The global phase is guaranteed to be a float");
     }
-    Ok(())
+    Ok(multi_qubit_changed)
 }
 
 pub fn remove_identity_equiv_mod(m: &Bound<PyModule>) -> PyResult<()> {

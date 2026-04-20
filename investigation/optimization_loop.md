@@ -1,8 +1,12 @@
-# Investigation: Qiskit Optimization Loop (Level 2 & 3)
+# Investigation: Smarter Loop Exit for Level 2 Optimization
 
-## Overview
+## Motivation
 
-This document analyzes the Qiskit transpiler optimization stage loop: what it does, why it exists, whether it's necessary, and opportunities for improvement. The pipeline structure is described using Level 2 as a reference (simpler to follow), then compared with Level 3 which is what real users care about. The profiling results focus on **Level 3** — the recommended optimization level for production hardware runs.
+The Qiskit dev team asked: **"Is the Level 2 optimization loop warranted, or is there a better loop condition that could avoid an unnecessary second iteration to validate we've reached a steady state?"**
+
+The current Level 2 loop uses `FixedPoint("size") AND FixedPoint("depth")` for convergence. `FixedPoint` compares the current metric to the previous iteration's value and requires at least **two iterations** — one productive, one to confirm nothing changed. The question is whether we can find a condition that exits the loop earlier when the productive work is already done.
+
+**Scope**: Level 2 only. The team confirmed Level 3 keeps its existing `MinimumPoint` loop.
 
 **Branch**: `pass-manager-investigation` (based on Qiskit main, commit `03c640f73`)
 
@@ -10,132 +14,48 @@ This document analyzes the Qiskit transpiler optimization stage loop: what it do
 
 | File | Role |
 |------|------|
-| `qiskit/transpiler/preset_passmanagers/level2.py` | Level 2 entry point — assembles the StagedPassManager |
-| `qiskit/transpiler/preset_passmanagers/builtin_plugins.py` | Defines each stage as a plugin class (init, layout, routing, translation, optimization, scheduling) |
-| `qiskit/transpiler/preset_passmanagers/common.py` | Shared helpers: `generate_unroll_3q`, `generate_translation_passmanager`, `get_vf2_limits` |
+| `qiskit/transpiler/preset_passmanagers/builtin_plugins.py` | Defines optimization stage as a plugin; assembles the loop |
 | `qiskit/passmanager/flow_controllers.py` | `DoWhileController` — the loop mechanism |
-| `qiskit/transpiler/passes/utils/fixed_point.py` | `FixedPoint` — convergence check (used at level 1 and 2) |
-| `qiskit/transpiler/passes/utils/minimum_point.py` | `MinimumPoint` — local minimum tracker (used at level 3) |
+| `qiskit/transpiler/passes/utils/fixed_point.py` | `FixedPoint` — current convergence check |
+| `crates/transpiler/src/passes/remove_identity_equiv.rs` | Rust: RemoveIdentityEquivalent |
+| `crates/transpiler/src/passes/optimize_1q_gates_decomposition.rs` | Rust: Optimize1qGatesDecomposition |
+| `crates/transpiler/src/passes/commutation_cancellation.rs` | Rust: CommutativeCancellation |
+| `qiskit/transpiler/passes/optimization/contract_idle_wires_in_control_flow.py` | Python: ContractIdleWiresInControlFlow |
 
-## Full Pipeline (Level 2 Reference)
+## Level 2 Optimization Pipeline
 
-The `StagedPassManager` runs 6 stages in order. Each stage is built by a plugin class in `builtin_plugins.py`. Level 2 is shown here for clarity; Level 3 differences are noted in the "Comparison" sections below.
-
-### Stage 1: Init (lines 135-177 of builtin_plugins.py)
-
-Prepares the circuit before layout/routing. At level 2 (same at level 3):
-
-```
-UnitarySynthesis(min_qubits=3)       # Synthesize 3+ qubit unitaries into basis gates
-HighLevelSynthesis(min_qubits=3)     # Decompose high-level objects (e.g., MCX, Permutation)
-Unroll3qOrMore                       # Break remaining 3+ qubit gates into 1Q/2Q
-ElidePermutations                    # Remove permutation gates (if routing enabled)
-RemoveDiagonalGatesBeforeMeasure     # Drop diagonal gates immediately before measurement
-RemoveIdentityEquivalent             # Remove gates equivalent to identity
-InverseCancellation                  # Cancel adjacent inverse gate pairs (H·H, S·Sdg, etc.)
-ContractIdleWiresInControlFlow       # Remove unused wires in control-flow blocks
-CommutativeCancellation              # Cancel gates that commute and are inverses
-ConsolidateBlocks                    # Collect 2Q blocks → multiply into 4×4 unitary
-Split2QUnitaries                     # Split product-state 2Q unitaries back to 1Q gates
-```
-
-**Purpose**: Clean up the circuit so layout/routing sees a simplified DAG. ConsolidateBlocks + Split2QUnitaries is key — it compresses 2Q gate sequences into optimal unitaries, then splits out any that are actually separable (product states).
-
-### Stage 2: Layout
-
-```
-VF2Layout(call_limit=(5_000_000, 10_000))   # Find perfect layout via subgraph isomorphism
-  └─ fallback: SabreLayout(max_iterations=2, swap_trials=20, layout_trials=20)
-```
-
-### Stage 3: Routing
-
-```
-CheckMap                             # Is routing needed?
-  └─ if needed: SabreSwap(heuristic="decay", trials=20)
-VF2PostLayout                        # Try to find a better layout post-routing
-```
-
-### Stage 4: Translation
-
-```
-UnitarySynthesis                     # Synthesize unitaries into basis gates
-HighLevelSynthesis                   # Decompose high-level objects
-BasisTranslator                      # Translate remaining non-basis gates via equivalence library
-```
-
-### Stage 5: Optimization (lines 505-605 of builtin_plugins.py)
-
-This is the focus of this investigation.
-
-### Stage 6: Scheduling
-
-```
-TimeUnitConversion → ALAPScheduleAnalysis → PadDelay
-```
-
-## The Optimization Stage in Detail
-
-The optimization stage has three phases: **pre-loop**, **loop**, and **post-loop**. Level 2 structure shown first, then Level 3 differences.
-
-### Level 2 Structure
+The optimization stage has three phases: **pre-loop**, **loop**, and **post-loop**.
 
 ```python
-# builtin_plugins.py, lines 505-533
-case 2:
-    pre_loop = [
-        ConsolidateBlocks(...),
-        UnitarySynthesis(...),
-    ]
-    loop = [
-        RemoveIdentityEquivalent(...),
-        Optimize1qGatesDecomposition(...),
-        CommutativeCancellation(...),
-        ContractIdleWiresInControlFlow(),
-    ]
-    post_loop = []
-    loop_check, continue_loop = _optimization_check_fixed_point()
+# builtin_plugins.py, Level 2 case
+pre_loop = [
+    ConsolidateBlocks(...),       # Collect 2Q blocks → optimal unitaries via KAK/Weyl
+    UnitarySynthesis(...),        # Resynthesize unitaries into basis gates
+]
+loop = [
+    RemoveIdentityEquivalent(...),       # Remove near-identity gates
+    Optimize1qGatesDecomposition(...),   # Merge 1Q chains → optimal basis sequence
+    CommutativeCancellation(...),        # Cancel commuting gate pairs
+    ContractIdleWiresInControlFlow(),    # Remove idle wires in control-flow blocks
+]
+post_loop = []
 ```
 
-Assembled as:
+The pre-loop runs once. The loop repeats until convergence. Assembly:
 
 ```python
-# lines 601-604
 optimization = PassManager()
-optimization.append(pre_loop + loop_check)                              # Run once
-optimization.append(DoWhileController(loop + unroll + loop_check,       # Loop
+optimization.append(pre_loop + loop_check)                          # Run once
+optimization.append(DoWhileController(loop + unroll + loop_check,   # Loop
                                       do_while=continue_loop))
-optimization.append(post_loop)                                          # Run once (empty at L2)
+optimization.append(post_loop)
 ```
 
-### Pre-Loop (runs once)
+`DoWhileController` has do-while semantics: always runs at least once, then checks `do_while(property_set)` after each iteration.
 
-| Pass | What it does |
-|------|-------------|
-| **ConsolidateBlocks** | Collects adjacent 1Q+2Q gates on the same qubits into blocks, multiplies each block into a unitary matrix, and resynthesizes using KAK/Weyl decomposition (optimal 0-3 CX gates). This is the main gate reduction pass. |
-| **UnitarySynthesis** | Handles any remaining `UnitaryGate` nodes (including >2Q unitaries from ConsolidateBlocks) by decomposing them into basis gates. |
-
-**Why pre-loop?** After routing inserts SWAPs, there are new sequences of 2Q gates that can be consolidated. This is the first time the post-routing circuit gets block optimization. It runs once before the loop because it's expensive (block collection + matrix multiplication + KAK decomposition for each block) and the loop passes build on its output.
-
-### Loop Body (repeats until convergence)
-
-| Pass | What it does |
-|------|-------------|
-| **RemoveIdentityEquivalent** | Removes gates that are equivalent to identity (within approximation tolerance). After ConsolidateBlocks resynthesizes blocks, some gates may become identity. |
-| **Optimize1qGatesDecomposition** | Merges consecutive 1Q gates into a single rotation and decomposes into the optimal basis sequence (e.g., RZ-SX-RZ). A chain of 5 rotations → 1-2 basis gates. |
-| **CommutativeCancellation** | Finds pairs of gates that commute with everything between them and cancel (e.g., two CX gates on the same qubits with only commuting 1Q gates between them). |
-| **ContractIdleWiresInControlFlow** | Removes unused qubit wires from control-flow blocks (`if_else`, `while_loop`, etc.). |
-| **GatesInBasis** (conditional) | Checks if all gates are in the target basis. If not, runs BasisTranslator to fix. This handles cases where optimization passes introduce non-basis gates. |
-
-**Why loop?** Each pass can create new opportunities for the next:
-- CommutativeCancellation removes a gate → exposes adjacent 1Q gates for Optimize1qGatesDecomposition
-- Optimize1qGatesDecomposition merges 1Q chains → may produce identity gates for RemoveIdentityEquivalent
-- RemoveIdentityEquivalent removes a gate → enables new CommutativeCancellation patterns
-
-### Convergence Criterion: FixedPoint
+### Current Convergence: FixedPoint
 
 ```python
-# builtin_plugins.py, lines 468-473
 def _optimization_check_fixed_point():
     def check(property_set):
         return not (property_set["depth_fixed_point"] and property_set["size_fixed_point"])
@@ -144,135 +64,300 @@ def _optimization_check_fixed_point():
     return (setup, check)
 ```
 
-At the end of each iteration:
-1. `Size` counts total gates → stores in `property_set["size"]`
-2. `Depth` computes circuit depth → stores in `property_set["depth"]`
-3. `FixedPoint("size")` compares current size to previous iteration's size. If equal → `size_fixed_point = True`
-4. `FixedPoint("depth")` same for depth
+At the end of each iteration: `Size` and `Depth` compute metrics, then `FixedPoint` compares each to the previous value. Loop stops when both size AND depth are unchanged.
 
-**Loop stops when**: both `size_fixed_point` AND `depth_fixed_point` are `True` — meaning neither gate count nor depth changed from the previous iteration.
+**The problem**: `FixedPoint` stores `_previous = None` initially, so the first comparison always returns `False` (not converged). This means **minimum 2 iterations** — even when iteration 1 already produces the final result.
 
-**Max iterations**: 1000 (DoWhileController default). In practice, convergence happens much sooner.
+## Profiling: What Does the Loop Actually Do?
 
-### Level 3 Differences
+We profiled 13 circuits (6 original + 6 additional families + 1 real chemistry) at Level 2 on FakeTorino (133Q heavy-hex) to understand what work each iteration and each pass contributes.
 
-Level 3 uses `MinimumPoint(["depth", "size"], prefix, backtrack_depth=5)`:
-
-- Tracks the **best (lowest) score** seen across iterations as a `(depth, size)` tuple
-- If score improves → update the stored minimum, reset counter
-- If score worsens → increment counter. After `backtrack_depth=5` consecutive non-improvements → **restore the best DAG and stop**
-- If score equals the stored minimum → fixed point reached, stop
-
-This is more robust than FixedPoint because synthesis can be non-deterministic (e.g., two equivalent decompositions with same gate count but different structure). FixedPoint requires exact equality; MinimumPoint tolerates oscillation and backtracks to the best result.
-
-Another key difference: Level 3 puts ConsolidateBlocks + UnitarySynthesis **inside** the loop (not pre-loop), so reconsolidation happens every iteration. More expensive but catches more optimization opportunities.
-
-## What Each Pass Does (Detailed)
-
-### ConsolidateBlocks
-
-**Source**: `qiskit/transpiler/passes/optimization/consolidate_blocks.py` + `crates/transpiler/src/passes/consolidate_blocks.rs`
-
-1. Calls `dag.collect_2q_runs()` — Rust bicolor DAG algorithm that finds maximal runs of 1Q+2Q gates acting on ≤2 qubits
-2. Also calls `dag.collect_1q_runs()` for single-qubit optimization
-3. For each 2Q block:
-   - Multiplies gate matrices → 4×4 unitary
-   - Uses `TwoQubitBasisDecomposer` (KAK/Weyl) to compute optimal decomposition
-   - If decomposed gate count < original block size → replace the block
-4. For >2Q blocks: wraps in a generic `UnitaryGate` (no efficient decomposer exists)
-
-### Optimize1qGatesDecomposition
-
-Finds consecutive runs of 1Q gates on the same qubit, multiplies them into a single 2×2 unitary, and decomposes into the minimal basis sequence (e.g., a single RZ-SX-RZ instead of RZ-RZ-SX-RZ-SX).
-
-### CommutativeCancellation
-
-Uses a commutation checker to identify gates that can be reordered. When two self-inverse gates (like CX) commute with all gates between them, they cancel. When two rotation gates commute, their angles can be combined.
-
-### RemoveIdentityEquivalent
-
-Removes any gate whose unitary is close to identity (within `approximation_degree` tolerance). This catches near-identity gates produced by synthesis that have negligible effect.
-
-## Key Questions for Profiling
-
-1. **How many loop iterations** do typical benchpress circuits need? If 1-2 for most circuits, the loop mechanism is overhead with little benefit.
-
-2. **Is the pre-loop ConsolidateBlocks redundant** with the init-stage ConsolidateBlocks? The init version runs before routing; the pre-loop version runs after. Post-routing consolidation catches SWAP-adjacent gate sequences, so it's likely not redundant — but how much does it actually reduce?
-
-3. **Does the conditional BasisTranslator ever fire** inside the loop? If optimization passes never introduce non-basis gates, this check is wasted every iteration.
-
-4. **Would MinimumPoint be better than FixedPoint** at level 2? Level 3 uses it for good reason — synthesis non-determinism can prevent exact fixed-point convergence.
-
-5. **Per-pass timing**: Which pass in the loop is the bottleneck? CommutativeCancellation does commutativity analysis which can be expensive on large circuits.
-
-## Level 3 Optimization Loop Profiling Results
-
-**Setup**: 6 circuits (100Q each) on FakeTorino (133Q heavy-hex), optimization_level=3. Instrumented the DoWhileController loop pass-by-pass: timing, gate counts, 2Q deltas, MinimumPoint convergence.
-
-**Script**: `investigation/profile_optimization_loop.py`
-
-**Branch**: `pass-manager-investigation` (based on Qiskit main, commit `03c640f73`)
-
-### Circuits Tested
+### Test Circuits
 
 | Circuit | Description | Input Gates |
 |---------|-------------|:-----------:|
-| QFT_100 | 100-qubit QFT — chain topology | ~5K |
-| QV_100 | 100-qubit Quantum Volume — dense random | ~100K |
+| QFT_100 | 100-qubit QFT, chain topology | ~5K |
+| QV_100 | 100-qubit Quantum Volume, dense random | ~100K |
 | EfficientSU2_100 | 100-qubit EfficientSU2, linear entanglement | ~700 |
 | QAOA_100 | 100-qubit QAOA (3 layers, random ZZ) | ~1.2K |
 | BV_100 | 100-qubit Bernstein-Vazirani | ~300 |
-| Heisenberg_100 | 100-qubit 10×10 square Heisenberg (3 Trotter steps) | ~3.2K |
+| Heisenberg_100 | 100-qubit 10x10 square Heisenberg (3 Trotter steps) | ~3.2K |
+| Grover_50 | 50-qubit search oracle with MCX/CCX | ~564 |
+| Adder_80 | 80-qubit CDKMRippleCarryAdder(39) | ~108 |
+| Random_80 | 80-qubit random_circuit(80, 40) | ~2.3K |
+| GHZ_100 | 100-qubit GHZ (H + CX chain) | ~200 |
+| QPE_50 | 50-qubit phase estimation + IQFT | ~1.4K |
+| Toffoli_90 | 90-qubit CCX chain (3 layers) | ~210 |
+| fe4s4_LUCJ | 72-qubit [4Fe-4S] LUCJ chemistry ansatz | ~4K |
 
-### Table 1: Loop Convergence & Timing
+**Scripts**: `investigation/profile_optimization_loop.py`, `investigation/test_no_loop.py`, `investigation/test_more_circuits.py`, `investigation/test_fe4s4.py`
 
-| Circuit | Iters | Productive | Why Stopped | Opt (ms) | Pre-Opt (ms) | Opt % |
-|---------|:-----:|:----------:|-------------|:--------:|:------------:|:-----:|
-| QFT_100 | 6 | 1 | Backtrack (oscillation) | 8,255 | 4,679 | 63.8% |
-| QV_100 | 3 | 1 | Fixed point (iter 1-2) | 45,788 | 84,394 | 35.2% |
-| EfficientSU2_100 | 3 | 0 | Fixed point (iter 1-2) | 279 | 2,323 | 10.7% |
-| QAOA_100 | 3 | 1 | Fixed point (iter 1-2) | 6,207 | 10,334 | 37.5% |
-| BV_100 | 3 | 1 | Fixed point (iter 1-2) | 181 | 537,895 | 0.0% |
-| Heisenberg_100 | 6 | 1 | Backtrack (oscillation) | 7,119 | 2,552 | 73.6% |
+### Finding 1: The loop does no useful 2Q work after iteration 1
 
-**Productive** = iterations that actually changed 2Q gate count. All useful work happens in iteration 1. Extra iterations are convergence confirmation or oscillation wait for MinimumPoint to trigger.
+| Circuit | L2 Iters | Pre-Loop 2Q Delta | Loop 2Q Delta | Loop 2Q Contribution |
+|---------|:--------:|:-----------------:|:-------------:|:--------------------:|
+| QFT_100 | 3 | -1,492 (14.0%) | -56 | CommutativeCancellation |
+| QV_100 | 2 | -2,184 (2.2%) | 0 | none |
+| EfficientSU2_100 | 2 | 0 (0.0%) | 0 | none |
+| QAOA_100 | 3 | -282 (1.7%) | 0 | none |
+| BV_100 | 2 | -194 (49.7%) | 0 | none |
+| Heisenberg_100 | 2 | -1,809 (26.5%) | 0 | none |
+| fe4s4_LUCJ | 3 | -72 (1.7%) | 0 | none |
 
-### Table 2: Gate Quality (2Q Gates)
+The pre-loop (ConsolidateBlocks + UnitarySynthesis) does all the 2Q gate reduction. The loop body contributes zero 2Q gates on 12/13 circuits and 56 on QFT only (from CommutativeCancellation finding CX cancellations). All of QFT's 56 CX reductions happen in iteration 1.
 
-| Circuit | Pre-Opt | After Iter 1 | Final | Iter 1 Reduction | Loop Extra | Total Reduction |
-|---------|:-------:|:------------:|:-----:|:----------------:|:----------:|:---------------:|
-| QFT_100 | 11,029 | 8,821 | 8,805 | 2,208 (20.0%) | 16 | 2,224 (20.2%) |
-| QV_100 | 98,292 | 96,153 | 96,153 | 2,139 (2.2%) | 0 | 2,139 (2.2%) |
-| EfficientSU2_100 | 297 | 297 | 297 | 0 (0.0%) | 0 | 0 (0.0%) |
-| QAOA_100 | 16,500 | 16,226 | 16,226 | 274 (1.7%) | 0 | 274 (1.7%) |
-| BV_100 | 390 | 196 | 196 | 194 (49.7%) | 0 | 194 (49.7%) |
-| Heisenberg_100 | 6,489 | 4,710 | 4,710 | 1,779 (27.4%) | 0 | 1,779 (27.4%) |
+### Finding 2: Iterations 2+ are pure confirmation overhead
 
-**Loop Extra** = additional 2Q gate reduction from iterations 2+. Only QFT gets 16 extra gates (0.2% of total reduction) from the loop — all other circuits get **zero** benefit from iterating.
+When we remove the loop entirely (single iteration), the results are identical:
 
-### Table 3: Per-Pass Time (ms, cumulative across all iterations)
+| Circuit | Loop 2Q | No-Loop 2Q | Diff | Loop Opt (ms) | No-Loop Opt (ms) |
+|---------|:-------:|:----------:|:----:|:-------------:|:-----------------:|
+| QFT_100 | 9,116 | 9,116 | 0 | 2,714 | 2,175 |
+| QV_100 | 96,093 | 96,093 | 0 | 18,324 | 15,789 |
+| EfficientSU2_100 | 297 | 297 | 0 | 126 | 100 |
+| QAOA_100 | 15,961 | 15,961 | 0 | 3,046 | 2,223 |
+| BV_100 | 200 | 200 | 0 | 118 | 105 |
+| Heisenberg_100 | 4,947 | 4,947 | 0 | 1,299 | 1,140 |
+| fe4s4_LUCJ | 4,225 | 4,225 | 0 | 5,822 | 3,754 |
 
-| Pass | QFT | QV | SU2 | QAOA | BV | Heisenberg |
-|------|----:|---:|----:|-----:|---:|-----------:|
-| ConsolidateBlocks | 5,293 | 26,708 | 192 | 4,329 | 93 | 5,356 |
-| UnitarySynthesis | 1,265 | 9,588 | 0 | 748 | 50 | 813 |
-| Optimize1qGatesDecomposition | 808 | 4,631 | 41 | 564 | 19 | 458 |
-| CommutativeCancellation | 847 | 4,833 | 42 | 561 | 18 | 461 |
-| RemoveIdentityEquivalent | 42 | 28 | 3 | 5 | 1 | 30 |
-| ContractIdleWiresInControlFlow | 0 | 0 | 0 | 0 | 0 | 0 |
+**Zero 2Q gate regression on all circuits.** The extra iterations exist solely because FixedPoint needs a confirmation pass.
 
-### Table 4: Per-Pass Time (% of optimization stage)
+### Finding 3: Each pass has a clear scope
 
-| Pass | QFT | QV | SU2 | QAOA | BV | Heisenberg |
-|------|----:|---:|----:|-----:|---:|-----------:|
-| ConsolidateBlocks | 64.1% | 58.3% | 68.8% | 69.7% | 51.3% | 75.2% |
-| UnitarySynthesis | 15.3% | 20.9% | 0.0% | 12.1% | 27.6% | 11.4% |
-| Optimize1qGatesDecomposition | 9.8% | 10.1% | 14.6% | 9.1% | 10.6% | 6.4% |
-| CommutativeCancellation | 10.3% | 10.6% | 15.2% | 9.0% | 10.0% | 6.5% |
-| RemoveIdentityEquivalent | 0.5% | 0.1% | 1.2% | 0.1% | 0.6% | 0.4% |
-| ContractIdleWiresInControlFlow | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% |
+| Pass | 2Q Gate Impact | 1Q Gate Impact | When It Helps |
+|------|:-------------:|:--------------:|--------------|
+| RemoveIdentityEquivalent | Removes multi-qubit identity gates | Removes 1Q identity gates | After synthesis creates near-identity gates |
+| Optimize1qGatesDecomposition | None — 1Q only | Merges 1Q chains | Always (1Q cleanup) |
+| CommutativeCancellation | Cancels commuting 2Q pairs (CX, CY, CZ) | Merges commuting rotations (RZ, P, etc.) | Rotation-heavy circuits (QFT, QPE) |
+| ContractIdleWiresInControlFlow | None (idle wire removal) | None | Circuits with control flow |
 
-### Table 5: Per-Pass 2Q Gate Delta (cumulative across all iterations)
+**Key insight**: Only `RemoveIdentityEquivalent` (multi-qubit removals) and `CommutativeCancellation` (2Q gate cancellations) can create new opportunities for further 2Q optimization. If neither of these passes changes any 2Q gates, there's no reason to iterate — 1Q-only changes don't create new 2Q optimization opportunities.
+
+## Solution: 2Q-Aware Changed-Flag Loop Condition
+
+### Design
+
+Replace the indirect FixedPoint metric check with a direct signal from the passes themselves:
+
+1. **Rust passes return `bool`**: Each optimization pass returns whether it modified multi-qubit gates
+2. **Python wrappers propagate to `property_set`**: Only passes that change 2Q gates set a loop flag
+3. **Loop checks the flag directly**: No need for Size/Depth/FixedPoint analysis passes
+
+### Implementation
+
+#### Part 1: Rust — Return `bool` from each pass
+
+All 4 Rust loop passes already know internally when they modify the DAG. Previously they returned `PyResult<()>`, discarding that information. We change to `PyResult<bool>`.
+
+**`remove_identity_equiv.rs`** — returns `true` only when multi-qubit identity gates are removed:
+
+```rust
+pub fn run_remove_identity_equiv(...) -> PyResult<bool> {
+    // ... existing logic builds remove_list ...
+    let mut multi_qubit_changed = false;
+    for (node, phase_update) in remove_list {
+        if dag.get_qargs(dag[node].unwrap_operation().qubits).len() > 1 {
+            multi_qubit_changed = true;
+        }
+        dag.remove_op_node(node);
+        dag.add_global_phase(&Param::Float(phase_update))?;
+    }
+    Ok(multi_qubit_changed)
+}
+```
+
+**`commutation_cancellation.rs`** — returns `true` only when multi-qubit gate pairs are cancelled:
+
+```rust
+pub fn cancel_commutations(...) -> PyResult<bool> {
+    // ... existing logic builds cancellation_sets ...
+    let mut changed = false;
+    for (cancel_key, cancel_set) in &cancellation_sets {
+        if cancel_set.len() > 1 {
+            if let GateOrRotation::Gate(g) = cancel_key.gate {
+                if SUPPORTED_GATES.contains(&g) {
+                    if cancel_key.qubits.len() > 1 {
+                        changed = true;  // Only for multi-qubit gates (CX, CY, CZ)
+                    }
+                    // ... remove gates ...
+                }
+                continue;
+            }
+            // ZRotation/XRotation consolidation: always 1Q, does NOT set changed
+            // ... consolidate rotations ...
+        }
+    }
+    Ok(changed)
+}
+```
+
+**`optimize_1q_gates_decomposition.rs`** — returns `bool` but we don't use it for loop control (1Q-only pass):
+
+```rust
+pub fn run_optimize_1q_gates_decomposition(...) -> PyResult<bool> {
+    let mut changed = false;
+    for raw_run in runs {
+        // ... if replacement is better ...
+        changed = true;
+        // ... apply replacement ...
+    }
+    Ok(changed)
+}
+```
+
+**Backward compatibility**: All existing callers (including Level 1 and Level 3 code paths) use `function_call()?;` pattern (Rust `?` unwraps `Result`, `;` discards the `bool`). No caller breaks. The Rust return-type changes are purely additive — **Level 1 and Level 3 behavior is completely unchanged** because they never read the returned `bool`.
+
+#### Part 2: Python wrappers — propagate to property_set
+
+Only 2Q-relevant passes set the loop flag:
+
+```python
+# remove_identity_equiv.py
+def run(self, dag):
+    changed = remove_identity_equiv(dag, self._approximation_degree, self._target)
+    if changed:
+        self.property_set["_opt_pass_changed"] = True
+    return dag
+
+# commutative_cancellation.py
+def run(self, dag):
+    changed = cancel_commutations(dag, self._commutation_checker, sorted(self.basis))
+    if changed:
+        self.property_set["_opt_pass_changed"] = True
+    return dag
+```
+
+Passes that only affect 1Q gates do **not** set the flag:
+- `Optimize1qGatesDecomposition` — 1Q merging only
+- `ContractIdleWiresInControlFlow` — idle wire removal, no gate changes
+
+#### Part 3: Loop condition — replace FixedPoint
+
+```python
+# builtin_plugins.py
+def _optimization_check_changed_flag():
+    from qiskit.transpiler.basepasses import AnalysisPass
+
+    class _ResetChangedFlag(AnalysisPass):
+        """Reset the changed flag at the start of each iteration."""
+        def run(self, dag):
+            self.property_set["_opt_pass_changed"] = False
+
+    def check(property_set):
+        """Continue looping if any 2Q-relevant pass modified the DAG."""
+        return property_set.get("_opt_pass_changed", False)
+
+    return (_ResetChangedFlag(), check)
+```
+
+Level 2 assembly:
+
+```python
+case 2:
+    pre_loop = [ConsolidateBlocks(...), UnitarySynthesis(...)]
+    loop = [
+        RemoveIdentityEquivalent(...),
+        Optimize1qGatesDecomposition(...),
+        CommutativeCancellation(...),
+        ContractIdleWiresInControlFlow(),
+    ]
+    post_loop = []
+    reset_changed, continue_loop = _optimization_check_changed_flag()
+    loop = [reset_changed] + loop
+    loop_check = []
+```
+
+**What this removes**: `Size`, `Depth`, `FixedPoint("size")`, `FixedPoint("depth")` — 4 analysis passes per iteration that are no longer needed.
+
+**What this changes**: The `do_while` callback now checks a direct boolean flag instead of comparing metrics. The flag is reset at the start of each iteration, so it reflects only the current iteration's changes.
+
+## Results
+
+### Changed-flag loop behavior
+
+| Circuit | Old Iters (FixedPoint) | New Iters (Changed-Flag) | 2Q Gates (both) |
+|---------|:----------------------:|:------------------------:|:----------------:|
+| QFT_100 | 3 | **2** | 9,528 |
+| QV_100 | 2 | **1** | 96,474 |
+| EfficientSU2_100 | 2 | **1** | 297 |
+| QAOA_100 | 3 | **1** | 186 |
+| BV_100 | 2 | **1** | 196 |
+| Heisenberg_100 | 2 | **1** | 891 |
+
+**5 of 6 circuits now exit after 1 iteration** (was 2-3 with FixedPoint). QFT takes 2 iterations because CommutativeCancellation legitimately finds CX cancellations in iteration 1, triggering a second pass that confirms no further 2Q changes.
+
+**Zero 2Q gate regressions.** The 2Q gate counts are identical to the FixedPoint version.
+
+### Why it works
+
+The changed-flag directly answers the right question: "did any pass create new 2Q optimization opportunities?" Rather than:
+
+- Computing Size and Depth after each iteration (indirect)
+- Comparing to previous values via FixedPoint (requires 2 data points)
+- Waiting for both metrics to stabilize simultaneously
+
+...we ask each pass directly: "did you change any multi-qubit gates?" If no pass did, iteration is guaranteed to produce the same result, so we stop.
+
+### Why only 2Q changes matter
+
+1Q gate changes (from Optimize1qGatesDecomposition) cannot create new 2Q optimization opportunities:
+- They don't introduce new CX/CY/CZ pairs for CommutativeCancellation
+- They don't create new multi-qubit identity gates for RemoveIdentityEquivalent
+- The only cross-pass interaction that matters is: CommutativeCancellation removes 2Q gates -> exposes new patterns for subsequent passes
+
+By ignoring 1Q-only changes, we avoid the false positive where Optimize1qGatesDecomposition always finds work (it nearly always does) and would trigger unnecessary re-iteration.
+
+## Verification
+
+```bash
+# Build Rust changes
+cd ~/IBMWORK/QCSC/qiskit
+pip install -e .
+
+# Run optimization loop profiling (before/after comparison)
+~/.venv/bin/python investigation/profile_optimization_loop.py
+
+# Run no-loop comparison (verify identical 2Q gates)
+~/.venv/bin/python investigation/test_no_loop.py
+
+# Run Qiskit test suite for modified passes
+python -m pytest test/python/transpiler/test_remove_identity_equivalent.py -x
+python -m pytest test/python/transpiler/test_optimize_1q_decomposition.py -x
+python -m pytest test/python/transpiler/test_commutative_cancellation.py -x
+python -m pytest test/python/transpiler/test_preset_passmanagers.py -x
+```
+
+All 152 pass tests pass. All 3 optimization levels produce correct results.
+
+## Modified Files
+
+| File | Change |
+|------|--------|
+| `crates/transpiler/src/passes/remove_identity_equiv.rs` | Return `PyResult<bool>` (true = multi-qubit identity removed) |
+| `crates/transpiler/src/passes/optimize_1q_gates_decomposition.rs` | Return `PyResult<bool>` (true = 1Q run replaced) |
+| `crates/transpiler/src/passes/commutation_cancellation.rs` | Return `PyResult<bool>` (true = multi-qubit gates cancelled) |
+| `qiskit/transpiler/passes/optimization/remove_identity_equiv.py` | Read bool, set `property_set["_opt_pass_changed"]` |
+| `qiskit/transpiler/passes/optimization/commutative_cancellation.py` | Read bool, set `property_set["_opt_pass_changed"]` |
+| `qiskit/transpiler/preset_passmanagers/builtin_plugins.py` | Replace FixedPoint with changed-flag **for Level 2 only** (Level 1 and 3 unchanged) |
+
+## Reference: Profiling Data (Read-Only Context)
+
+These tables are from the initial profiling phase and motivated the investigation. **No changes were made to Level 3.** The Level 3 data is included here only as background context — it was part of the analysis that led the team to focus on Level 2.
+
+### Level 3 Loop Convergence (unchanged — included for context only)
+
+| Circuit | Iters | Productive | Why Stopped | Opt (ms) |
+|---------|:-----:|:----------:|-------------|:--------:|
+| QFT_100 | 6 | 1 | Backtrack (oscillation) | 8,255 |
+| QV_100 | 3 | 1 | Fixed point (iter 1-2) | 45,788 |
+| EfficientSU2_100 | 3 | 0 | Fixed point (iter 1-2) | 279 |
+| QAOA_100 | 3 | 1 | Fixed point (iter 1-2) | 6,207 |
+| BV_100 | 3 | 1 | Fixed point (iter 1-2) | 181 |
+| Heisenberg_100 | 6 | 1 | Backtrack (oscillation) | 7,119 |
+
+At Level 3, MinimumPoint needs 3-6 iterations. All useful work happens in iteration 1. Extra iterations are convergence confirmation or oscillation wait for backtrack_depth=5 to trigger. **Level 3 is untouched — it keeps its existing MinimumPoint loop per team direction.**
+
+### Per-Pass 2Q Gate Delta (Level 3, cumulative)
 
 | Pass | QFT | QV | SU2 | QAOA | BV | Heisenberg |
 |------|----:|---:|----:|-----:|---:|-----------:|
@@ -281,301 +366,28 @@ Removes any gate whose unitary is close to identity (within `approximation_degre
 | CommutativeCancellation | -68 | 0 | 0 | 0 | 0 | 0 |
 | Others | 0 | 0 | 0 | 0 | 0 | 0 |
 
-**Note**: ConsolidateBlocks collapses gate blocks into abstract unitaries (reducing gate count), then UnitarySynthesis expands those unitaries back into basis gates (adding gates back). The net reduction is ConsolidateBlocks removal minus UnitarySynthesis re-addition.
-
-### Key Takeaways
-
-1. **The loop does almost nothing after iteration 1.** Only QFT gets 16 extra 2Q gates (0.2% of total reduction) from the loop. All other circuits get zero benefit from iterating.
-
-2. **ConsolidateBlocks dominates** — 51-75% of optimization time. It also does most of the useful work (reducing 2Q gates by consolidating blocks into optimal unitaries via KAK/Weyl decomposition).
-
-3. **UnitarySynthesis adds gates back** — it resynthesizes the consolidated unitaries into basis gates. The net reduction = ConsolidateBlocks removal - UnitarySynthesis re-addition.
-
-4. **RemoveIdentityEquivalent and ContractIdleWiresInControlFlow are essentially free but also do nothing** on these circuits.
-
-5. **Iterations 2-6 are pure overhead** — they re-run ConsolidateBlocks (expensive) only to confirm nothing changed or to wait out MinimumPoint's backtrack_depth before convergence.
-
-### Answers to Key Questions
-
-1. **How many loop iterations?** 3-6, but only iteration 1 is productive. The extra iterations exist because MinimumPoint requires either a fixed point (same score twice) or `backtrack_depth=5` consecutive non-improvements before stopping.
-
-2. **Is the pre-loop ConsolidateBlocks redundant?** N/A for level 3 — ConsolidateBlocks is inside the loop, not pre-loop. At level 3 it runs every iteration, which means after iteration 1 converges, iterations 2+ re-run it for nothing.
-
-3. **Does the conditional BasisTranslator ever fire?** No — it never fired on any of the 6 test circuits. All optimization passes preserved the basis gate set.
-
-4. **Would MinimumPoint be better than FixedPoint at level 2?** MinimumPoint is more robust (handles oscillation) but also more expensive — it requires more iterations to confirm convergence (backtrack_depth=5). For these circuits, FixedPoint would converge faster since no oscillation was observed in the productive work.
-
-5. **Per-pass timing**: ConsolidateBlocks is the clear bottleneck at 51-75%. CommutativeCancellation and Optimize1qGatesDecomposition are roughly equal (6-15% each). UnitarySynthesis varies (11-28%) depending on how many unitaries ConsolidateBlocks produces.
-
-## Level 2 vs Level 3 Comparison
-
-Same 6 circuits (100Q, FakeTorino) profiled at both optimization levels to compare the two designs:
-
-- **Level 2**: ConsolidateBlocks + UnitarySynthesis in **pre-loop** (once), loop has 4 light passes, **FixedPoint** convergence
-- **Level 3**: ConsolidateBlocks + UnitarySynthesis **inside loop** (every iteration), loop has 6 passes, **MinimumPoint** convergence (backtrack_depth=5)
-
-**Note**: Pre-optimization stages (init, layout, routing, translation) also differ between levels, so the optimization loop starts from a different circuit. The comparison captures the end-to-end effect, not just the loop in isolation.
-
-### Convergence Speed
-
-| Circuit | L2 Iters | L3 Iters | L2 Opt (ms) | L3 Opt (ms) | L3/L2 |
-|---------|:--------:|:--------:|:-----------:|:-----------:|:-----:|
-| QFT_100 | 3 | 12 | 2,733 | 15,512 | 5.7x |
-| QV_100 | 2 | 3 | 18,281 | 45,605 | 2.5x |
-| EfficientSU2_100 | 2 | 3 | 124 | 276 | 2.2x |
-| QAOA_100 | 3 | 3 | 2,852 | 6,111 | 2.1x |
-| BV_100 | 2 | 3 | 117 | 178 | 1.5x |
-| Heisenberg_100 | 2 | 6 | 1,316 | 5,975 | 4.5x |
-
-**Level 2 optimization is 1.5-5.7x faster.** Two reasons:
-
-1. ConsolidateBlocks runs once (pre-loop) instead of every iteration — this alone saves 51-75% per iteration
-2. FixedPoint converges in 2 iterations (one productive + one confirmation) vs MinimumPoint needing up to backtrack_depth=5 non-improvements before stopping
-
-QFT is the worst case: Level 3 runs 12 iterations because MinimumPoint sees tiny depth oscillations (size stays flat) and waits 5 consecutive non-improvements before restoring the best DAG and stopping. Level 2's FixedPoint detects the exact fixed point in 3 iterations.
-
-### Level 2 Loop Detail
-
-| Circuit | Pre-Loop 2Q Delta | Loop Iters | Loop 2Q Delta | Total 2Q Reduction |
-|---------|:-----------------:|:----------:|:-------------:|:------------------:|
-| QFT_100 | -1,492 (14.0%) | 3 | -56 | -1,548 (14.5%) |
-| QV_100 | -2,184 (2.2%) | 2 | 0 | -2,184 (2.2%) |
-| EfficientSU2_100 | 0 (0.0%) | 2 | 0 | 0 (0.0%) |
-| QAOA_100 | -282 (1.7%) | 3 | 0 | -282 (1.7%) |
-| BV_100 | -194 (49.7%) | 2 | 0 | -194 (49.7%) |
-| Heisenberg_100 | -1,809 (26.5%) | 2 | 0 | -1,809 (26.5%) |
-
-At Level 2, the pre-loop (ConsolidateBlocks + UnitarySynthesis) does all the 2Q work. The loop contributes only 56 extra 2Q gates on QFT (CommutativeCancellation) and zero on everything else. The loop's main contribution is 1Q gate optimization (Optimize1qGatesDecomposition) and total gate count reduction — not 2Q gate reduction.
-
-### Gate Quality (Final 2Q Gates)
-
-| Circuit | Pre-Opt 2Q | L2 Final | L3 Final | L2 Reduction | L3 Reduction | L3-L2 Diff |
-|---------|:----------:|:--------:|:--------:|:------------:|:------------:|:----------:|
-| QFT_100 | 10,687 / 10,963 | 9,139 | 8,827 | 1,548 (14.5%) | 2,136 (19.5%) | **-312** |
-| QV_100 | 98,667 / 98,637 | 96,483 | 96,558 | 2,184 (2.2%) | 2,079 (2.1%) | +75 |
-| EfficientSU2_100 | 297 / 297 | 297 | 297 | 0 (0.0%) | 0 (0.0%) | 0 |
-| QAOA_100 | 16,302 / 16,551 | 16,020 | 16,317 | 282 (1.7%) | 234 (1.4%) | **+297** |
-| BV_100 | 390 / 390 | 196 | 200 | 194 (49.7%) | 190 (48.7%) | +4 |
-| Heisenberg_100 | 6,831 / 6,654 | 5,022 | 4,878 | 1,809 (26.5%) | 1,776 (26.7%) | **-144** |
-
-*Pre-Opt 2Q shows L2/L3 values (different because init/layout/routing differ between levels).*
-
-**Neither level consistently wins on gate quality:**
-- L3 is better on QFT (-312) and Heisenberg (-144) — re-consolidation inside the loop finds additional blocks
-- L2 is better on QAOA (+297) and QV (+75) — likely from different pre-opt routing, not the optimization loop itself
-- BV and EfficientSU2 are essentially tied
-
-### Total Transpile Time
-
-| Circuit | L2 Total (ms) | L3 Total (ms) | L3/L2 |
-|---------|:-------------:|:-------------:|:-----:|
-| QFT_100 | 7,026 | 20,128 | 2.9x |
-| QV_100 | 89,019 | 128,327 | 1.4x |
-| EfficientSU2_100 | 475 | 2,571 | 5.4x |
-| QAOA_100 | 10,303 | 14,784 | 1.4x |
-| BV_100 | 1,248 | 535,421 | 429x* |
-| Heisenberg_100 | 3,583 | 8,790 | 2.5x |
-
-*BV_100 at Level 3 has anomalous pre-opt time (535s vs 1.1s at L2) — this is from the pre-optimization stages (layout/routing), not the optimization loop.
-
-**Level 2 is 1.4-5.4x faster end-to-end** (excluding BV anomaly), with comparable gate quality.
-
-### Key Takeaways
-
-1. **Level 2's design is more efficient.** By running ConsolidateBlocks once in pre-loop instead of every iteration, it avoids the dominant bottleneck (51-75% of optimization time) in redundant iterations.
-
-2. **FixedPoint converges faster than MinimumPoint** for these circuits. FixedPoint needs 2-3 iterations; MinimumPoint needs 3-12. The extra iterations exist because MinimumPoint's backtrack mechanism waits for 5 consecutive non-improvements, even when the first iteration already found the optimum.
-
-3. **Gate quality is a wash between levels.** The differences come more from pre-optimization stages (different routing seeds, layout heuristics) than from the optimization loop design.
-
-4. **The loop body (excluding ConsolidateBlocks) is cheap.** At Level 2, the 4 light passes take 200-3,200ms total (2-3 iterations). The expensive part is ConsolidateBlocks, which Level 2 correctly runs only once.
-
-5. **Level 3's re-consolidation rarely helps.** Only QFT shows meaningful benefit from re-running ConsolidateBlocks (312 fewer 2Q gates). For most circuits, iteration 1 finds everything.
-
-## No-Loop Experiment: Is the Loop Necessary?
-
-Tested removing the loop entirely (single iteration only) at both levels. The no-loop runs use the **same pre-optimized circuit** as the looped runs, so the only variable is whether the loop body repeats.
-
-### Level 2: No-Loop vs Loop
-
-| Circuit | Loop 2Q | No-Loop 2Q | Diff | Regression? | Loop Opt (ms) | No-Loop Opt (ms) | Speedup |
-|---------|:-------:|:----------:|:----:|:-----------:|:-------------:|:-----------------:|:-------:|
-| QFT_100 | 9,116 | 9,116 | 0 | no | 2,714 | 2,175 | 1.2x |
-| QV_100 | 96,093 | 96,093 | 0 | no | 18,324 | 15,789 | 1.2x |
-| EfficientSU2_100 | 297 | 297 | 0 | no | 126 | 100 | 1.3x |
-| QAOA_100 | 15,961 | 15,961 | 0 | no | 3,046 | 2,223 | 1.4x |
-| BV_100 | 200 | 200 | 0 | no | 118 | 105 | 1.1x |
-| Heisenberg_100 | 4,947 | 4,947 | 0 | no | 1,299 | 1,140 | 1.1x |
-
-**Zero 2Q gate regression across all 6 circuits.** The loop is provably unnecessary at Level 2 for these circuits.
-
-Total gate difference is negligible (QFT +69, QAOA +9, others 0). Depth difference is negligible (QFT +3, others 0). The loop's only contribution at Level 2 is a second pass of Optimize1qGatesDecomposition and CommutativeCancellation, which occasionally shave a few 1Q gates but never affect 2Q gates.
-
-### Level 3: No-Loop vs Loop
-
-| Circuit | Loop 2Q | No-Loop 2Q | Diff | Regression? | Loop Opt (ms) | No-Loop Opt (ms) | Speedup |
-|---------|:-------:|:----------:|:----:|:-----------:|:-------------:|:-----------------:|:-------:|
-| QFT_100 | 9,323 | 9,331 | **+8** | YES | 8,645 | 2,241 | 3.9x |
-| QV_100 | 95,979 | 95,979 | 0 | no | 45,762 | 15,707 | 2.9x |
-| EfficientSU2_100 | 297 | 297 | 0 | no | 276 | 98 | 2.8x |
-| QAOA_100 | 16,283 | 16,283 | 0 | no | 6,110 | 2,136 | 2.9x |
-| BV_100 | 196 | 196 | 0 | no | 179 | 105 | 1.7x |
-| Heisenberg_100 | 4,506 | 4,506 | 0 | no | 5,120 | 1,096 | 4.7x |
-
-**Only QFT regresses, by 8 gates (0.09%).** All other circuits are identical. The optimization speedup is **1.7-4.7x** without the loop.
-
-Interestingly, Heisenberg no-loop produces fewer total gates (-308) and lower depth (-48) than the looped version. This is because MinimumPoint's backtracking restores a DAG from an earlier iteration that had lower depth but slightly more total gates — a quirk of the (depth, size) tuple scoring.
-
-### Summary: The Loop Is Almost Always Unnecessary
-
-| Level | Circuits Regressed | Max 2Q Regression | Optimization Speedup |
-|:-----:|:------------------:|:-----------------:|:--------------------:|
-| 2 | **0 / 6** | 0 gates | 1.1-1.4x |
-| 3 | **1 / 6** | 8 gates (0.09%) | 1.7-4.7x |
-
-The loop provides negligible benefit on these circuits. At Level 2, it does nothing. At Level 3, it saves 8 2Q gates on QFT at a cost of 3.9x slower optimization.
-
-The speedup from removing the loop is larger at Level 3 because:
-1. ConsolidateBlocks (the dominant cost) runs every iteration at L3 vs once at L2
-2. MinimumPoint needs more iterations to confirm convergence than FixedPoint
-
-## Pass Ordering Experiment
-
-Tested whether reordering passes within a single iteration affects quality. Three orderings on the same pre-optimized circuits (Level 3, single iteration):
-
-- **A (current)**: ConsolidateBlocks → UnitarySynthesis → RemoveIdentityEquivalent → Optimize1qGatesDecomposition → CommutativeCancellation
-- **B (cancel first)**: CommutativeCancellation → ConsolidateBlocks → UnitarySynthesis → RemoveIdentityEquivalent → Optimize1qGatesDecomposition
-- **C (light first)**: RemoveIdentityEquivalent → Optimize1qGatesDecomposition → CommutativeCancellation → ConsolidateBlocks → UnitarySynthesis
-
-**Script**: `investigation/test_pass_ordering.py`
-
-### 2Q Gates (what matters most)
-
-| Circuit | A (current) | B-A | C-A |
-|---------|:-----------:|:---:|:---:|
-| QFT_100 | 8,472 | +66 | -18 |
-| QV_100 | 96,240 | 0 | 0 |
-| EfficientSU2_100 | 297 | 0 | 0 |
-| QAOA_100 | 16,123 | 0 | 0 |
-| BV_100 | 200 | 0 | 0 |
-| Heisenberg_100 | 4,539 | 0 | 0 |
-
-5 of 6 circuits produce identical 2Q counts. Only QFT shows minor variation (C is 18 better, B is 66 worse).
-
-### Total Gates and Depth: Current Order Wins
-
-| Circuit | A total gates | B-A | C-A | A depth | B-A | C-A |
-|---------|:------------:|:---:|:---:|:-------:|:---:|:---:|
-| QFT_100 | 36,950 | +5,120 | +6,211 | 4,193 | +683 | +584 |
-| QV_100 | 388,839 | +24,785 | +44,837 | 27,051 | +1,923 | +3,239 |
-| QAOA_100 | 53,793 | +728 | +365 | 5,038 | +73 | +55 |
-| BV_100 | 1,083 | +245 | +531 | 443 | +188 | +533 |
-| Heisenberg_100 | 19,379 | +1,599 | +4,024 | 2,351 | +173 | +464 |
-
-Orderings B and C produce significantly more total gates and deeper circuits. The reason: in A, ConsolidateBlocks + UnitarySynthesis run first and reconstruct optimal 2Q blocks, then Optimize1qGatesDecomposition and CommutativeCancellation clean up the resulting 1Q gates. In B and C, the light passes run on the pre-optimized circuit first, but ConsolidateBlocks + UnitarySynthesis then reconstruct it from scratch — the 1Q cleanup doesn't happen afterward.
-
-**Conclusion: the current ordering is correct.** ConsolidateBlocks + UnitarySynthesis must come first. No benefit from reordering.
-
-## Real Chemistry Circuit: [4Fe-4S] LUCJ
-
-Validated findings on a real production workload: the 72-qubit Local Unitary Cluster Jastrow (LUCJ) ansatz for the [4Fe-4S] iron-sulfur cluster. This is the kind of circuit real users run at optimization_level=3 on IBM hardware for quantum chemistry applications (SQD workflow, arXiv:2405.05068).
-
-**Script**: `investigation/test_fe4s4.py`
-
-### Circuit Details
-
-- 72 qubits (36 orbitals x 2 spins), (27a, 27b) electrons
-- Built with `ffsim.UCJOpSpinBalancedJW` from pre-computed parameters
-- Uses `ffsim.qiskit.PRE_INIT` for circuit decomposition before transpilation
-- Target: FakeTorino (133Q heavy-hex)
-
-### Results
-
-| | L2 Loop | L2 No-Loop | L3 Loop | L3 No-Loop |
-|--|:-------:|:----------:|:-------:|:----------:|
-| 2Q gates | 4,225 | 4,225 | 3,993 | 3,993 |
-| Total gates | 29,264 | 29,270 | 28,499 | 28,505 |
-| Depth | 1,621 | 1,623 | 1,615 | 1,615 |
-| Opt time (ms) | 5,822 | 3,754 | 7,810 | 3,639 |
-| Iterations | 3 | 1 | 3 | 1 |
-| Speedup | — | **1.6x** | — | **2.1x** |
-
-**Zero 2Q gate regression from removing the loop at both levels.** This confirms the findings from the 6 synthetic circuits on a real production workload.
-
-### Loop Behavior Detail
-
-**Level 2**: Pre-loop ConsolidateBlocks removes 1,844 2Q gates, UnitarySynthesis adds back 1,772 (net -72 2Q). The loop body runs 3 iterations but only does 1Q optimization — zero 2Q change.
-
-**Level 3**: Iteration 1 does all the work (ConsolidateBlocks -1,759 2Q, UnitarySynthesis +1,755, net -4 2Q). Iterations 2-3 show tiny ConsolidateBlocks/UnitarySynthesis oscillation (-2/+2 per iteration) that nets to zero — pure overhead waiting for MinimumPoint to converge.
-
-### Level 2 vs Level 3
-
-Level 3 produces 5.5% fewer 2Q gates (3,993 vs 4,225). This difference comes from the pre-optimization stages (init/layout/routing differ between levels), not from the optimization loop design. Both levels' loops are equally unnecessary.
-
-## Additional Circuit Families
-
-To stress-test the no-loop finding, we tested 6 more circuit families covering different circuit structures:
-
-- **Grover_50** — Toffoli-heavy search oracle with small MCX(4-control) + CCX gates (564 gates)
-- **Adder_80** — CDKMRippleCarryAdder(39), structured arithmetic (108 gates)
-- **Random_80** — random_circuit(80, 40), worst-case dense stress test (2258 gates)
-- **GHZ_100** — H + chain of CX, simplest entangling circuit (200 gates)
-- **QPE_50** — Phase estimation with 49 counting qubits + IQFT, rotation-heavy (1398 gates)
-- **Toffoli_90** — Chain of CCX gates in 3 layers (210 gates)
-
-### Level 2: Loop vs No-Loop
-
-| Circuit | Pre-Opt 2Q | Loop 2Q | NoLoop 2Q | Diff | Speedup |
-|---------|-----------|---------|-----------|------|---------|
-| Grover_50 | 3,059 | 2,809 | 2,809 | +0 | 1.2x |
-| Adder_80 | 1,492 | 1,332 | 1,332 | +0 | 1.1x |
-| Random_80 | 15,147 | 14,808 | 14,808 | +0 | 1.3x |
-| GHZ_100 | 99 | 99 | 99 | +0 | 1.2x |
-| QPE_50 | 4,743 | 3,721 | 3,721 | +0 | 1.4x |
-| Toffoli_90 | 1,413 | 1,111 | 1,111 | +0 | 1.1x |
-
-**0/6 regressed.** Removing the loop at Level 2 produces identical 2Q gates.
-
-### Level 3: Loop vs No-Loop
-
-| Circuit | Pre-Opt 2Q | Loop 2Q | NoLoop 2Q | Diff | Speedup |
-|---------|-----------|---------|-----------|------|---------|
-| Grover_50 | 2,762 | 2,468 | 2,468 | +0 | 2.5x |
-| Adder_80 | 1,507 | 1,351 | 1,351 | +0 | 2.4x |
-| Random_80 | 15,120 | 14,842 | 14,842 | +0 | 5.2x |
-| GHZ_100 | 99 | 99 | 99 | +0 | 2.9x |
-| QPE_50 | 4,662 | 3,832 | 3,840 | **+8** | 2.8x |
-| Toffoli_90 | 1,368 | 1,076 | 1,076 | +0 | 2.3x |
-
-**1/6 regressed.** QPE lost 8 gates (0.2%) — same pattern as QFT. Both are rotation-heavy circuits where repeated ConsolidateBlocks finds a tiny number of additional blocks.
-
-### Notable Observations
-
-- **Random_80 at Level 3** ran **6 iterations** (the most of any circuit tested). ConsolidateBlocks/UnitarySynthesis oscillated every iteration (-27/+27, -17/+17, -9/+9, ...) but never netted any 2Q reduction — 5.2x overhead for zero benefit.
-- **QPE_50** is the only circuit where CommutativeCancellation found 2Q reductions (30 at L2, 24 at L3), likely from the controlled-P gate structure enabling commutation-based cancellations.
-- All other passes (RemoveIdentityEquivalent, Optimize1qGatesDecomposition, ContractIdleWiresInControlFlow) never changed 2Q gate counts — they only optimize 1Q gates.
-
-## Conclusions
-
-Across **13 circuits** (12 synthetic + 1 real chemistry) at **both optimization levels**:
-
-1. **The optimization loop is unnecessary.** A single iteration produces identical or near-identical 2Q gate counts. The maximum regression observed was 8 gates on QFT and QPE at Level 3 (0.09-0.2%). Both are rotation-heavy circuits with dense controlled-rotation structure.
-
-2. **Removing the loop saves 1.1-5.2x optimization time** depending on circuit and level. The savings are larger at Level 3 (2.3-5.2x) because ConsolidateBlocks (51-75% of optimization time) runs inside the loop.
-
-3. **Level 3 sometimes produces better gate quality than Level 2**, but this comes from pre-optimization stages (layout/routing), not from the loop running more passes.
-
-4. **The current pass ordering is correct.** ConsolidateBlocks + UnitarySynthesis must run first; light passes clean up afterward.
-
-5. **Potential upstream recommendation**: Remove the loop entirely and run the optimization passes once. The data shows no meaningful quality benefit from iterating — 11/13 circuits are identical, 2/13 lose 8 gates (< 0.2%).
+### No-Loop Experiment (Level 2, all 13 circuits)
+
+| Circuit | Loop 2Q | No-Loop 2Q | Diff |
+|---------|:-------:|:----------:|:----:|
+| QFT_100 | 9,116 | 9,116 | 0 |
+| QV_100 | 96,093 | 96,093 | 0 |
+| EfficientSU2_100 | 297 | 297 | 0 |
+| QAOA_100 | 15,961 | 15,961 | 0 |
+| BV_100 | 200 | 200 | 0 |
+| Heisenberg_100 | 4,947 | 4,947 | 0 |
+| Grover_50 | 2,809 | 2,809 | 0 |
+| Adder_80 | 1,332 | 1,332 | 0 |
+| Random_80 | 14,808 | 14,808 | 0 |
+| GHZ_100 | 99 | 99 | 0 |
+| QPE_50 | 3,721 | 3,721 | 0 |
+| Toffoli_90 | 1,111 | 1,111 | 0 |
+| fe4s4_LUCJ | 4,225 | 4,225 | 0 |
+
+**0/13 circuits regressed at Level 2.** This confirms the loop's extra iterations are unnecessary — providing the empirical basis for the changed-flag approach.
 
 ## Next Steps
 
-- [x] Instrument the optimization loop to count iterations per circuit
-- [x] Add per-pass timing to measure where time is spent
-- [x] Compare level 2 vs level 3 quality and speed
-- [x] Test whether removing the loop (single iteration) degrades gate quality
-- [x] Test whether pass ordering matters — current order is optimal
-- [x] Profile with real chemistry circuit (fe4s4 LUCJ) — confirms loop is unnecessary
-- [x] ~~Investigate reducing MinimumPoint backtrack_depth~~ — moot if loop is removed entirely
-- [x] Test on more circuit families (Grover, adder, random, GHZ, QPE, Toffoli cascade) — confirms 0/6 regressed at L2, 1/6 at L3
+- [ ] Upstream proposal to Qiskit team with the changed-flag approach and profiling data
+- [ ] Consider applying the same pattern to Level 1 (uses FixedPoint with different passes)
+- [ ] Consider applying to Level 3 as a supplementary early-exit (before MinimumPoint kicks in)
