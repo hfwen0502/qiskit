@@ -1,15 +1,17 @@
 """Benchmark parallelized optimization passes.
 
-Measures transpile time with QISKIT_IN_PARALLEL=TRUE vs FALSE to isolate
-the impact of rayon parallelization in:
-  - Optimize1qGatesDecomposition (threshold: 500 runs)
-  - CommutationAnalysis (threshold: 100 qubits)
-  - ConsolidateBlocks (threshold: 200 2Q blocks)
+Measures transpile time to compare upstream main vs our branch.
+Supports sequential-only mode and parallel mode with configurable settings.
 
 Usage:
+    # Sequential only (default)
     python investigation/benchmark_parallel_passes.py
+
+    # Parallel mode
+    python investigation/benchmark_parallel_passes.py --parallel
 """
 
+import argparse
 import os
 import time
 import statistics
@@ -24,7 +26,7 @@ CIRCUITS = {
     "QV-100": ("qv", 100),
 }
 
-NUM_RUNS = 1
+NUM_RUNS = 5
 
 
 def make_circuit(kind, n):
@@ -43,7 +45,7 @@ def make_circuit(kind, n):
         raise ValueError(f"Unknown circuit kind: {kind}")
 
 
-def benchmark_one(circuit_name, kind, n, parallel):
+def benchmark_one(kind, n, parallel):
     from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
     from qiskit_ibm_runtime.fake_provider import FakeTorino
 
@@ -74,42 +76,38 @@ def benchmark_one(circuit_name, kind, n, parallel):
 
 
 def main():
-    print(f"Benchmark: parallel optimization passes")
-    print(f"Runs per config: {NUM_RUNS}")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--parallel", action="store_true",
+                        help="Run in parallel mode (QISKIT_IN_PARALLEL=TRUE)")
+    args = parser.parse_args()
+
+    mode = "parallel" if args.parallel else "sequential"
+    parallel = args.parallel
+
+    print(f"Benchmark: optimization passes ({mode} mode)")
+    print(f"Runs per circuit: {NUM_RUNS}")
     print(f"CPU count: {os.cpu_count()}")
+    if parallel:
+        rayon = os.environ.get("RAYON_NUM_THREADS", "not set")
+        print(f"RAYON_NUM_THREADS: {rayon}")
     print("=" * 80)
 
     results = {}
     for name, (kind, n) in CIRCUITS.items():
         print(f"\n--- {name} ---")
-
-        # Sequential
-        seq = benchmark_one(name, kind, n, parallel=False)
-        print(f"  Sequential: {seq['mean']:.3f}s ± {seq['stdev']:.3f}s  "
-              f"(min {seq['min']:.3f}s, {seq['mean_gates']:.0f} 2Q gates)")
-
-        # Parallel
-        par = benchmark_one(name, kind, n, parallel=True)
-        print(f"  Parallel:   {par['mean']:.3f}s ± {par['stdev']:.3f}s  "
-              f"(min {par['min']:.3f}s, {par['mean_gates']:.0f} 2Q gates)")
-
-        speedup = seq["mean"] / par["mean"]
-        pct = (1 - par["mean"] / seq["mean"]) * 100
-        print(f"  Speedup: {speedup:.2f}x ({pct:+.1f}%)")
-
-        results[name] = {"sequential": seq, "parallel": par}
+        r = benchmark_one(kind, n, parallel=parallel)
+        print(f"  {r['mean']:.3f}s ± {r['stdev']:.3f}s  "
+              f"(min {r['min']:.3f}s, {r['mean_gates']:.0f} 2Q gates)")
+        print(f"  times: {[f'{t:.3f}' for t in r['times']]}")
+        results[name] = r
 
     # Summary table
     print("\n" + "=" * 80)
-    print(f"{'Circuit':<20} {'Seq (s)':>10} {'Par (s)':>10} {'Speedup':>10} {'Gates match':>12}")
-    print("-" * 62)
+    print(f"{'Circuit':<20} {'Mean (s)':>10} {'Stdev':>8} {'Min (s)':>10} {'2Q gates':>10}")
+    print("-" * 58)
     for name in CIRCUITS:
         r = results[name]
-        seq_mean = r["sequential"]["mean"]
-        par_mean = r["parallel"]["mean"]
-        speedup = seq_mean / par_mean
-        gates_match = "YES" if abs(r["sequential"]["mean_gates"] - r["parallel"]["mean_gates"]) < 0.01 * r["sequential"]["mean_gates"] else "~same"
-        print(f"{name:<20} {seq_mean:>10.3f} {par_mean:>10.3f} {speedup:>9.2f}x {gates_match:>12}")
+        print(f"{name:<20} {r['mean']:>10.3f} {r['stdev']:>8.3f} {r['min']:>10.3f} {r['mean_gates']:>10.0f}")
 
 
 if __name__ == "__main__":
