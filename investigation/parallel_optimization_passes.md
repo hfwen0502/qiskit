@@ -458,6 +458,7 @@ All tests pass:
 | [`commutation_analysis.rs`](https://github.com/hfwen0502/qiskit/blob/c5228537e/crates/transpiler/src/passes/commutation_analysis.rs) | +138/-75 | Extract per-wire function, parallel per-qubit, `&mut` -> `&` signature |
 | [`commutation_checker.rs`](https://github.com/hfwen0502/qiskit/blob/c5228537e/crates/transpiler/src/commutation_checker.rs) | +1/-1 | `commute()`: `&mut self` -> `&self` |
 | [`consolidate_blocks.rs`](https://github.com/hfwen0502/qiskit/blob/ea4abc77c/crates/transpiler/src/passes/consolidate_blocks.rs) | +151/-41 | Three-phase processing, extract `process_2q_block`, add rayon |
+| [`benchmark_parallel_passes.py`](https://github.com/hfwen0502/qiskit/blob/parallel-optimization-passes/investigation/benchmark_parallel_passes.py) | +114 | Benchmark script: 6 circuits, 5 runs each, `--parallel` flag for rayon ON/OFF |
 
 ## Branch
 
