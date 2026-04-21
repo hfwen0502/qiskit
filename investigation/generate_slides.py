@@ -150,7 +150,7 @@ def make_title_slide(prs):
                 font_size=18, color=MED_GRAY)
 
     bullets = [
-        ("1.  Optimization Loop: redundant iterations in the L2 loop", False, 0),
+        ("1.  Optimization Loop: smarter convergence detection for L2", False, 0),
         ("2.  Compute-Then-Apply: memory access pattern refactoring (15-30% speedup)", False, 0),
         ("3.  3-Qubit Block Synthesis: separability splitting (-5% CX gates)", False, 0),
     ]
@@ -170,7 +170,7 @@ def make_opt_loop_slide1(prs):
     set_slide_bg(slide, WHITE)
 
     add_textbox(slide, Inches(0.5), Inches(0.3), Inches(9.0), Inches(0.5),
-                "1. Optimization Loop: The L2 Loop Does No Useful Work After Iteration 1",
+                "1. Optimization Loop: Smarter Convergence Detection for Level 2",
                 font_size=22, bold=True, color=IBM_BLUE)
 
     # Problem
@@ -179,34 +179,38 @@ def make_opt_loop_slide1(prs):
 
     problem_bullets = [
         ("Level 2 uses FixedPoint(size) AND FixedPoint(depth)", False, 0),
-        ("to detect convergence -- minimum 2 iterations always", False, 0),
-        ("Iteration 2+ only confirms \"nothing changed\"", False, 0),
-        ("Wastes 33-50% of optimization stage time", False, 0),
+        ("to detect convergence", False, 0),
+        ("Always requires a redundant \"confirmation\" iteration", False, 0),
+        ("that re-runs all passes just to verify metrics", False, 0),
+        ("haven't changed", False, 0),
+        ("The loop structure is sound -- the issue is the", False, 0),
+        ("convergence check", False, 0),
     ]
-    add_bullet_frame(slide, Inches(0.5), Inches(1.35), Inches(4.2), Inches(1.8),
+    add_bullet_frame(slide, Inches(0.5), Inches(1.35), Inches(4.2), Inches(2.2),
                      problem_bullets, font_size=12)
 
-    # Finding
+    # Observation
     add_textbox(slide, Inches(5.2), Inches(1.0), Inches(4.5), Inches(0.3),
-                "Key Finding", font_size=16, bold=True, color=GREEN)
+                "Observation (13 benchmarks)", font_size=16, bold=True, color=GREEN)
 
     finding_bullets = [
+        ("On 13 circuits (QFT, QV, ESU2, QAOA, BV,", False, 0),
+        ("Heisenberg at 50-100Q on FakeTorino):", False, 0),
         ("Pre-loop passes (ConsolidateBlocks, UnitarySynthesis)", False, 0),
-        ("handle all 2Q reduction before the loop starts", False, 0),
-        ("Loop passes contribute 0 additional 2Q gates", False, 0),
-        ("on 12 out of 13 benchmark circuits", False, 0),
-        ("Removing the loop entirely: identical gate counts", True, 0),
+        ("handle the bulk of 2Q gate reduction", False, 0),
+        ("Final iteration is always a no-op confirmation", False, 0),
+        ("Different workloads may behave differently", False, 0),
     ]
-    add_bullet_frame(slide, Inches(5.2), Inches(1.35), Inches(4.5), Inches(1.8),
+    add_bullet_frame(slide, Inches(5.2), Inches(1.35), Inches(4.5), Inches(2.2),
                      finding_bullets, font_size=12)
 
     # Results table
-    add_textbox(slide, Inches(0.5), Inches(3.3), Inches(9.0), Inches(0.3),
-                "Results: 13 Circuits on FakeTorino (133Q), Optimization Level 2",
+    add_textbox(slide, Inches(0.5), Inches(3.5), Inches(9.0), Inches(0.3),
+                "Changed-Flag Prototype: Iterations Saved, No Regressions",
                 font_size=14, bold=True, color=DARK_GRAY)
 
     rows = [
-        ["Circuit", "Old Iters", "New Iters", "2Q Gates", "Regressed?"],
+        ["Circuit", "FixedPoint Iters", "Changed-Flag Iters", "2Q Gates", "Regressed?"],
         ["QFT_100", "3", "2", "9,528", "No"],
         ["QV_100", "2", "1", "96,474", "No"],
         ["EfficientSU2_100", "2", "1", "297", "No"],
@@ -214,13 +218,14 @@ def make_opt_loop_slide1(prs):
         ["BV_100", "2", "1", "196", "No"],
         ["Heisenberg_100", "2", "1", "891", "No"],
     ]
-    add_table(slide, Inches(0.5), Inches(3.7), Inches(7.5), Inches(2.5), rows,
-              col_widths=[Inches(2.2), Inches(1.1), Inches(1.1), Inches(1.5), Inches(1.6)])
+    add_table(slide, Inches(0.5), Inches(3.9), Inches(8.0), Inches(2.3), rows,
+              col_widths=[Inches(2.0), Inches(1.4), Inches(1.6), Inches(1.4), Inches(1.6)])
 
     # Bottom summary
     add_textbox(slide, Inches(0.5), Inches(6.4), Inches(9.0), Inches(0.5),
-                "Recommendation: Replace FixedPoint with a direct \"changed\" boolean flag. "
-                "Passes return whether they modified 2Q gates; loop exits immediately when no pass reports changes.",
+                "Proposal: Replace FixedPoint with a direct \"changed\" flag -- each pass reports whether it modified "
+                "2Q gates, and the loop exits when no pass reports changes. Preserves the loop for circuits where "
+                "later iterations do find opportunities. Needs validation on broader circuit set.",
                 font_size=11, color=MED_GRAY)
 
 
@@ -481,7 +486,7 @@ def make_summary_slide(prs):
     # Summary table
     rows = [
         ["Investigation", "Status", "Impact", "Effort"],
-        ["Optimization Loop", "Prototype done", "33-50% fewer iterations, 0 regressions", "Low (flag change)"],
+        ["Optimization Loop", "Prototype done", "Eliminates redundant confirmation iteration", "Low (flag change)"],
         ["Compute-Then-Apply", "Implemented (fork)", "15-42% speedup on opt passes", "Medium (Rust refactor)"],
         ["3Q Block Synthesis", "Prototype done", "-5% CX gates across benchmarks", "Low (Python pass)"],
     ]
@@ -493,7 +498,7 @@ def make_summary_slide(prs):
 
     insight_bullets = [
         ("All three optimizations are orthogonal -- they compose without interference", False, 0),
-        ("The L2 loop's value was assumed, not measured. Profiling 13 circuits showed it does nothing.", False, 0),
+        ("The L2 loop's convergence check (FixedPoint) always forces a redundant confirmation iteration", False, 0),
         ("The parallelization hypothesis was wrong: actual gain is from cache-friendly memory access", False, 0),
         ("3Q synthesis gains are dominated by separability (90%), not decomposition algorithms", False, 0),
     ]

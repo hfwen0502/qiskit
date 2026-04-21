@@ -10,26 +10,26 @@ Sophia Wen | IBM Quantum | Benchpress + Qiskit fork
 
 ---
 
-## 1. Optimization Loop: The L2 Loop Does No Useful Work After Iteration 1
+## 1. Optimization Loop: Smarter Convergence Detection for Level 2
 
 **Branch**: [`pass-manager-investigation`](https://github.com/hfwen0502/qiskit/tree/pass-manager-investigation) | **Details**: [`investigation/optimization_loop.md`](https://github.com/hfwen0502/qiskit/blob/pass-manager-investigation/investigation/optimization_loop.md)
 
 ### Problem
 
-- Level 2 uses `FixedPoint(size) AND FixedPoint(depth)` to detect convergence — minimum 2 iterations always
-- Iteration 2+ only confirms "nothing changed"
-- Wastes 33-50% of optimization stage time
+- Level 2 uses `FixedPoint(size) AND FixedPoint(depth)` to detect convergence
+- This always requires a redundant "confirmation" iteration that re-runs all passes just to verify metrics haven't changed
+- The loop structure itself is sound — later iterations could find opportunities on some circuits
+- The issue is the convergence check, not the loop
 
-### Key Finding
+### Observation
 
-- Pre-loop passes (ConsolidateBlocks, UnitarySynthesis) handle all 2Q reduction before the loop starts
-- Loop passes contribute 0 additional 2Q gates on 12 out of 13 benchmark circuits
-- **Removing the loop entirely: identical gate counts**
+On 13 benchmark circuits (QFT, QV, EfficientSU2, QAOA, BV, Heisenberg at 50-100 qubits on FakeTorino):
+- Iteration 2+ never changed 2Q gate counts
+- Pre-loop passes (ConsolidateBlocks, UnitarySynthesis) handle the bulk of 2Q reduction
+- The final iteration is always a no-op confirmation pass
 
-### Results: 13 Circuits on FakeTorino (133Q), Optimization Level 2
-
-| Circuit | Old Iters | New Iters | 2Q Gates | Regressed? |
-|---------|-----------|-----------|----------|------------|
+| Circuit | Old Iters | With Changed-Flag | 2Q Gates | Regressed? |
+|---------|-----------|-------------------|----------|------------|
 | QFT_100 | 3 | 2 | 9,528 | No |
 | QV_100 | 2 | 1 | 96,474 | No |
 | EfficientSU2_100 | 2 | 1 | 297 | No |
@@ -37,9 +37,9 @@ Sophia Wen | IBM Quantum | Benchpress + Qiskit fork
 | BV_100 | 2 | 1 | 196 | No |
 | Heisenberg_100 | 2 | 1 | 891 | No |
 
-### Recommendation
+### Proposal
 
-Replace FixedPoint with a direct "changed" boolean flag. Passes return whether they modified 2Q gates; loop exits immediately when no pass reports changes.
+Replace FixedPoint with a direct "changed" flag: each Rust pass returns whether it modified 2Q gates, and the loop exits as soon as no pass reports changes. This preserves the loop for circuits where later iterations do find opportunities, while eliminating the guaranteed-useless confirmation iteration. Needs validation on a broader circuit set.
 
 ---
 
@@ -169,14 +169,14 @@ Implement separability splitting as a Python pass (low effort, high impact). Gua
 
 | Investigation | Status | Impact | Effort |
 |---------------|--------|--------|--------|
-| Optimization Loop | Prototype done | 33-50% fewer iterations, 0 regressions | Low (flag change) |
+| Optimization Loop | Prototype done | Eliminates redundant confirmation iteration | Low (flag change) |
 | Compute-Then-Apply | Implemented (fork) | 15-42% speedup on opt passes | Medium (Rust refactor) |
 | 3Q Block Synthesis | Prototype done | -5% CX gates across benchmarks | Low (Python pass) |
 
 ### Key Insights
 
 - All three optimizations are orthogonal — they compose without interference
-- The L2 loop's value was assumed, not measured. Profiling 13 circuits showed it does nothing.
+- The L2 loop's convergence check (FixedPoint) always forces a redundant confirmation iteration. A direct "changed" flag can avoid this.
 - The parallelization hypothesis was wrong: actual gain is from cache-friendly memory access
 - 3Q synthesis gains are dominated by separability (90%), not decomposition algorithms
 
