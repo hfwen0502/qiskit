@@ -20,6 +20,7 @@ use numpy::PyReadonlyArray2;
 use pyo3::exceptions::PyIndexError;
 use pyo3::intern;
 use pyo3::prelude::*;
+use rayon::prelude::*;
 use qiskit_circuit::Qubit;
 use qiskit_circuit::circuit_data::CircuitData;
 use qiskit_circuit::dag_circuit::{DAGCircuit, NodeType};
@@ -45,6 +46,7 @@ use smallvec::SmallVec;
 use crate::passes::unitary_synthesis::{PARAM_SET, TWO_QUBIT_BASIS_SET};
 use crate::target::{Qargs, Target};
 use qiskit_circuit::PhysicalQubit;
+use qiskit_util::getenv_use_multiple_threads;
 
 static IDENTITY_2Q: Matrix4<Complex64> = Matrix4::new(
     // Row 1
@@ -197,6 +199,80 @@ fn is_supported(
 // If depth > 20, there will be 1q gates to consolidate.
 const MAX_2Q_DEPTH: usize = 20;
 
+// Minimum number of 2Q blocks before we parallelize.
+const PARALLEL_THRESHOLD: usize = 200;
+
+/// Action computed for a 2Q block during the parallel phase.
+enum TwoQBlockAction {
+    /// Block should be kept as-is (no improvement or no matrix).
+    Skip,
+    /// Block is identity — remove all nodes.
+    RemoveIdentity(Vec<NodeIndex>),
+    /// Block should be consolidated into a UnitaryGate.
+    Consolidate {
+        block: Vec<NodeIndex>,
+        matrix: Matrix4<Complex64>,
+        qubit_pos_map: HashMap<Qubit, usize>,
+    },
+}
+
+/// Metadata collected during the sequential classification pass for a 2Q block.
+struct TwoQBlockInfo {
+    block: Vec<NodeIndex>,
+    block_index_map: [Qubit; 2],
+    basis_count: usize,
+    outside_basis: bool,
+}
+
+/// Process a single 2Q block: compute the matrix and decide whether to consolidate.
+/// Pure Rust computation — no Python, no DAG mutation.
+fn process_2q_block(
+    dag: &DAGCircuit,
+    info: TwoQBlockInfo,
+    decomposer: &DecomposerType,
+    force_consolidate: bool,
+    has_basis_gates: bool,
+    has_target: bool,
+) -> PyResult<TwoQBlockAction> {
+    let matrix = match blocks_to_matrix(dag, &info.block, info.block_index_map) {
+        Ok(mat) => mat,
+        Err(_) => return Ok(TwoQBlockAction::Skip),
+    };
+    let num_basis_gates = match decomposer {
+        DecomposerType::TwoQubitBasis(decomp) => decomp.num_basis_gates_inner(
+            nalgebra_array_view::<Complex64, U4, U4>(matrix.as_view()),
+        )?,
+        DecomposerType::TwoQubitControlledU(decomp) => decomp.num_basis_gates_inner(
+            nalgebra_array_view::<Complex64, U4, U4>(matrix.as_view()),
+        )?,
+    };
+
+    if force_consolidate
+        || num_basis_gates < info.basis_count
+        || info.block.len() > MAX_2Q_DEPTH
+        || (has_basis_gates && info.outside_basis)
+        || (has_target && info.outside_basis)
+    {
+        if approx::abs_diff_eq!(IDENTITY_2Q, matrix) {
+            Ok(TwoQBlockAction::RemoveIdentity(info.block))
+        } else {
+            let qubit_pos_map = info
+                .block_index_map
+                .into_iter()
+                .enumerate()
+                .map(|(idx, qubit)| (qubit, idx))
+                .collect();
+            Ok(TwoQBlockAction::Consolidate {
+                block: info.block,
+                matrix,
+                qubit_pos_map,
+            })
+        }
+    } else {
+        Ok(TwoQBlockAction::Skip)
+    }
+}
+
 struct PhysQargsMap {
     map: Option<Vec<PhysicalQubit>>,
     cache: HashMap<Interned<[Qubit]>, Vec<PhysicalQubit>>,
@@ -279,6 +355,10 @@ fn py_run_consolidate_blocks(
     // In most cases, the qargs in a block will not exceed 2 qubits.
     let mut block_qargs: HashSet<Qubit> = HashSet::with_capacity(2);
     let mut phys_qargs = PhysQargsMap::new(qubit_map);
+
+    // Phase 1: Classify blocks, handle single-gate and >2Q blocks immediately,
+    // collect 2Q blocks for parallel processing.
+    let mut two_q_blocks: Vec<TwoQBlockInfo> = Vec::new();
     for block in blocks {
         block_qargs.clear();
         if block.len() == 1 {
@@ -345,6 +425,7 @@ fn py_run_consolidate_blocks(
             }
         }
         if block_qargs.len() > 2 {
+            // >2Q blocks require Python for matrix computation — handle immediately
             let mut qargs: Vec<Qubit> = block_qargs.iter().copied().collect();
             qargs.sort();
             let block_index_map: HashMap<Qubit, usize> = qargs
@@ -402,53 +483,82 @@ fn py_run_consolidate_blocks(
                 )?;
             }
         } else {
+            // Collect 2Q block metadata for parallel processing
             let block_index_map = [
                 *block_qargs.iter().min().unwrap(),
                 *block_qargs.iter().max().unwrap(),
             ];
-            let matrix = blocks_to_matrix(dag, &block, block_index_map).ok();
-            if let Some(matrix) = matrix {
-                let num_basis_gates = match decomposer {
-                    DecomposerType::TwoQubitBasis(ref decomp) => decomp.num_basis_gates_inner(
-                        nalgebra_array_view::<Complex64, U4, U4>(matrix.as_view()),
-                    )?,
-                    DecomposerType::TwoQubitControlledU(ref decomp) => decomp
-                        .num_basis_gates_inner(nalgebra_array_view::<Complex64, U4, U4>(
-                            matrix.as_view(),
-                        ))?,
-                };
+            two_q_blocks.push(TwoQBlockInfo {
+                block,
+                block_index_map,
+                basis_count,
+                outside_basis,
+            });
+        }
+    }
 
-                if force_consolidate
-                    || num_basis_gates < basis_count
-                    || block.len() > MAX_2Q_DEPTH
-                    || (basis_gates.is_some() && outside_basis)
-                    || (target.is_some() && outside_basis)
-                {
-                    if approx::abs_diff_eq!(IDENTITY_2Q, matrix) {
-                        for node in block {
-                            dag.remove_op_node(node);
-                        }
-                    } else {
-                        let unitary_gate = UnitaryGate {
-                            array: ArrayType::TwoQ(matrix),
-                        };
-                        let qubit_pos_map = block_index_map
-                            .into_iter()
-                            .enumerate()
-                            .map(|(idx, qubit)| (qubit, idx))
-                            .collect();
-                        let clbit_pos_map = HashMap::new();
-                        dag.replace_block(
-                            &block,
-                            PackedOperation::from_unitary(Box::new(unitary_gate)),
-                            None,
-                            None,
-                            false,
-                            &qubit_pos_map,
-                            &clbit_pos_map,
-                        )?;
-                    }
+    // Phase 2: Process 2Q blocks — parallel for large circuits, sequential for small ones
+    let has_basis_gates = basis_gates.is_some();
+    let has_target = target.is_some();
+    let run_in_parallel = getenv_use_multiple_threads();
+    let two_q_actions: Vec<TwoQBlockAction> =
+        if two_q_blocks.len() >= PARALLEL_THRESHOLD && run_in_parallel {
+            two_q_blocks
+                .into_par_iter()
+                .map(|info| {
+                    process_2q_block(
+                        dag,
+                        info,
+                        &decomposer,
+                        force_consolidate,
+                        has_basis_gates,
+                        has_target,
+                    )
+                })
+                .collect::<PyResult<Vec<_>>>()?
+        } else {
+            two_q_blocks
+                .into_iter()
+                .map(|info| {
+                    process_2q_block(
+                        dag,
+                        info,
+                        &decomposer,
+                        force_consolidate,
+                        has_basis_gates,
+                        has_target,
+                    )
+                })
+                .collect::<PyResult<Vec<_>>>()?
+        };
+
+    // Phase 3: Apply 2Q block actions sequentially (DAG mutations are not thread-safe)
+    for action in two_q_actions {
+        match action {
+            TwoQBlockAction::Skip => {}
+            TwoQBlockAction::RemoveIdentity(block) => {
+                for node in block {
+                    dag.remove_op_node(node);
                 }
+            }
+            TwoQBlockAction::Consolidate {
+                block,
+                matrix,
+                qubit_pos_map,
+            } => {
+                let unitary_gate = UnitaryGate {
+                    array: ArrayType::TwoQ(matrix),
+                };
+                let clbit_pos_map = HashMap::new();
+                dag.replace_block(
+                    &block,
+                    PackedOperation::from_unitary(Box::new(unitary_gate)),
+                    None,
+                    None,
+                    false,
+                    &qubit_pos_map,
+                    &clbit_pos_map,
+                )?;
             }
         }
     }
