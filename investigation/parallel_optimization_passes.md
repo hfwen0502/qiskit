@@ -58,7 +58,8 @@ rayon thread pool. Default: number of logical CPUs.
 - Extracted `process_run()` — pure computation for a single 1Q run (matrix fold,
   Euler decomposition, error comparison). Returns `Option<RunReplacement>`.
 - Added `py_optimize_1q_gates_decomposition()` wrapper with `py.detach()` for GIL release.
-- Parallel threshold: 500 runs.
+- Added `PARALLEL_THRESHOLD = 500` (new constant — original code had no parallelism).
+  Rayon activates only when there are >= 500 1Q runs; below that, sequential fallback.
 
 <table>
 <tr><th>Before (<a href="https://github.com/hfwen0502/qiskit/blob/03c640f73/crates/transpiler/src/passes/optimize_1q_gates_decomposition.rs">03c640f73</a>)</th><th>After (<a href="https://github.com/hfwen0502/qiskit/blob/fdd061ef6/crates/transpiler/src/passes/optimize_1q_gates_decomposition.rs">fdd061ef6</a>)</th></tr>
@@ -134,7 +135,8 @@ for r in replacements {
 - Changed `analyze_commutations()` signature from `(&mut DAGCircuit, &mut CommutationChecker)`
   to `(&DAGCircuit, &CommutationChecker)`.
 - Merge phase with pre-allocated `IndexMap` capacity.
-- Parallel threshold: 100 qubits.
+- Added `PARALLEL_THRESHOLD = 100` (new constant — original code had no parallelism).
+  Rayon activates only when there are >= 100 qubits; below that, sequential fallback.
 - No changes needed in [`commutation_cancellation.rs`](https://github.com/hfwen0502/qiskit/blob/c5228537e/crates/transpiler/src/passes/commutation_cancellation.rs) — Rust auto-derefs `&mut` to `&`.
 
 <table>
@@ -223,7 +225,8 @@ pub fn analyze_commutations(
   2. Process 2Q blocks in parallel (matrix computation + Weyl decomposition counting).
   3. Apply all 2Q actions sequentially.
 - >2Q blocks still processed sequentially (require `Python::attach()` for matrix via `QI_OPERATOR`).
-- Parallel threshold: 200 blocks.
+- Added `PARALLEL_THRESHOLD = 200` (new constant — original code had no parallelism).
+  Rayon activates only when there are >= 200 2Q blocks; below that, sequential fallback.
 
 <table>
 <tr><th>Before (<a href="https://github.com/hfwen0502/qiskit/blob/03c640f73/crates/transpiler/src/passes/consolidate_blocks.rs">03c640f73</a>)</th><th>After (<a href="https://github.com/hfwen0502/qiskit/blob/ea4abc77c/crates/transpiler/src/passes/consolidate_blocks.rs">ea4abc77c</a>)</th></tr>
