@@ -24,7 +24,7 @@ CIRCUITS = {
     "QV-100": ("qv", 100),
 }
 
-NUM_RUNS = 5
+NUM_RUNS = 1
 
 
 def make_circuit(kind, n):
