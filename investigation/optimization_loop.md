@@ -307,6 +307,25 @@ The changed-flag directly answers the right question: "did any pass create new 2
 
 By ignoring 1Q-only changes, we avoid the false positive where Optimize1qGatesDecomposition always finds work (it nearly always does) and would trigger unnecessary re-iteration.
 
+### Handling unconditional DAG mutation in Optimize1qGatesDecomposition
+
+A known issue with a generic "changed" flag approach: `Optimize1qGatesDecomposition`
+mutates the DAG unconditionally — it replaces 1Q runs with their optimal Euler
+decomposition even when the result is identical to the input (e.g., `[RZ, SX, RZ]` →
+decompose → `[RZ, SX, RZ]`). The pass does not distinguish "I improved something"
+from "I replaced with an equivalent sequence."
+
+A naive loop condition that checks "did any pass mutate the DAG?" would never terminate,
+because this pass always reports changes.
+
+**Our design sidesteps this entirely.** `Optimize1qGatesDecomposition` never sets the
+`_opt_pass_changed` flag because it is a 1Q-only pass — it cannot create new 2Q
+optimization opportunities regardless of whether it mutates or not. The loop condition
+only watches `RemoveIdentityEquivalent` (multi-qubit removals) and
+`CommutativeCancellation` (multi-qubit cancellations). These passes have well-defined
+semantics: they either remove/cancel gates or they don't, with no "equivalent replacement"
+ambiguity.
+
 ## Verification
 
 ```bash
