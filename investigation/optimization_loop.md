@@ -298,7 +298,7 @@ The changed-flag directly answers the right question: "did any pass create new 2
 
 ...we ask each pass directly: "did you change any multi-qubit gates?" If no pass did, iteration is guaranteed to produce the same result, so we stop.
 
-### Why only 2Q changes matter
+### Why only 2Q changes matter for loop termination
 
 1Q gate changes (from Optimize1qGatesDecomposition) cannot create new 2Q optimization opportunities:
 - They don't introduce new CX/CY/CZ pairs for CommutativeCancellation
@@ -306,6 +306,8 @@ The changed-flag directly answers the right question: "did any pass create new 2
 - The only cross-pass interaction that matters is: CommutativeCancellation removes 2Q gates -> exposes new patterns for subsequent passes
 
 By ignoring 1Q-only changes, we avoid the false positive where Optimize1qGatesDecomposition always finds work (it nearly always does) and would trigger unnecessary re-iteration.
+
+**Caveat**: This design intentionally trades a small amount of 1Q optimization for faster convergence. See [Dev Team Feedback: 1Q Gate and Depth Impact](#dev-team-feedback-1q-gate-and-depth-impact) below for the full analysis.
 
 ### Handling unconditional DAG mutation in Optimize1qGatesDecomposition
 
@@ -325,6 +327,58 @@ only watches `RemoveIdentityEquivalent` (multi-qubit removals) and
 `CommutativeCancellation` (multi-qubit cancellations). These passes have well-defined
 semantics: they either remove/cancel gates or they don't, with no "equivalent replacement"
 ambiguity.
+
+## Dev Team Feedback: 1Q Gate and Depth Impact
+
+### The concern
+
+The dev team pointed out that the optimization loop is not just concerned with 2Q gates — it also reduces 1Q gates and depth. The current FixedPoint condition tracks total operation count and total depth (all gates), not just 2Q. A 2Q-only changed-flag would exit the loop early, potentially missing legitimate 1Q optimization opportunities.
+
+> "The fundamental mismatch is the optimization loop is not just concerned with 2q optimizations, it also can reduce 1q gates. The current loop structure considers a fixed point in total operation count not just 2q gates. Similarly with depth it's depth over all gates not just 2q."
+
+### Empirical data: total gates and depth
+
+To quantify the 1Q impact, we compare total gate count and depth between loop (FixedPoint) and no-loop (single iteration):
+
+| Circuit | Loop Size | No-Loop Size | Size Delta | % | Loop Depth | No-Loop Depth | Depth Delta | % |
+|---------|:---------:|:------------:|:----------:|:-:|:----------:|:-------------:|:-----------:|:-:|
+| QFT_100 | 37,285 | 37,354 | **+69** | 0.18% | 5,357 | 5,360 | **+3** | 0.06% |
+| QV_100 | 388,349 | 388,349 | 0 | 0% | 26,772 | 26,772 | 0 | 0% |
+| EfficientSU2_100 | 3,482 | 3,482 | 0 | 0% | 330 | 330 | 0 | 0% |
+| QAOA_100 | 53,226 | 53,235 | **+9** | 0.02% | 4,889 | 4,889 | 0 | 0% |
+| BV_100 | 1,083 | 1,083 | 0 | 0% | 450 | 450 | 0 | 0% |
+| Heisenberg_100 | 20,640 | 20,640 | 0 | 0% | 2,275 | 2,275 | 0 | 0% |
+
+**2/6 circuits show a total gate regression without the loop. 1/6 shows a depth regression.** The regressions are small but real — QFT loses 69 total gates (0.18%) and 3 depth levels, QAOA loses 9 total gates (0.02%). All are 1Q gates (2Q gates are identical).
+
+### The mechanism: CommutativeCancellation → Optimize1qGatesDecomposition cross-iteration interaction
+
+The 1Q benefit comes from a specific cross-pass interaction across iterations:
+
+1. **Iteration 1**: `CommutativeCancellation` consolidates Z-rotations (RZ, P, U1) into single rotations. This is a 1Q-only operation — it merges commuting rotation angles but does not cancel 2Q gates.
+
+2. **Iteration 2**: The consolidated rotations shorten some 1Q runs. `Optimize1qGatesDecomposition` now finds these shorter runs can be decomposed more efficiently (e.g., a 3-gate run becomes a 2-gate decomposition).
+
+Evidence from per-pass stats:
+- QFT: `Optimize1qGatesDecomposition` removes **-6,472** total gates across 3 iterations (loop) vs **-6,416** in 1 iteration (no-loop). The extra 56 gates come from iteration 2. `RemoveIdentityEquivalent` similarly removes 13 more identity gates in the full loop.
+- QAOA: `Optimize1qGatesDecomposition` removes **-3,325** (loop) vs **-3,316** (no-loop). The extra 9 gates come from iteration 2.
+
+**This interaction only matters for rotation-heavy circuits** (QFT, QAOA with ZZ interactions). Circuits without dense rotation patterns (QV, BV, GHZ, Heisenberg, EfficientSU2) see zero difference.
+
+### Why a generic "total-gate changed" flag doesn't work
+
+The natural response to this feedback would be: "broaden the changed-flag to include any gate change." But `Optimize1qGatesDecomposition` mutates the DAG unconditionally — it replaces 1Q runs with optimal Euler decompositions even when the result is identical to the input. A total-gate changed-flag would never converge because this pass always "changes" something.
+
+Options:
+1. **Fix Optimize1qGatesDecomposition to be idempotent**: Compare the replacement with the original before applying it. This would enable a reliable total-gate changed-flag but requires a more invasive Rust change.
+2. **Track CommutativeCancellation's 1Q consolidation separately**: Have CommutativeCancellation report whether it consolidated any rotations (not just cancelled 2Q pairs). If it did, run one more iteration for Optimize1qGatesDecomposition to pick up the benefit.
+3. **Accept the trade-off**: The 2Q-only flag is correct for the dominant use case. The 0.18% 1Q regression on rotation-heavy circuits is negligible compared to the 10-20% optimization stage speedup from eliminating the confirmation iteration.
+
+### Recommendation
+
+**Option 3 is the pragmatic choice for Level 2.** The purpose of Level 2 is to be the "good enough, fast" optimization level. The 0.18% total gate regression on QFT (69 out of 37,285 gates, all 1Q) and 0.02% on QAOA (9 out of 53,226 gates) are well within noise for any practical use case. These are rotation-gate merges that have negligible impact on circuit fidelity — 1Q gate errors are typically 10-100x lower than 2Q gate errors on real hardware.
+
+If the team wants to preserve the 1Q benefit with zero regression, **Option 2** is the cleanest path: extend `CommutativeCancellation` to also report whether it consolidated any rotations. This adds a second flag (`_opt_1q_consolidated`) that triggers at most one additional iteration, avoiding the FixedPoint's unconditional confirmation pass.
 
 ## Verification
 
@@ -387,6 +441,8 @@ At Level 3, MinimumPoint needs 3-6 iterations. All useful work happens in iterat
 
 ### No-Loop Experiment (Level 2, all 13 circuits)
 
+**2Q gate comparison** — zero regressions on all 13 circuits:
+
 | Circuit | Loop 2Q | No-Loop 2Q | Diff |
 |---------|:-------:|:----------:|:----:|
 | QFT_100 | 9,116 | 9,116 | 0 |
@@ -403,10 +459,22 @@ At Level 3, MinimumPoint needs 3-6 iterations. All useful work happens in iterat
 | Toffoli_90 | 1,111 | 1,111 | 0 |
 | fe4s4_LUCJ | 4,225 | 4,225 | 0 |
 
-**0/13 circuits regressed at Level 2.** This confirms the loop's extra iterations are unnecessary — providing the empirical basis for the changed-flag approach.
+**Total gate and depth comparison** — small 1Q regressions on 2 rotation-heavy circuits:
+
+| Circuit | Loop Size | No-Loop Size | Size Delta | Loop Depth | No-Loop Depth | Depth Delta |
+|---------|:---------:|:------------:|:----------:|:----------:|:-------------:|:-----------:|
+| QFT_100 | 37,285 | 37,354 | **+69** (0.18%) | 5,357 | 5,360 | **+3** |
+| QV_100 | 388,349 | 388,349 | 0 | 26,772 | 26,772 | 0 |
+| EfficientSU2_100 | 3,482 | 3,482 | 0 | 330 | 330 | 0 |
+| QAOA_100 | 53,226 | 53,235 | **+9** (0.02%) | 4,889 | 4,889 | 0 |
+| BV_100 | 1,083 | 1,083 | 0 | 450 | 450 | 0 |
+| Heisenberg_100 | 20,640 | 20,640 | 0 | 2,275 | 2,275 | 0 |
+
+**0/13 circuits regressed on 2Q gates.** 2/6 show small total gate regressions (0.02-0.18%, all 1Q gates) from the CommutativeCancellation → Optimize1qGatesDecomposition cross-iteration interaction on rotation-heavy circuits. See [Dev Team Feedback](#dev-team-feedback-1q-gate-and-depth-impact) for analysis.
 
 ## Next Steps
 
-- [ ] Upstream proposal to Qiskit team with the changed-flag approach and profiling data
+- [ ] Discuss with Qiskit team: accept 0.18% 1Q regression (Option 3) or implement CommutativeCancellation rotation-consolidation flag (Option 2)?
+- [ ] If Option 2: extend `cancel_commutations` in Rust to return a struct `{multi_qubit_changed: bool, rotations_consolidated: bool}` instead of a single bool
+- [ ] Upstream proposal with profiling data and chosen approach
 - [ ] Consider applying the same pattern to Level 1 (uses FixedPoint with different passes)
-- [ ] Consider applying to Level 3 as a supplementary early-exit (before MinimumPoint kicks in)
