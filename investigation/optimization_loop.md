@@ -252,13 +252,17 @@ def _optimization_check_changed_flag():
             self.property_set["_opt_1q_consolidated"] = False
 
     def check(property_set):
-        """Continue looping if any pass modified 2Q gates OR consolidated rotations."""
-        return property_set.get("_opt_pass_changed", False) or property_set.get(
-            "_opt_1q_consolidated", False
+        """Continue looping if new optimization opportunities exist."""
+        return (
+            property_set.get("_opt_pass_changed", False)
+            or property_set.get("_opt_1q_consolidated", False)
+            or not property_set.get("all_gates_in_basis", True)
         )
 
     return (_ResetChangedFlag(), check)
 ```
+
+The third condition (`all_gates_in_basis`) is already set by `GatesInBasis` which runs inside the loop body (in the `unroll` block after the optimization passes). No additional pass is needed — we just read the existing property.
 
 Level 2 assembly:
 
@@ -306,12 +310,15 @@ The changed-flag answers the right question: "did any pass create new optimizati
 - Comparing to previous values via FixedPoint (requires 2 data points)
 - Waiting for both metrics to stabilize simultaneously
 
-...we ask the passes directly. The loop continues when either:
+...we ask the passes directly. The loop continues when any of:
 
 1. **2Q gates were removed** (`_opt_pass_changed`) — a removed 2Q gate exposes longer 1Q runs and new cancellation patterns for the next iteration
 2. **Rotations were consolidated** (`_opt_1q_consolidated`) — merged rotations shorten 1Q runs, enabling `Optimize1qGatesDecomposition` to find better decompositions on the next iteration
+3. **Out-of-basis gates detected** (`all_gates_in_basis == False`) — `CommutativeCancellation` can produce gates outside the target basis (e.g., `RX` for X-rotation consolidation when `RX` isn't in basis). `BasisTranslator` runs to translate them, producing unoptimized sequences that need re-optimization.
 
-Both 2Q and 1Q optimization matter. The key insight is that new 1Q opportunities only arise when the structure of 1Q runs changes — and within this loop, that can only happen through two mechanisms: 2Q gate removal (which merges adjacent 1Q runs across the gap) or rotation consolidation (which shortens existing 1Q runs). If neither occurred, `Optimize1qGatesDecomposition` sees the same runs it already optimally decomposed — re-running it produces identical results.
+The third condition is important because the loop body includes `[optimization passes] + [GatesInBasis + BasisTranslator]`. If `CommutativeCancellation` introduces an out-of-basis gate, `BasisTranslator` translates it into an unoptimized 1Q sequence. Without re-iteration, that sequence stays unoptimized.
+
+Both 2Q and 1Q optimization matter. The key insight is that new optimization opportunities only arise when the structure of the circuit changes — and within this loop, that happens through three mechanisms: 2Q gate removal, rotation consolidation, or basis translation introducing unoptimized sequences. If none of these occurred, re-running the passes produces identical results.
 
 ### Why Optimize1qGatesDecomposition doesn't drive the loop
 
@@ -322,8 +329,9 @@ A naive "did anything change?" flag would never converge because this pass alway
 Therefore we track signals only from passes that **produce** new opportunities:
 - `RemoveIdentityEquivalent` — removes multi-qubit identity gates (well-defined: either it finds identities or it doesn't)
 - `CommutativeCancellation` — cancels 2Q gate pairs and consolidates rotations (well-defined: either it finds cancellations/consolidations or it doesn't)
+- `GatesInBasis` — detects out-of-basis gates introduced by optimization passes (triggers BasisTranslator, which produces unoptimized sequences)
 
-When neither finds work, no 1Q run in the circuit has changed, so `Optimize1qGatesDecomposition` would reproduce its previous output. The loop exits safely.
+When none of these fire, the circuit's structure is unchanged, so `Optimize1qGatesDecomposition` would reproduce its previous output. The loop exits safely.
 
 ## Dev Team Feedback: 1Q Gate and Depth Impact
 
@@ -399,11 +407,14 @@ We ran both loop conditions on the same post-routing circuits to verify zero reg
 
 **How v2 fixes it:** `CommutativeCancellation` now returns `(multi_qubit_changed, rotations_consolidated)`. When `rotations_consolidated = true`, the loop runs one more iteration — just enough for `Optimize1qGatesDecomposition` to find better decompositions for the shortened 1Q runs. No unnecessary confirmation pass, no regression.
 
-**Why this is correct and complete:** New 1Q optimization opportunities can only arise when the structure of 1Q runs changes. Within this loop, that happens via exactly two mechanisms:
+**Why this is correct and complete:** New optimization opportunities can only arise when the circuit's structure changes. Within this loop, that happens via exactly three mechanisms:
 1. A 2Q gate is removed → adjacent 1Q runs merge into a longer run → `_opt_pass_changed` fires
 2. Rotations are consolidated → a 1Q run becomes shorter → `_opt_1q_consolidated` fires
+3. An out-of-basis gate is produced → BasisTranslator translates it into unoptimized sequences → `all_gates_in_basis == False`
 
-If neither fires, `Optimize1qGatesDecomposition` sees identical runs to what it already optimally decomposed. Re-running it would produce the same output — the loop exits safely with zero missed opportunities.
+If none fires, `Optimize1qGatesDecomposition` sees identical runs to what it already optimally decomposed. Re-running it would produce the same output — the loop exits safely with zero missed opportunities.
+
+**Note on signal 3:** `CommutativeCancellation` can produce `RX` (for X-rotation consolidation) or a Z-rotation gate type (`RZ`, `P`, `U1`) that may not be in the target basis. The `GatesInBasis` check runs inside the loop (after the optimization passes), and `BasisTranslator` translates any such gates. The translated output is unoptimized (e.g., `RX(θ)` → `H; RZ(θ); H` or similar), requiring re-optimization. At Level 3, `UnitarySynthesis` can similarly produce gates outside the basis.
 
 ## Verification
 

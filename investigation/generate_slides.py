@@ -196,12 +196,12 @@ def make_opt_loop_slide1(prs):
     solution_bullets = [
         ("Initial attempt: track only 2Q changes", True, 0),
         ("  \u2192 0.18% 1Q regression on QFT (69 gates)", False, 0),
-        ("  \u2192 rotation merges missed across iterations", False, 0),
         ("", False, 0),
-        ("Fix: also track rotation consolidation", True, 0),
+        ("Final: three opportunity-producing signals", True, 0),
         ("  _opt_pass_changed: 2Q gate removed", False, 0),
         ("  _opt_1q_consolidated: rotations merged", False, 0),
-        ("  \u2192 zero regression (A/B verified)", False, 0),
+        ("  all_gates_in_basis=False: out-of-basis gate", False, 0),
+        ("    needs BasisTranslator \u2192 re-optimization", False, 0),
     ]
     add_bullet_frame(slide, Inches(5.2), Inches(1.35), Inches(4.5), Inches(2.5),
                      solution_bullets, font_size=12)
@@ -225,9 +225,9 @@ def make_opt_loop_slide1(prs):
 
     # Bottom summary
     add_textbox(slide, Inches(0.5), Inches(6.5), Inches(9.0), Inches(0.5),
-                "Tracking rotation consolidation captures the CommutativeCancellation \u2192 Optimize1qGatesDecomposition "
-                "cross-iteration benefit. Without it, skipping the extra iteration loses 1Q optimization on rotation-heavy "
-                "circuits. With it: zero regression, fewer iterations, no analysis passes needed.",
+                "Three signals cover all paths that create new optimization opportunities. "
+                "CommutativeCancellation can produce out-of-basis gates (e.g. RX); BasisTranslator translates them "
+                "into unoptimized sequences that need re-optimization. A/B test confirms zero regression vs FixedPoint.",
                 font_size=11, color=MED_GRAY)
 
 
