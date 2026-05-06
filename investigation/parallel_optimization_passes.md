@@ -452,6 +452,64 @@ The `QISKIT_BUILD_PROFILE` env var maps to the `rust_debug` flag in `setup.py`:
 - `debug` → `rust_debug = True` → `cargo build` (no optimizations)
 - unset → checks `RUST_DEBUG=1` env var, otherwise defaults to debug
 
+## Related Upstream PRs
+
+Three open Qiskit PRs pursue the same goal of parallelizing optimization passes. All are
+unmerged and on hold as of May 2026.
+
+### [#16014](https://github.com/Qiskit/qiskit/pull/16014) — Parallelize CommutationAnalysis
+
+| | Upstream (#16014) | Ours |
+|---|---|---|
+| **Author** | mtreinish | — |
+| **Approach** | `fold` + `reduce` with rayon | `par_iter().map()` → collect Vec → merge sequentially |
+| **Determinism** | Non-deterministic map insertion order (reviewer blocker) | Deterministic: merge by qubit index preserves original ordering |
+| **Status** | On hold, waiting for #15999 | Implemented, all tests pass |
+
+**Key difference:** Their `fold`+`reduce` merges `IndexMap`s from different threads, which
+produces non-deterministic iteration order. Reviewer alexanderivrii flagged this. Our
+approach collects per-wire results into a Vec ordered by qubit index, then merges
+sequentially — deterministic with minimal overhead.
+
+### [#15567](https://github.com/Qiskit/qiskit/pull/15567) — Multithreaded Optimize1qGatesDecomposition
+
+| | Upstream (#15567) | Ours |
+|---|---|---|
+| **Author** | mtreinish | — |
+| **Approach** | `Optimize1qGatesDecompositionState` struct with `OnceLock` lazy init | `precompute_basis_data()` upfront, then `process_run()` per item |
+| **Threshold** | 100K runs (never triggers in practice) | 500 runs (benchmarked — triggers on QFT-50+) |
+| **Status** | Draft, has test failures | Implemented, all 94 tests pass |
+
+**Key difference:** Their `OnceLock` pattern defers basis computation until needed per-qubit,
+requiring thread-safe lazy init machinery. We pre-compute all basis data upfront in a
+single pass over unique qubits, then each `process_run()` call is purely stateless — simpler,
+no synchronization overhead, and enables straightforward rayon parallelism.
+
+### [#13419](https://github.com/Qiskit/qiskit/pull/13419) — TwoQubitPeepholeOptimization
+
+| | Upstream (#13419) | Ours |
+|---|---|---|
+| **Author** | mtreinish | — |
+| **Approach** | New unified pass replacing Collect2qBlocks + ConsolidateBlocks + UnitarySynthesis | Parallel refactor of existing ConsolidateBlocks |
+| **Scope** | Full rewrite: thread-local decomposer caches, tuple scoring `(num_2q, num_1q, error)`, tries all synthesizers | Minimal change: separate compute from mutation, add rayon |
+| **Status** | Open, 86 commits, approved by ShellyGarion | Implemented, all 43 tests pass |
+
+**Key difference:** This is a much larger rewrite that unifies three passes into one.
+Our work is orthogonal — we only parallelized the compute phase of the existing
+`ConsolidateBlocks`. If #13419 merges, our parallel pattern (compute-then-apply +
+rayon threshold) could be applied to the new unified pass.
+
+### Summary
+
+| PR | Pass | Their Blocker | Our Advantage |
+|---|---|---|---|
+| #16014 | CommutationAnalysis | Non-deterministic ordering | Deterministic merge by qubit index |
+| #15567 | Optimize1qGatesDecomposition | OnceLock complexity, threshold too high | Simple precompute, practical threshold (500) |
+| #13419 | ConsolidateBlocks (rewrite) | Large scope (86 commits) | Minimal, focused change; composable |
+
+**Recommendation:** Contribute via code review on the open PRs — our determinism fix for
+#16014 and simpler precompute pattern for #15567 directly solve their blockers.
+
 ## Branch
 
 [`parallel-optimization-passes`](https://github.com/hfwen0502/qiskit/tree/parallel-optimization-passes) on fork (`https://github.com/hfwen0502/qiskit.git`),

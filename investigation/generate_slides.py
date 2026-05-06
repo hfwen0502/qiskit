@@ -398,6 +398,73 @@ def make_cta_slide2(prs):
     p.font.color.rgb = DARK_GRAY
 
 
+def make_cta_slide3(prs):
+    """Slide: Related upstream PRs comparison"""
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_slide_bg(slide, WHITE)
+
+    add_textbox(slide, Inches(0.5), Inches(0.3), Inches(9.0), Inches(0.5),
+                "2. Compute-Then-Apply: Related Upstream PRs",
+                font_size=22, bold=True, color=IBM_BLUE)
+
+    add_textbox(slide, Inches(0.5), Inches(0.85), Inches(9.0), Inches(0.3),
+                "Three open Qiskit PRs pursue the same goal. All unmerged and on hold (May 2026).",
+                font_size=12, color=MED_GRAY)
+
+    # Comparison table
+    rows = [
+        ["PR", "Pass", "Their Approach", "Blocker", "Our Advantage"],
+        ["#16014", "CommutationAnalysis",
+         "fold+reduce with rayon",
+         "Non-deterministic order",
+         "Deterministic merge by qubit index"],
+        ["#15567", "Optimize1qGatesDecomp",
+         "OnceLock lazy init, 100K threshold",
+         "Test failures, never triggers",
+         "Simple precompute, threshold=500"],
+        ["#13419", "ConsolidateBlocks (rewrite)",
+         "Unified pass (86 commits)",
+         "Large scope",
+         "Minimal focused change, composable"],
+    ]
+    add_table(slide, Inches(0.3), Inches(1.3), Inches(9.4), Inches(2.0), rows,
+              col_widths=[Inches(0.8), Inches(2.0), Inches(2.3), Inches(2.0), Inches(2.3)])
+
+    # Key differences
+    add_textbox(slide, Inches(0.5), Inches(3.6), Inches(9.0), Inches(0.3),
+                "Key Implementation Differences", font_size=14, bold=True, color=DARK_GRAY)
+
+    diff_bullets = [
+        ("#16014: Their fold+reduce merges IndexMaps from threads \u2192 non-deterministic iteration order (flagged by reviewer).", False, 0),
+        ("    Ours: collect per-wire results into Vec ordered by qubit index, merge sequentially. Deterministic, zero overhead.", False, 0),
+        ("", False, 0),
+        ("#15567: OnceLock defers basis computation per-qubit with thread-safe lazy init \u2014 complex, threshold too high to trigger.", False, 0),
+        ("    Ours: precompute_basis_data() upfront in one pass, then stateless process_run(). No sync overhead, practical threshold.", False, 0),
+        ("", False, 0),
+        ("#13419: Full rewrite unifying 3 passes. Our compute-then-apply pattern is orthogonal and can be applied to their new pass.", False, 0),
+    ]
+    add_bullet_frame(slide, Inches(0.5), Inches(3.9), Inches(9.0), Inches(2.5),
+                     diff_bullets, font_size=11, color=MED_GRAY, spacing=Pt(2))
+
+    # Recommendation
+    shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
+                                    Inches(0.3), Inches(6.2), Inches(9.4), Inches(0.6))
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = RGBColor(0xE8, 0xF0, 0xFE)
+    shape.line.color.rgb = ACCENT
+    shape.line.width = Pt(1.5)
+    tf = shape.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    p.text = ("Recommendation: Contribute via code review on the open PRs. "
+              "Our determinism fix directly solves #16014's blocker. "
+              "Our precompute pattern simplifies #15567. "
+              "Benchmark data validates practical thresholds for all three.")
+    p.font.size = Pt(11)
+    p.font.name = "Calibri"
+    p.font.color.rgb = DARK_GRAY
+
+
 # ── Investigation 3: 3-Qubit Block Synthesis ──
 
 def make_3q_slide1(prs):
@@ -532,6 +599,7 @@ def main():
     make_opt_loop_slide1(prs)       # Investigation 1: 1 slide
     make_cta_slide1(prs)            # Investigation 2: slide 1 (approach + code)
     make_cta_slide2(prs)            # Investigation 2: slide 2 (benchmarks)
+    make_cta_slide3(prs)            # Investigation 2: slide 3 (upstream PRs)
     make_3q_slide1(prs)             # Investigation 3: 1 slide
     make_summary_slide(prs)         # Summary: 1 slide
 
