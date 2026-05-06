@@ -194,14 +194,14 @@ def make_opt_loop_slide1(prs):
                 "Solution: Track Opportunity Producers", font_size=16, bold=True, color=GREEN)
 
     solution_bullets = [
-        ("Only track passes that produce new opportunities:", True, 0),
-        ("  _opt_pass_changed: 2Q gate removed (exposes", False, 0),
-        ("    longer 1Q runs for next iteration)", False, 0),
-        ("  _opt_1q_consolidated: rotations merged (shortens", False, 0),
-        ("    1Q runs for better decomposition)", False, 0),
+        ("Initial attempt: track only 2Q changes", True, 0),
+        ("  \u2192 0.18% 1Q regression on QFT (69 gates)", False, 0),
+        ("  \u2192 rotation merges missed across iterations", False, 0),
         ("", False, 0),
-        ("Optimize1qGatesDecomposition is a consumer, not a", False, 0),
-        ("producer -- it doesn't drive the loop", False, 0),
+        ("Fix: also track rotation consolidation", True, 0),
+        ("  _opt_pass_changed: 2Q gate removed", False, 0),
+        ("  _opt_1q_consolidated: rotations merged", False, 0),
+        ("  \u2192 zero regression (A/B verified)", False, 0),
     ]
     add_bullet_frame(slide, Inches(5.2), Inches(1.35), Inches(4.5), Inches(2.5),
                      solution_bullets, font_size=12)
@@ -225,9 +225,9 @@ def make_opt_loop_slide1(prs):
 
     # Bottom summary
     add_textbox(slide, Inches(0.5), Inches(6.5), Inches(9.0), Inches(0.5),
-                "Both 2Q and 1Q optimization preserved. Loop exits when neither opportunity-producing pass finds work. "
-                "Removes 4 analysis passes (Size, Depth, FixedPoint x2) per iteration. "
-                "Branch: pass-manager-investigation (commit efc12cf7c).",
+                "Tracking rotation consolidation captures the CommutativeCancellation \u2192 Optimize1qGatesDecomposition "
+                "cross-iteration benefit. Without it, skipping the extra iteration loses 1Q optimization on rotation-heavy "
+                "circuits. With it: zero regression, fewer iterations, no analysis passes needed.",
                 font_size=11, color=MED_GRAY)
 
 
