@@ -387,7 +387,23 @@ We ran both loop conditions on the same post-routing circuits to verify zero reg
 
 **Zero delta on total gate count, depth, and 2Q gates across all tested circuits.** The rotation-consolidation flag triggers exactly the iterations needed to capture the CommutativeCancellation → Optimize1qGatesDecomposition cross-iteration benefit, without the FixedPoint's unnecessary confirmation pass.
 
-This eliminates the 0.18% QFT and 0.02% QAOA regressions that the 2Q-only flag had. The changed-flag approach is now strictly better: same quality as FixedPoint, fewer iterations, no analysis passes needed.
+### Progression: How We Eliminated the 1Q Regression
+
+| Version | Exit Condition | QFT_100 Total Gates | QAOA_100 Total Gates | Regression? |
+|---------|---------------|:---:|:---:|:---:|
+| **Baseline (FixedPoint)** | Size + depth unchanged for 1 iteration | 37,687 | 2,137 | — (reference) |
+| **v1: 2Q-only flag** | Only `_opt_pass_changed` (multi-qubit removals) | 37,756 (+69) | 2,146 (+9) | **Yes** — 0.18% / 0.02% |
+| **v2: + rotation tracking** | `_opt_pass_changed` OR `_opt_1q_consolidated` | 37,687 (+0) | 2,137 (+0) | **No** — zero delta |
+
+**What caused the v1 regression:** Skipping the extra iteration meant `CommutativeCancellation`'s rotation consolidation in iteration 1 (merging commuting RZ/P/U1 gates into single rotations) never got a follow-up `Optimize1qGatesDecomposition` pass to exploit the shorter 1Q runs. The consolidated rotations sat there un-decomposed.
+
+**How v2 fixes it:** `CommutativeCancellation` now returns `(multi_qubit_changed, rotations_consolidated)`. When `rotations_consolidated = true`, the loop runs one more iteration — just enough for `Optimize1qGatesDecomposition` to find better decompositions for the shortened 1Q runs. No unnecessary confirmation pass, no regression.
+
+**Why this is correct and complete:** New 1Q optimization opportunities can only arise when the structure of 1Q runs changes. Within this loop, that happens via exactly two mechanisms:
+1. A 2Q gate is removed → adjacent 1Q runs merge into a longer run → `_opt_pass_changed` fires
+2. Rotations are consolidated → a 1Q run becomes shorter → `_opt_1q_consolidated` fires
+
+If neither fires, `Optimize1qGatesDecomposition` sees identical runs to what it already optimally decomposed. Re-running it would produce the same output — the loop exits safely with zero missed opportunities.
 
 ## Verification
 

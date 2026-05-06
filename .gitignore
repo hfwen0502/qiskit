@@ -153,3 +153,6 @@ test/visual/mpl/visual_test_failures/*.png
 # Added by cargo
 
 /target
+
+# Generated slide decks
+*.pptx
