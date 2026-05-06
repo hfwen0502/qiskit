@@ -131,17 +131,17 @@ When we remove the loop entirely (single iteration), the results are identical:
 | CommutativeCancellation | Cancels commuting 2Q pairs (CX, CY, CZ) | Merges commuting rotations (RZ, P, etc.) | Rotation-heavy circuits (QFT, QPE) |
 | ContractIdleWiresInControlFlow | None (idle wire removal) | None | Circuits with control flow |
 
-**Key insight**: Only `RemoveIdentityEquivalent` (multi-qubit removals) and `CommutativeCancellation` (2Q gate cancellations) can create new opportunities for further 2Q optimization. If neither of these passes changes any 2Q gates, there's no reason to iterate — 1Q-only changes don't create new 2Q optimization opportunities.
+**Key insight**: Only `RemoveIdentityEquivalent` and `CommutativeCancellation` can create new optimization opportunities for subsequent iterations. Specifically: 2Q gate removal exposes longer 1Q runs, and rotation consolidation shortens 1Q runs — both give `Optimize1qGatesDecomposition` new material to work with. If neither pass finds actionable work, the circuit's structure is unchanged and re-iteration produces identical results.
 
-## Solution: 2Q-Aware Changed-Flag Loop Condition
+## Solution: Opportunity-Driven Changed-Flag Loop Condition
 
 ### Design
 
-Replace the indirect FixedPoint metric check with a direct signal from the passes themselves:
+Replace the indirect FixedPoint metric check with direct signals from the passes themselves:
 
-1. **Rust passes return `bool`**: Each optimization pass returns whether it modified multi-qubit gates
-2. **Python wrappers propagate to `property_set`**: Only passes that change 2Q gates set a loop flag
-3. **Loop checks the flag directly**: No need for Size/Depth/FixedPoint analysis passes
+1. **Rust passes report what they did**: Each pass returns whether it found actionable work (2Q cancellations, rotation consolidations)
+2. **Python wrappers propagate to `property_set`**: Two flags capture the two mechanisms that create new optimization opportunities
+3. **Loop checks the flags directly**: No need for Size/Depth/FixedPoint analysis passes
 
 ### Implementation
 
@@ -300,43 +300,30 @@ case 2:
 
 ### Why it works
 
-The changed-flag directly answers the right question: "did any pass create new 2Q optimization opportunities?" Rather than:
+The changed-flag answers the right question: "did any pass create new optimization opportunities that a subsequent iteration could exploit?" Rather than:
 
 - Computing Size and Depth after each iteration (indirect)
 - Comparing to previous values via FixedPoint (requires 2 data points)
 - Waiting for both metrics to stabilize simultaneously
 
-...we ask each pass directly: "did you change any multi-qubit gates?" If no pass did, iteration is guaranteed to produce the same result, so we stop.
+...we ask the passes directly. The loop continues when either:
 
-### Why only 2Q changes matter for loop termination
+1. **2Q gates were removed** (`_opt_pass_changed`) — a removed 2Q gate exposes longer 1Q runs and new cancellation patterns for the next iteration
+2. **Rotations were consolidated** (`_opt_1q_consolidated`) — merged rotations shorten 1Q runs, enabling `Optimize1qGatesDecomposition` to find better decompositions on the next iteration
 
-1Q gate changes (from Optimize1qGatesDecomposition) cannot create new 2Q optimization opportunities:
-- They don't introduce new CX/CY/CZ pairs for CommutativeCancellation
-- They don't create new multi-qubit identity gates for RemoveIdentityEquivalent
-- The only cross-pass interaction that matters is: CommutativeCancellation removes 2Q gates -> exposes new patterns for subsequent passes
+Both 2Q and 1Q optimization matter. The key insight is that new 1Q opportunities only arise when the structure of 1Q runs changes — and within this loop, that can only happen through two mechanisms: 2Q gate removal (which merges adjacent 1Q runs across the gap) or rotation consolidation (which shortens existing 1Q runs). If neither occurred, `Optimize1qGatesDecomposition` sees the same runs it already optimally decomposed — re-running it produces identical results.
 
-By ignoring 1Q-only changes, we avoid the false positive where Optimize1qGatesDecomposition always finds work (it nearly always does) and would trigger unnecessary re-iteration.
+### Why Optimize1qGatesDecomposition doesn't drive the loop
 
-**Caveat**: This design intentionally trades a small amount of 1Q optimization for faster convergence. See [Dev Team Feedback: 1Q Gate and Depth Impact](#dev-team-feedback-1q-gate-and-depth-impact) below for the full analysis.
+`Optimize1qGatesDecomposition` mutates the DAG unconditionally — it replaces 1Q runs with their optimal Euler decomposition even when the result is identical to the input (e.g., `[RZ, SX, RZ]` → decompose → `[RZ, SX, RZ]`). It does not distinguish "I improved something" from "I replaced with an equivalent sequence."
 
-### Handling unconditional DAG mutation in Optimize1qGatesDecomposition
+A naive "did anything change?" flag would never converge because this pass always reports changes. But this pass also cannot create new opportunities for other passes — its output doesn't introduce new commutation patterns or new identity gates. It is purely a **consumer** of opportunities created by the other two passes.
 
-A known issue with a generic "changed" flag approach: `Optimize1qGatesDecomposition`
-mutates the DAG unconditionally — it replaces 1Q runs with their optimal Euler
-decomposition even when the result is identical to the input (e.g., `[RZ, SX, RZ]` →
-decompose → `[RZ, SX, RZ]`). The pass does not distinguish "I improved something"
-from "I replaced with an equivalent sequence."
+Therefore we track signals only from passes that **produce** new opportunities:
+- `RemoveIdentityEquivalent` — removes multi-qubit identity gates (well-defined: either it finds identities or it doesn't)
+- `CommutativeCancellation` — cancels 2Q gate pairs and consolidates rotations (well-defined: either it finds cancellations/consolidations or it doesn't)
 
-A naive loop condition that checks "did any pass mutate the DAG?" would never terminate,
-because this pass always reports changes.
-
-**Our design sidesteps this entirely.** `Optimize1qGatesDecomposition` never sets the
-`_opt_pass_changed` flag because it is a 1Q-only pass — it cannot create new 2Q
-optimization opportunities regardless of whether it mutates or not. The loop condition
-only watches `RemoveIdentityEquivalent` (multi-qubit removals) and
-`CommutativeCancellation` (multi-qubit cancellations). These passes have well-defined
-semantics: they either remove/cancel gates or they don't, with no "equivalent replacement"
-ambiguity.
+When neither finds work, no 1Q run in the circuit has changed, so `Optimize1qGatesDecomposition` would reproduce its previous output. The loop exits safely.
 
 ## Dev Team Feedback: 1Q Gate and Depth Impact
 
