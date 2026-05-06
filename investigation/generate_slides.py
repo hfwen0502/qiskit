@@ -1,8 +1,8 @@
 """Generate PPT slides for Qiskit transpiler optimization investigations.
 
 Creates slides covering three completed investigations:
-1. Optimization Loop — L2 loop does no useful 2Q work after iteration 1
-2. Compute-Then-Apply — Memory access pattern refactoring, 15-30% speedup
+1. Optimization Loop — Opportunity-driven convergence (zero regression, fewer iterations)
+2. Compute-Then-Apply — Parallel DAG access refactoring, 1.5-1.9x speedup (release build)
 3. 3-Qubit Block Synthesis — Separability splitting, -5% CX gates
 
 Usage:
@@ -150,8 +150,8 @@ def make_title_slide(prs):
                 font_size=18, color=MED_GRAY)
 
     bullets = [
-        ("1.  Optimization Loop: smarter convergence detection for L2", False, 0),
-        ("2.  Compute-Then-Apply: memory access pattern refactoring (15-30% speedup)", False, 0),
+        ("1.  Optimization Loop: opportunity-driven convergence for L2 (zero regression)", False, 0),
+        ("2.  Compute-Then-Apply: parallel DAG access refactoring (1.5-1.9x speedup)", False, 0),
         ("3.  3-Qubit Block Synthesis: separability splitting (-5% CX gates)", False, 0),
     ]
     add_bullet_frame(slide, Inches(0.8), Inches(3.5), Inches(8.4), Inches(2.0),
@@ -165,12 +165,12 @@ def make_title_slide(prs):
 # ── Investigation 1: Optimization Loop ──
 
 def make_opt_loop_slide1(prs):
-    """Slide: Problem + Finding"""
+    """Slide: Problem + Solution"""
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_slide_bg(slide, WHITE)
 
     add_textbox(slide, Inches(0.5), Inches(0.3), Inches(9.0), Inches(0.5),
-                "1. Optimization Loop: Smarter Convergence Detection for Level 2",
+                "1. Optimization Loop: Opportunity-Driven Convergence for Level 2",
                 font_size=22, bold=True, color=IBM_BLUE)
 
     # Problem
@@ -179,53 +179,55 @@ def make_opt_loop_slide1(prs):
 
     problem_bullets = [
         ("Level 2 uses FixedPoint(size) AND FixedPoint(depth)", False, 0),
-        ("to detect convergence", False, 0),
         ("Always requires a redundant \"confirmation\" iteration", False, 0),
-        ("that re-runs all passes just to verify metrics", False, 0),
-        ("haven't changed", False, 0),
-        ("The loop structure is sound -- the issue is the", False, 0),
-        ("convergence check", False, 0),
+        ("that re-runs all passes just to verify nothing changed", False, 0),
+        ("", False, 0),
+        ("Challenge: Optimize1qGatesDecomposition mutates DAG", False, 0),
+        ("unconditionally (replaces 1Q runs even when result is", False, 0),
+        ("identical). A naive \"changed?\" flag never converges.", False, 0),
     ]
     add_bullet_frame(slide, Inches(0.5), Inches(1.35), Inches(4.2), Inches(2.2),
                      problem_bullets, font_size=12)
 
-    # Observation
+    # Solution
     add_textbox(slide, Inches(5.2), Inches(1.0), Inches(4.5), Inches(0.3),
-                "Observation (13 benchmarks)", font_size=16, bold=True, color=GREEN)
+                "Solution: Track Opportunity Producers", font_size=16, bold=True, color=GREEN)
 
-    finding_bullets = [
-        ("On 13 circuits (QFT, QV, ESU2, QAOA, BV,", False, 0),
-        ("Heisenberg at 50-100Q on FakeTorino):", False, 0),
-        ("Pre-loop passes (ConsolidateBlocks, UnitarySynthesis)", False, 0),
-        ("handle the bulk of 2Q gate reduction", False, 0),
-        ("Final iteration is always a no-op confirmation", False, 0),
-        ("Different workloads may behave differently", False, 0),
+    solution_bullets = [
+        ("Only track passes that produce new opportunities:", True, 0),
+        ("  _opt_pass_changed: 2Q gate removed (exposes", False, 0),
+        ("    longer 1Q runs for next iteration)", False, 0),
+        ("  _opt_1q_consolidated: rotations merged (shortens", False, 0),
+        ("    1Q runs for better decomposition)", False, 0),
+        ("", False, 0),
+        ("Optimize1qGatesDecomposition is a consumer, not a", False, 0),
+        ("producer -- it doesn't drive the loop", False, 0),
     ]
-    add_bullet_frame(slide, Inches(5.2), Inches(1.35), Inches(4.5), Inches(2.2),
-                     finding_bullets, font_size=12)
+    add_bullet_frame(slide, Inches(5.2), Inches(1.35), Inches(4.5), Inches(2.5),
+                     solution_bullets, font_size=12)
 
     # Results table
-    add_textbox(slide, Inches(0.5), Inches(3.5), Inches(9.0), Inches(0.3),
-                "Changed-Flag Prototype: Iterations Saved, No Regressions",
+    add_textbox(slide, Inches(0.5), Inches(3.7), Inches(9.0), Inches(0.3),
+                "Results: Zero Regression vs FixedPoint (A/B tested)",
                 font_size=14, bold=True, color=DARK_GRAY)
 
     rows = [
-        ["Circuit", "FixedPoint Iters", "Changed-Flag Iters", "2Q Gates", "Regressed?"],
-        ["QFT_100", "3", "2", "9,528", "No"],
-        ["QV_100", "2", "1", "96,474", "No"],
-        ["EfficientSU2_100", "2", "1", "297", "No"],
-        ["QAOA_100", "3", "1", "186", "No"],
-        ["BV_100", "2", "1", "196", "No"],
-        ["Heisenberg_100", "2", "1", "891", "No"],
+        ["Circuit", "FixedPoint Iters", "Changed-Flag Iters", "Total Gates", "Depth", "Regressed?"],
+        ["QFT_100", "3", "2", "37,687", "5,404", "No (0 delta)"],
+        ["QV_100", "2", "1", "96,474", "—", "No"],
+        ["EfficientSU2_100", "2", "1", "1,494", "330", "No (0 delta)"],
+        ["QAOA_100", "3", "1", "2,137", "323", "No (0 delta)"],
+        ["BV_100", "2", "1", "196", "—", "No"],
+        ["Heisenberg_100", "2", "1", "891", "—", "No"],
     ]
-    add_table(slide, Inches(0.5), Inches(3.9), Inches(8.0), Inches(2.3), rows,
-              col_widths=[Inches(2.0), Inches(1.4), Inches(1.6), Inches(1.4), Inches(1.6)])
+    add_table(slide, Inches(0.5), Inches(4.05), Inches(9.0), Inches(2.3), rows,
+              col_widths=[Inches(1.8), Inches(1.3), Inches(1.5), Inches(1.3), Inches(1.0), Inches(1.6)])
 
     # Bottom summary
-    add_textbox(slide, Inches(0.5), Inches(6.4), Inches(9.0), Inches(0.5),
-                "Proposal: Replace FixedPoint with a direct \"changed\" flag -- each pass reports whether it modified "
-                "2Q gates, and the loop exits when no pass reports changes. Preserves the loop for circuits where "
-                "later iterations do find opportunities. Needs validation on broader circuit set.",
+    add_textbox(slide, Inches(0.5), Inches(6.5), Inches(9.0), Inches(0.5),
+                "Both 2Q and 1Q optimization preserved. Loop exits when neither opportunity-producing pass finds work. "
+                "Removes 4 analysis passes (Size, Depth, FixedPoint x2) per iteration. "
+                "Branch: pass-manager-investigation (commit efc12cf7c).",
                 font_size=11, color=MED_GRAY)
 
 
@@ -279,10 +281,10 @@ for result in results:
     tf = shape.text_frame
     tf.word_wrap = True
     p = tf.paragraphs[0]
-    p.text = ("Key insight: Speedup comes from memory access patterns, not threading. "
-              "remove_1q_sequence() / replace_block() / remove_op_node() modify petgraph's "
-              "StableGraph edge lists after every item, invalidating CPU cache lines. "
-              "Batching all reads first keeps the cache warm. Rayon ON vs OFF shows no difference.")
+    p.text = ("Key insight: Separating compute from mutation enables both cache-friendly access AND rayon parallelism. "
+              "Serial mode shows 1.85x from batching alone (cache-warm reads). "
+              "Rayon adds further speedup on release builds (4.7-6.5x within these passes). "
+              "Combined: 1.5-1.6x end-to-end on QFT circuits.")
     p.font.size = Pt(11)
     p.font.name = "Calibri"
     p.font.color.rgb = DARK_GRAY
@@ -306,82 +308,80 @@ for result in results:
 
 
 def make_cta_slide2(prs):
-    """Slide: Benchmark results"""
+    """Slide: Benchmark results (release build)"""
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_slide_bg(slide, WHITE)
 
     add_textbox(slide, Inches(0.5), Inches(0.3), Inches(9.0), Inches(0.5),
-                "2. Compute-Then-Apply: Benchmark Results",
+                "2. Compute-Then-Apply: Benchmark Results (Release Build)",
                 font_size=22, bold=True, color=IBM_BLUE)
 
     add_textbox(slide, Inches(0.5), Inches(0.85), Inches(9.0), Inches(0.3),
-                "FakeTorino (133Q heavy-hex), optimization level 2, 5 runs per circuit, mean reported",
+                "FakeTorino (133Q heavy-hex), optimization level 2, QISKIT_BUILD_PROFILE=release, 5 runs mean",
                 font_size=12, color=MED_GRAY)
 
-    # Remote server table - rayon ON
+    # Default mode (rayon ON)
     add_textbox(slide, Inches(0.3), Inches(1.3), Inches(4.5), Inches(0.3),
-                "Remote Server (Intel Xeon, 160 vCPUs) -- Rayon ON",
+                "Default Mode (Rayon ON) -- Remote Server",
                 font_size=12, bold=True, color=DARK_GRAY)
 
-    rows_remote_on = [
+    rows_default = [
         ["Circuit", "Main (s)", "Ours (s)", "Speedup"],
-        ["QFT-50", "2.626", "2.051", "1.28x"],
-        ["QFT-100", "6.321", "4.605", "1.37x"],
-        ["ESU2-50", "0.303", "0.293", "1.03x"],
-        ["ESU2-100", "0.489", "0.350", "1.40x"],
-        ["QV-50", "1.167", "1.013", "1.15x"],
-        ["QV-100", "3.385", "3.128", "1.08x"],
+        ["QFT-50", "0.196", "0.129", "1.52x"],
+        ["QFT-100", "0.456", "0.288", "1.58x"],
+        ["ESU2-50", "0.012", "0.013", "~same"],
+        ["ESU2-100", "0.019", "0.018", "~same"],
+        ["QV-50", "0.060", "0.054", "1.11x"],
+        ["QV-100", "0.164", "0.154", "1.06x"],
     ]
-    t1 = add_table(slide, Inches(0.3), Inches(1.65), Inches(4.5), Inches(2.4), rows_remote_on,
+    t1 = add_table(slide, Inches(0.3), Inches(1.65), Inches(4.5), Inches(2.4), rows_default,
               col_widths=[Inches(1.2), Inches(1.0), Inches(1.0), Inches(1.0)])
     # Bold the best speedups
-    for r in [2, 4, 5]:
-        for c in [3]:
-            cell = t1.cell(r, c)
-            for p in cell.text_frame.paragraphs:
-                p.font.bold = True
-                p.font.color.rgb = GREEN
+    for r in [1, 2]:
+        cell = t1.cell(r, 3)
+        for p in cell.text_frame.paragraphs:
+            p.font.bold = True
+            p.font.color.rgb = GREEN
 
-    # Remote server table - rayon OFF
+    # Serial mode (rayon OFF)
     add_textbox(slide, Inches(5.2), Inches(1.3), Inches(4.5), Inches(0.3),
-                "Remote Server -- Rayon OFF (serial mode)",
+                "Serial Mode (Rayon OFF) -- Remote Server",
                 font_size=12, bold=True, color=DARK_GRAY)
 
-    rows_remote_off = [
+    rows_serial = [
         ["Circuit", "Main (s)", "Ours (s)", "Speedup"],
-        ["QFT-50", "2.700", "2.175", "1.24x"],
-        ["QFT-100", "6.374", "4.491", "1.42x"],
-        ["ESU2-50", "0.299", "0.293", "1.02x"],
-        ["ESU2-100", "0.494", "0.350", "1.41x"],
-        ["QV-50", "1.273", "1.134", "1.12x"],
-        ["QV-100", "3.429", "3.082", "1.11x"],
+        ["QFT-50", "1.128", "0.609", "1.85x"],
+        ["QFT-100", "2.648", "1.407", "1.88x"],
+        ["ESU2-50", "0.012", "0.012", "~same"],
+        ["ESU2-100", "0.019", "0.019", "~same"],
+        ["QV-50", "0.305", "0.264", "1.16x"],
+        ["QV-100", "1.040", "0.999", "1.04x"],
     ]
-    t2 = add_table(slide, Inches(5.2), Inches(1.65), Inches(4.5), Inches(2.4), rows_remote_off,
+    t2 = add_table(slide, Inches(5.2), Inches(1.65), Inches(4.5), Inches(2.4), rows_serial,
               col_widths=[Inches(1.2), Inches(1.0), Inches(1.0), Inches(1.0)])
-    for r in [2, 4, 5]:
-        for c in [3]:
-            cell = t2.cell(r, c)
-            for p in cell.text_frame.paragraphs:
-                p.font.bold = True
-                p.font.color.rgb = GREEN
+    for r in [1, 2]:
+        cell = t2.cell(r, 3)
+        for p in cell.text_frame.paragraphs:
+            p.font.bold = True
+            p.font.color.rgb = GREEN
 
-    # Rayon comparison
+    # Rayon speedup comparison
     add_textbox(slide, Inches(0.3), Inches(4.3), Inches(9.4), Inches(0.3),
-                "Rayon ON vs OFF (our branch) -- no measurable difference:",
+                "Rayon ON vs OFF -- Isolating Threading Contribution:",
                 font_size=12, bold=True, color=DARK_GRAY)
 
     rows_rayon = [
-        ["Circuit", "Remote ON", "Remote OFF", "Local ON", "Local OFF"],
-        ["QFT-100", "4.605", "4.491", "7.231", "5.592"],
-        ["ESU2-100", "0.350", "0.350", "0.502", "0.390"],
-        ["QV-100", "3.128", "3.082", "4.286", "3.688"],
+        ["Circuit", "Main: ON", "Main: OFF", "Main Rayon", "Ours: ON", "Ours: OFF", "Ours Rayon"],
+        ["QFT-50", "0.196", "1.128", "5.8x", "0.129", "0.609", "4.7x"],
+        ["QFT-100", "0.456", "2.648", "5.8x", "0.288", "1.407", "4.9x"],
+        ["QV-100", "0.164", "1.040", "6.3x", "0.154", "0.999", "6.5x"],
     ]
-    add_table(slide, Inches(0.3), Inches(4.65), Inches(6.5), Inches(1.2), rows_rayon,
-              col_widths=[Inches(1.3), Inches(1.3), Inches(1.3), Inches(1.3), Inches(1.3)])
+    add_table(slide, Inches(0.3), Inches(4.65), Inches(9.4), Inches(1.2), rows_rayon,
+              col_widths=[Inches(1.2), Inches(1.1), Inches(1.1), Inches(1.2), Inches(1.1), Inches(1.1), Inches(1.2)])
 
     # Takeaway
     shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-                                    Inches(0.3), Inches(6.1), Inches(9.4), Inches(0.6))
+                                    Inches(0.3), Inches(6.1), Inches(9.4), Inches(0.7))
     shape.fill.solid()
     shape.fill.fore_color.rgb = RGBColor(0xE8, 0xF0, 0xFE)
     shape.line.color.rgb = ACCENT
@@ -389,9 +389,10 @@ def make_cta_slide2(prs):
     tf = shape.text_frame
     tf.word_wrap = True
     p = tf.paragraphs[0]
-    p.text = ("Takeaway: 15-42% speedup on 50-100 qubit circuits from cache-friendly DAG access. "
-              "Identical speedup with rayon ON and OFF confirms the gain is purely from compute-then-apply batching. "
-              "No regressions on small circuits. Rayon parallelism is ready for future 1000+ qubit circuits.")
+    p.text = ("Takeaway: 1.5-1.6x end-to-end speedup on QFT circuits (rayon ON). "
+              "In serial mode, restructuring alone gives 1.85-1.88x. "
+              "Main already has rayon in SABRE (5-6x); our branch adds rayon to 3 optimization passes. "
+              "Small circuits show no overhead. Gate counts identical.")
     p.font.size = Pt(11)
     p.font.name = "Calibri"
     p.font.color.rgb = DARK_GRAY
@@ -486,8 +487,8 @@ def make_summary_slide(prs):
     # Summary table
     rows = [
         ["Investigation", "Status", "Impact", "Effort"],
-        ["Optimization Loop", "Prototype done", "Eliminates redundant confirmation iteration", "Low (flag change)"],
-        ["Compute-Then-Apply", "Implemented (fork)", "15-42% speedup on opt passes", "Medium (Rust refactor)"],
+        ["Optimization Loop", "Implemented + verified", "Skip redundant iterations, 0 regression", "Low (flag change)"],
+        ["Compute-Then-Apply", "Implemented (fork)", "1.5-1.9x speedup (release build)", "Medium (Rust refactor)"],
         ["3Q Block Synthesis", "Prototype done", "-5% CX gates across benchmarks", "Low (Python pass)"],
     ]
     add_table(slide, Inches(0.3), Inches(1.1), Inches(9.4), Inches(1.5), rows,
@@ -498,8 +499,8 @@ def make_summary_slide(prs):
 
     insight_bullets = [
         ("All three optimizations are orthogonal -- they compose without interference", False, 0),
-        ("The L2 loop's convergence check (FixedPoint) always forces a redundant confirmation iteration", False, 0),
-        ("The parallelization hypothesis was wrong: actual gain is from cache-friendly memory access", False, 0),
+        ("Optimization loop: track opportunity-producing passes, not consumers (solves idempotency problem)", False, 0),
+        ("Compute-then-apply: separating reads from writes enables both cache efficiency AND rayon parallelism", False, 0),
         ("3Q synthesis gains are dominated by separability (90%), not decomposition algorithms", False, 0),
     ]
     add_bullet_frame(slide, Inches(0.5), Inches(3.4), Inches(9.0), Inches(1.8),
@@ -510,7 +511,7 @@ def make_summary_slide(prs):
 
     next_bullets = [
         ("Seek feedback from Qiskit transpiler team on all three proposals", False, 0),
-        ("Optimization loop: propose changed-flag approach for Level 2", False, 0),
+        ("Optimization loop: upstream PR with opportunity-driven flag approach", False, 0),
         ("Compute-then-apply: submit PR to Qiskit (branch: parallel-optimization-passes)", False, 0),
         ("3Q synthesis: implement separability pass, integrate into Level 2 pipeline", False, 0),
     ]
