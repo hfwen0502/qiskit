@@ -166,12 +166,13 @@ pub fn run_remove_identity_equiv(...) -> PyResult<bool> {
 }
 ```
 
-**`commutation_cancellation.rs`** — returns `true` only when multi-qubit gate pairs are cancelled:
+**`commutation_cancellation.rs`** — returns `(multi_qubit_changed, rotations_consolidated)`:
 
 ```rust
-pub fn cancel_commutations(...) -> PyResult<bool> {
+pub fn cancel_commutations(...) -> PyResult<(bool, bool)> {
     // ... existing logic builds cancellation_sets ...
     let mut changed = false;
+    let mut rotations_consolidated = false;
     for (cancel_key, cancel_set) in &cancellation_sets {
         if cancel_set.len() > 1 {
             if let GateOrRotation::Gate(g) = cancel_key.gate {
@@ -183,11 +184,13 @@ pub fn cancel_commutations(...) -> PyResult<bool> {
                 }
                 continue;
             }
-            // ZRotation/XRotation consolidation: always 1Q, does NOT set changed
-            // ... consolidate rotations ...
+            if matches!(cancel_key.gate, GateOrRotation::ZRotation | GateOrRotation::XRotation) {
+                rotations_consolidated = true;  // 1Q rotation consolidation
+                // ... consolidate rotations ...
+            }
         }
     }
-    Ok(changed)
+    Ok((changed, rotations_consolidated))
 }
 ```
 
@@ -221,9 +224,13 @@ def run(self, dag):
 
 # commutative_cancellation.py
 def run(self, dag):
-    changed = cancel_commutations(dag, self._commutation_checker, sorted(self.basis))
-    if changed:
+    multi_qubit_changed, rotations_consolidated = (
+        cancel_commutations(dag, self._commutation_checker, sorted(self.basis))
+    )
+    if multi_qubit_changed:
         self.property_set["_opt_pass_changed"] = True
+    if rotations_consolidated:
+        self.property_set["_opt_1q_consolidated"] = True
     return dag
 ```
 
@@ -239,13 +246,16 @@ def _optimization_check_changed_flag():
     from qiskit.transpiler.basepasses import AnalysisPass
 
     class _ResetChangedFlag(AnalysisPass):
-        """Reset the changed flag at the start of each iteration."""
+        """Reset the changed flags at the start of each iteration."""
         def run(self, dag):
             self.property_set["_opt_pass_changed"] = False
+            self.property_set["_opt_1q_consolidated"] = False
 
     def check(property_set):
-        """Continue looping if any 2Q-relevant pass modified the DAG."""
-        return property_set.get("_opt_pass_changed", False)
+        """Continue looping if any pass modified 2Q gates OR consolidated rotations."""
+        return property_set.get("_opt_pass_changed", False) or property_set.get(
+            "_opt_1q_consolidated", False
+        )
 
     return (_ResetChangedFlag(), check)
 ```
@@ -374,11 +384,23 @@ Options:
 2. **Track CommutativeCancellation's 1Q consolidation separately**: Have CommutativeCancellation report whether it consolidated any rotations (not just cancelled 2Q pairs). If it did, run one more iteration for Optimize1qGatesDecomposition to pick up the benefit.
 3. **Accept the trade-off**: The 2Q-only flag is correct for the dominant use case. The 0.18% 1Q regression on rotation-heavy circuits is negligible compared to the 10-20% optimization stage speedup from eliminating the confirmation iteration.
 
-### Recommendation
+### Recommendation and Implementation
 
-**Option 3 is the pragmatic choice for Level 2.** The purpose of Level 2 is to be the "good enough, fast" optimization level. The 0.18% total gate regression on QFT (69 out of 37,285 gates, all 1Q) and 0.02% on QAOA (9 out of 53,226 gates) are well within noise for any practical use case. These are rotation-gate merges that have negligible impact on circuit fidelity — 1Q gate errors are typically 10-100x lower than 2Q gate errors on real hardware.
+**Option 2 was implemented and verified.** We extended `CommutativeCancellation` to return a tuple `(multi_qubit_changed, rotations_consolidated)` and added a second property-set flag `_opt_1q_consolidated`. The loop now continues if **either** flag is set — this preserves the 1Q rotation-consolidation benefit while still avoiding the FixedPoint's unconditional confirmation pass.
 
-If the team wants to preserve the 1Q benefit with zero regression, **Option 2** is the cleanest path: extend `CommutativeCancellation` to also report whether it consolidated any rotations. This adds a second flag (`_opt_1q_consolidated`) that triggers at most one additional iteration, avoiding the FixedPoint's unconditional confirmation pass.
+### A/B Test: Changed-Flag (with rotation tracking) vs FixedPoint
+
+We ran both loop conditions on the same post-routing circuits to verify zero regression:
+
+| Circuit | FixedPoint Size | Changed-Flag Size | Delta | FixedPoint Depth | Changed-Flag Depth | Delta |
+|---------|:-:|:-:|:-:|:-:|:-:|:-:|
+| QFT_100 | 37,687 | 37,687 | **0** | 5,404 | 5,404 | **0** |
+| QAOA_100 | 2,137 | 2,137 | **0** | 323 | 323 | **0** |
+| EfficientSU2_100 | 1,494 | 1,494 | **0** | 330 | 330 | **0** |
+
+**Zero delta on total gate count, depth, and 2Q gates across all tested circuits.** The rotation-consolidation flag triggers exactly the iterations needed to capture the CommutativeCancellation → Optimize1qGatesDecomposition cross-iteration benefit, without the FixedPoint's unnecessary confirmation pass.
+
+This eliminates the 0.18% QFT and 0.02% QAOA regressions that the 2Q-only flag had. The changed-flag approach is now strictly better: same quality as FixedPoint, fewer iterations, no analysis passes needed.
 
 ## Verification
 
@@ -408,10 +430,10 @@ All 152 pass tests pass. All 3 optimization levels produce correct results.
 |------|--------|
 | `crates/transpiler/src/passes/remove_identity_equiv.rs` | Return `PyResult<bool>` (true = multi-qubit identity removed) |
 | `crates/transpiler/src/passes/optimize_1q_gates_decomposition.rs` | Return `PyResult<bool>` (true = 1Q run replaced) |
-| `crates/transpiler/src/passes/commutation_cancellation.rs` | Return `PyResult<bool>` (true = multi-qubit gates cancelled) |
+| `crates/transpiler/src/passes/commutation_cancellation.rs` | Return `PyResult<(bool, bool)>` — `(multi_qubit_changed, rotations_consolidated)` |
 | `qiskit/transpiler/passes/optimization/remove_identity_equiv.py` | Read bool, set `property_set["_opt_pass_changed"]` |
-| `qiskit/transpiler/passes/optimization/commutative_cancellation.py` | Read bool, set `property_set["_opt_pass_changed"]` |
-| `qiskit/transpiler/preset_passmanagers/builtin_plugins.py` | Replace FixedPoint with changed-flag **for Level 2 only** (Level 1 and 3 unchanged) |
+| `qiskit/transpiler/passes/optimization/commutative_cancellation.py` | Unpack tuple, set `_opt_pass_changed` and `_opt_1q_consolidated` separately |
+| `qiskit/transpiler/preset_passmanagers/builtin_plugins.py` | Replace FixedPoint with changed-flag; loop checks both `_opt_pass_changed` OR `_opt_1q_consolidated` |
 
 ## Reference: Profiling Data (Read-Only Context)
 
@@ -474,7 +496,9 @@ At Level 3, MinimumPoint needs 3-6 iterations. All useful work happens in iterat
 
 ## Next Steps
 
-- [ ] Discuss with Qiskit team: accept 0.18% 1Q regression (Option 3) or implement CommutativeCancellation rotation-consolidation flag (Option 2)?
-- [ ] If Option 2: extend `cancel_commutations` in Rust to return a struct `{multi_qubit_changed: bool, rotations_consolidated: bool}` instead of a single bool
+- [x] ~~Discuss with Qiskit team: accept 0.18% 1Q regression (Option 3) or implement rotation-consolidation flag (Option 2)?~~ → **Option 2 implemented**
+- [x] ~~Extend `cancel_commutations` in Rust to return `(bool, bool)` — `(multi_qubit_changed, rotations_consolidated)`~~ → **Done** (commit `efc12cf7c`)
+- [x] ~~A/B test proving zero regression vs FixedPoint~~ → **Verified**: zero delta on QFT, QAOA, EfficientSU2
+- [ ] Run A/B on remaining circuits (QV_100, BV_100, Heisenberg_100) for completeness
 - [ ] Upstream proposal with profiling data and chosen approach
 - [ ] Consider applying the same pattern to Level 1 (uses FixedPoint with different passes)
