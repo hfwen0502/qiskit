@@ -151,7 +151,7 @@ We swept all circuits from the Benchpress device transpile suite through Level 2
 
 The redundant iteration produces **zero gate changes** on all 22 circuits. When the changed-flag says "nothing changed," the confirmation pass adds no value.
 
-A/B test (changed-flag vs FixedPoint on same post-routing circuits):
+Side-by-side comparison (changed-flag exit vs FixedPoint exit on same post-routing circuits):
 
 | Circuit | FixedPoint Size | Changed-Flag Size | Delta | Depth Delta |
 |---------|:-:|:-:|:-:|:-:|
@@ -351,7 +351,7 @@ Each signal is independently verifiable with a minimal circuit. This ensures cor
 
 All 5 tests PASS.
 
-### Level 2: Quality Parity (A/B vs FixedPoint)
+### Level 2: Quality Parity (Changed-Flag vs FixedPoint)
 
 | Metric | Method | Result |
 |--------|--------|--------|
@@ -478,7 +478,7 @@ Small 1Q regressions on 2 rotation-heavy circuits (motivating signal 2):
 - [x] ~~v1: 2Q-only flag~~ → 0.18% 1Q regression on QFT
 - [x] ~~v2: + rotation tracking~~ → Zero regression (commit `efc12cf7c`)
 - [x] ~~v3: + all_gates_in_basis signal~~ → Handles BasisTranslator (commit `46e421426`)
-- [x] ~~A/B test vs FixedPoint~~ → Zero delta on all metrics
+- [x] ~~Side-by-side test vs FixedPoint~~ → Zero delta on all metrics
 - [x] ~~RZZ out-of-basis trigger~~ → Loop handles correctly
 - [x] ~~hwb12 stress test (1M+ gates)~~ → 15.5% savings
 - [x] ~~Benchpress sweep (22 circuits)~~ → 3.8% average, up to 16.5%

@@ -208,7 +208,7 @@ def make_opt_loop_slide1(prs):
 
     # Results table
     add_textbox(slide, Inches(0.5), Inches(3.7), Inches(9.0), Inches(0.3),
-                "Results: Zero Regression vs FixedPoint (A/B tested)",
+                "Results: Zero Regression (Changed-Flag vs FixedPoint)",
                 font_size=14, bold=True, color=DARK_GRAY)
 
     rows = [
@@ -227,7 +227,7 @@ def make_opt_loop_slide1(prs):
     add_textbox(slide, Inches(0.5), Inches(6.5), Inches(9.0), Inches(0.5),
                 "Three signals cover all paths that create new optimization opportunities. "
                 "CommutativeCancellation can produce out-of-basis gates (e.g. RX); BasisTranslator translates them "
-                "into unoptimized sequences that need re-optimization. A/B test confirms zero regression vs FixedPoint.",
+                "into unoptimized sequences that need re-optimization. Side-by-side test confirms zero regression vs FixedPoint.",
                 font_size=11, color=MED_GRAY)
 
 
@@ -386,7 +386,7 @@ def make_opt_loop_slide3(prs):
 
     verify_bullets = [
         ("L1: Signal coverage tests (this slide) \u2014 each signal triggers independently, output is correct", False, 0),
-        ("L2: A/B vs FixedPoint \u2014 zero delta on total gates, depth, 2Q gates across all tested circuits", False, 0),
+        ("L2: Changed-flag vs FixedPoint \u2014 zero delta on total gates, depth, 2Q gates across all tested circuits", False, 0),
         ("L3: Qiskit unit tests \u2014 152 pass tests pass, all 3 optimization levels correct", False, 0),
         ("L4: Benchpress sweep (22 circuits) \u2014 redundant iteration produces zero gate changes on every circuit", False, 0),
     ]
