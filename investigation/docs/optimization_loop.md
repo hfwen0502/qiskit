@@ -119,45 +119,56 @@ We swept all circuits from the Benchpress device transpile suite through Level 2
 
 | Circuit | Qubits | Output Gates | CZ | Transpile (s) | Saved (s) | **Savings %** |
 |---------|:------:|:------------:|:--:|:-------------:|:---------:|:-------------:|
-| **bwt_n37** | **37** | **2,887,616** | **604,400** | **31.5** | **5.205** | **16.5%** |
-| **hwb12** | **20** | **826,842** | **190,975** | **7.7** | **1.199** | **15.5%** |
-| **square_root_n45** | **45** | **254,616** | **54,151** | **2.6** | **0.403** | **15.3%** |
-| adder_n118 | 118 | 4,098 | 845 | 0.07 | 0.005 | 6.8% |
-| **vqe_uccsd_n28** | **28** | **782,039** | **206,612** | **24.5** | **1.211** | **4.9%** |
-| ghz_n127 | 127 | 886 | 126 | 0.04 | 0.002 | 4.4% |
-| QV_n100 | 100 | 109,394 | 14,835 | 3.7 | 0.156 | 4.2% |
-| ising_n98 | 98 | 1,361 | 194 | 0.07 | 0.003 | 4.2% |
-| multiplier_n45 | 45 | 10,663 | 2,286 | 0.5 | 0.014 | 2.9% |
-| wstate_n76 | 76 | 1,128 | 150 | 0.1 | 0.003 | 2.4% |
-| cat_n65 | 65 | 452 | 64 | 0.1 | 0.001 | 1.3% |
-| qugan_n71 | 71 | 2,366 | 381 | 0.4 | 0.005 | 1.2% |
-| ising_n42 | 42 | 575 | 82 | 0.2 | 0.001 | 0.8% |
-| qft_n63 | 63 | 8,454 | 2,014 | 1.7 | 0.013 | 0.8% |
-| knn_n67 | 67 | 1,260 | 231 | 0.3 | 0.003 | 0.8% |
-| dnn_n51 | 51 | 1,687 | 271 | 0.5 | 0.003 | 0.6% |
-| barenco_tof_10 | 19 | 949 | 192 | 0.3 | 0.001 | 0.4% |
-| swap_test_n41 | 41 | 845 | 140 | 0.5 | 0.002 | 0.4% |
+| **bwt_n37** | **37** | **2,889,216** | **604,400** | **30.8** | **5.185** | **14.4%** |
+| **square_root_n45** | **45** | **254,616** | **54,151** | **2.4** | **0.324** | **11.9%** |
+| adder_n118 | 118 | 4,098 | 845 | 0.07 | 0.005 | 6.5% |
+| **vqe_uccsd_n28** | **28** | **781,157** | **206,612** | **23.5** | **1.186** | **4.8%** |
+| ghz_n127 | 127 | 886 | 126 | 0.05 | 0.002 | 3.7% |
+| ising_n98 | 98 | 1,353 | 194 | 0.07 | 0.002 | 3.1% |
+| multiplier_n45 | 45 | 10,623 | 2,286 | 0.5 | 0.014 | 2.6% |
+| wstate_n76 | 76 | 1,128 | 150 | 0.1 | 0.002 | 1.6% |
+| cat_n65 | 65 | 452 | 64 | 0.1 | 0.001 | 1.0% |
+| qft_n63 | 63 | 8,485 | 2,014 | 1.7 | 0.017 | 1.0% |
+| qugan_n71 | 71 | 2,382 | 381 | 0.5 | 0.004 | 0.9% |
+| knn_n67 | 67 | 1,260 | 231 | 0.4 | 0.003 | 0.8% |
+| ising_n42 | 42 | 585 | 82 | 0.2 | 0.001 | 0.7% |
+| dnn_n51 | 51 | 1,704 | 271 | 0.5 | 0.003 | 0.6% |
+| swap_test_n41 | 41 | 845 | 140 | 0.5 | 0.002 | 0.3% |
 | bv_n70 | 70 | 527 | 36 | 0.5 | 0.001 | 0.3% |
-| gf2^16_mult | 48 | 7,363 | 1,581 | 6.3 | 0.013 | 0.2% |
-| adder | 10 | 309 | 65 | 0.6 | 0.001 | 0.1% |
-| bigadder | 18 | 611 | 130 | 0.8 | 0.001 | 0.1% |
+| adder | 10 | 309 | 65 | 0.5 | 0.001 | 0.2% |
+| bigadder | 18 | 611 | 130 | 0.7 | 0.001 | 0.2% |
 
-**Summary**: Average **3.8%** savings. Max **16.5%** (bwt_n37, 5.2s). Savings scale with output circuit size:
-- >100K gates: **5–16%** savings
+**Summary** (18 circuits, 4 files not found on server): Average savings **~4%**. Max **14.4%** (bwt_n37, 5.2s saved). Savings scale with output circuit size:
+- >100K gates: **5–14%** savings
 - 10K–100K gates: 2–7% savings
 - <10K gates: <2% savings
 
-### Quality: Zero Regression
+### Quality: Zero Regression (Full 18-Circuit Verification)
 
-The redundant iteration produces **zero gate changes** on all 22 circuits. When the changed-flag says "nothing changed," the confirmation pass adds no value.
+After transpile, we re-run the loop body passes (RemoveIdentityEquivalent, Optimize1qGatesDecomposition, CommutativeCancellation) one more time on the output. If the changed-flag exit was correct, these passes should find **nothing** to improve.
 
-Side-by-side comparison (changed-flag exit vs FixedPoint exit on same post-routing circuits):
+| Circuit | Qubits | Gates | CZ | Depth | Δ Gates | Δ CZ | Δ Depth | Status |
+|---------|:------:|------:|---:|------:|:-------:|:----:|:-------:|:------:|
+| bwt_n37 | 37 | 2,889,216 | 604,400 | 1,609,710 | 0 | 0 | 0 | PASS |
+| square_root_n45 | 45 | 254,616 | 54,151 | 151,041 | 0 | 0 | 0 | PASS |
+| adder_n118 | 118 | 4,098 | 845 | 1,200 | 0 | 0 | 0 | PASS |
+| vqe_uccsd_n28 | 28 | 781,157 | 206,612 | 636,917 | 0 | 0 | 0 | PASS |
+| ghz_n127 | 127 | 886 | 126 | 382 | 0 | 0 | 0 | PASS |
+| ising_n98 | 98 | 1,353 | 194 | 22 | 0 | 0 | 0 | PASS |
+| multiplier_n45 | 45 | 10,623 | 2,286 | 4,641 | 0 | 0 | 0 | PASS |
+| wstate_n76 | 76 | 1,128 | 150 | 383 | 0 | 0 | 0 | PASS |
+| cat_n65 | 65 | 452 | 64 | 196 | 0 | 0 | 0 | PASS |
+| qugan_n71 | 71 | 2,382 | 381 | 618 | 0 | 0 | 0 | PASS |
+| ising_n42 | 42 | 585 | 82 | 22 | 0 | 0 | 0 | PASS |
+| qft_n63 | 63 | 8,485 | 2,014 | 905 | 0 | 0 | 0 | PASS |
+| knn_n67 | 67 | 1,260 | 231 | 571 | 0 | 0 | 0 | PASS |
+| dnn_n51 | 51 | 1,704 | 271 | 463 | 0 | 0 | 0 | PASS |
+| swap_test_n41 | 41 | 845 | 140 | 352 | 0 | 0 | 0 | PASS |
+| bv_n70 | 70 | 527 | 36 | 48 | 0 | 0 | 0 | PASS |
+| adder | 10 | 309 | 65 | 204 | 0 | 0 | 0 | PASS |
+| bigadder | 18 | 611 | 130 | 319 | 0 | 0 | 0 | PASS |
 
-| Circuit | FixedPoint Size | Changed-Flag Size | Delta | Depth Delta |
-|---------|:-:|:-:|:-:|:-:|
-| QFT_100 | 37,687 | 37,687 | **0** | **0** |
-| QAOA_100 | 2,137 | 2,137 | **0** | **0** |
-| EfficientSU2_100 | 1,494 | 1,494 | **0** | **0** |
+**18/18 circuits: zero regression on total gates, 2Q gates, and depth.**
 
 ### Speed: Fewer Iterations
 
