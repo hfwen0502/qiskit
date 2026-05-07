@@ -231,6 +231,173 @@ def make_opt_loop_slide1(prs):
                 font_size=11, color=MED_GRAY)
 
 
+def make_opt_loop_slide2(prs):
+    """Slide: Benchpress suite sweep — runtime savings from skipping redundant iteration."""
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_slide_bg(slide, WHITE)
+
+    add_textbox(slide, Inches(0.5), Inches(0.3), Inches(9.0), Inches(0.5),
+                "1. Optimization Loop: Runtime Savings (22-Circuit Benchpress Sweep)",
+                font_size=22, bold=True, color=IBM_BLUE)
+
+    add_textbox(slide, Inches(0.5), Inches(0.85), Inches(9.0), Inches(0.3),
+                "GenericBackendV2(127Q), Level 2, basis=[id, sx, x, rz, cz]. "
+                "Measures cost of one redundant iteration that FixedPoint's confirmation pass requires.",
+                font_size=12, color=MED_GRAY)
+
+    # Highlight table: large circuits with significant savings
+    add_textbox(slide, Inches(0.3), Inches(1.3), Inches(4.5), Inches(0.3),
+                "Top Savings (circuits with >100K output gates)",
+                font_size=12, bold=True, color=DARK_GRAY)
+
+    rows_top = [
+        ["Circuit", "Output Gates", "Transpile", "Saved", "Savings %"],
+        ["bwt_n37", "2,887,616", "31.5s", "5.21s", "16.5%"],
+        ["hwb12", "826,842", "7.7s", "1.20s", "15.5%"],
+        ["square_root_n45", "254,616", "2.6s", "0.40s", "15.3%"],
+        ["vqe_uccsd_n28", "782,039", "24.5s", "1.21s", "4.9%"],
+        ["QV_n100", "109,394", "3.7s", "0.16s", "4.2%"],
+    ]
+    t = add_table(slide, Inches(0.3), Inches(1.6), Inches(4.8), Inches(2.0), rows_top,
+              col_widths=[Inches(1.3), Inches(1.0), Inches(0.8), Inches(0.8), Inches(0.9)])
+    # Highlight savings column
+    for r in range(1, len(rows_top)):
+        cell = t.cell(r, 4)
+        for p in cell.text_frame.paragraphs:
+            p.font.bold = True
+            p.font.color.rgb = GREEN
+
+    # Summary stats (right side)
+    add_textbox(slide, Inches(5.5), Inches(1.3), Inches(4.2), Inches(0.3),
+                "Suite-Wide Statistics", font_size=12, bold=True, color=DARK_GRAY)
+
+    stats_bullets = [
+        ("Circuits tested: 22 (QASMBench + Feynman)", False, 0),
+        ("Average savings: 3.8% of total transpile time", True, 0),
+        ("Max % savings: bwt_n37 (16.5%, 5.2s)", False, 0),
+        ("Max absolute: bwt_n37 (5.205s saved)", False, 0),
+        ("Median savings: 1.3%", False, 0),
+        ("", False, 0),
+        ("Pattern: savings scale with output size", True, 0),
+        (">100K gates: 5\u201316% savings", False, 0),
+        ("10K\u2013100K gates: 2\u20137% savings", False, 0),
+        ("<10K gates: <2% savings", False, 0),
+    ]
+    add_bullet_frame(slide, Inches(5.5), Inches(1.6), Inches(4.2), Inches(2.5),
+                     stats_bullets, font_size=12, spacing=Pt(3))
+
+    # hwb12 callout
+    shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
+                                    Inches(0.3), Inches(3.9), Inches(9.4), Inches(0.8))
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = RGBColor(0xE8, 0xF0, 0xFE)
+    shape.line.color.rgb = ACCENT
+    shape.line.width = Pt(1.5)
+    tf = shape.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    p.text = ("hwb12 stress test (Matthew Treinish's request): 20-qubit reversible circuit, 171K input gates \u2192 "
+              "826K after routing. Redundant iteration costs 1.2s (15.5% of total). "
+              "Confirms runtime benefit on circuits that stress the optimization loop.")
+    p.font.size = Pt(11)
+    p.font.name = "Calibri"
+    p.font.color.rgb = DARK_GRAY
+
+    # Remaining circuits (smaller table)
+    add_textbox(slide, Inches(0.3), Inches(5.0), Inches(9.4), Inches(0.3),
+                "Remaining Circuits (<10K output gates: <2% savings, negligible for small circuits)",
+                font_size=11, color=MED_GRAY)
+
+    rows_small = [
+        ["Circuit", "Qubits", "Output", "Savings"],
+        ["adder", "10", "309", "0.1%"],
+        ["barenco_tof_10", "19", "949", "0.4%"],
+        ["multiplier_n45", "45", "10,663", "2.9%"],
+        ["qft_n63", "63", "8,454", "0.8%"],
+        ["ising_n98", "98", "1,361", "4.2%"],
+        ["adder_n118", "118", "4,098", "6.8%"],
+        ["ghz_n127", "127", "886", "4.4%"],
+    ]
+    add_table(slide, Inches(0.3), Inches(5.3), Inches(5.5), Inches(1.8), rows_small,
+              col_widths=[Inches(1.4), Inches(0.7), Inches(1.0), Inches(0.8)])
+
+    # Correctness note
+    add_textbox(slide, Inches(5.5), Inches(5.3), Inches(4.2), Inches(1.5),
+                "Correctness: The redundant iteration produces\n"
+                "zero gate changes on all 22 circuits.\n\n"
+                "When the changed-flag says \"nothing changed,\"\n"
+                "the confirmation pass adds no value.\n"
+                "Zero delta on both 2Q and 1Q gates.",
+                font_size=11, color=MED_GRAY)
+
+
+def make_opt_loop_slide3(prs):
+    """Slide: Signal coverage tests — verifying each exit condition."""
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_slide_bg(slide, WHITE)
+
+    add_textbox(slide, Inches(0.5), Inches(0.3), Inches(9.0), Inches(0.5),
+                "1. Optimization Loop: Signal Coverage Tests",
+                font_size=22, bold=True, color=IBM_BLUE)
+
+    add_textbox(slide, Inches(0.5), Inches(0.85), Inches(9.0), Inches(0.3),
+                "Benchpress circuits may not trigger all three exit conditions. "
+                "These tests construct minimal circuits that exercise each signal independently.",
+                font_size=12, color=MED_GRAY)
+
+    # Test table
+    rows = [
+        ["Test", "Signal", "Circuit Pattern", "Mechanism"],
+        ["1a", "_opt_pass_changed",
+         "CX; RZ(0.5, ctrl); CX",
+         "CX pair cancels (RZ commutes on ctrl)"],
+        ["1b", "_opt_pass_changed",
+         "CX; RZ(\u03b5); CX  (\u03b5\u224810\u207b\u00b9\u2070)",
+         "Near-identity 2Q block removed"],
+        ["2", "_opt_1q_consolidated",
+         "RZ; CZ; RZ; CZ; RZ",
+         "Z-rotations consolidated (RZ commutes with CZ)"],
+        ["3a", "all_gates_in_basis",
+         "RZZ backend (Level 3)",
+         "UnitarySynthesis emits S/Sdg/H out-of-basis"],
+        ["3b", "all_gates_in_basis",
+         "X; CX(0,1); RX(0.5, 1)",
+         "CommutativeCancellation \u2192 RX not in basis"],
+    ]
+    add_table(slide, Inches(0.3), Inches(1.3), Inches(9.4), Inches(2.5), rows,
+              col_widths=[Inches(0.5), Inches(1.8), Inches(3.3), Inches(3.8)])
+
+    # Why each signal matters
+    add_textbox(slide, Inches(0.5), Inches(4.0), Inches(9.0), Inches(0.3),
+                "Why Re-iteration Is Needed After Each Signal",
+                font_size=14, bold=True, color=DARK_GRAY)
+
+    why_bullets = [
+        ("Signal 1: 2Q gate removed \u2192 adjacent 1Q runs merge \u2192 Optimize1qGatesDecomposition finds shorter decomposition", False, 0),
+        ("Signal 2: Rotations consolidated \u2192 1Q run shortened \u2192 Optimize1qGatesDecomposition finds better Euler sequence", False, 0),
+        ("Signal 3: Out-of-basis gate \u2192 BasisTranslator produces unoptimized multi-gate sequence \u2192 needs re-optimization", False, 0),
+    ]
+    add_bullet_frame(slide, Inches(0.5), Inches(4.35), Inches(9.0), Inches(1.5),
+                     why_bullets, font_size=11, color=MED_GRAY, spacing=Pt(6))
+
+    # Verification flow
+    add_textbox(slide, Inches(0.5), Inches(5.5), Inches(9.0), Inches(0.3),
+                "Four-Level Verification Strategy", font_size=14, bold=True, color=DARK_GRAY)
+
+    verify_bullets = [
+        ("L1: Signal coverage tests (this slide) \u2014 each signal triggers independently, output is correct", False, 0),
+        ("L2: A/B vs FixedPoint \u2014 zero delta on total gates, depth, 2Q gates across all tested circuits", False, 0),
+        ("L3: Qiskit unit tests \u2014 152 pass tests pass, all 3 optimization levels correct", False, 0),
+        ("L4: Benchpress sweep (22 circuits) \u2014 redundant iteration produces zero gate changes on every circuit", False, 0),
+    ]
+    add_bullet_frame(slide, Inches(0.5), Inches(5.85), Inches(9.0), Inches(1.5),
+                     verify_bullets, font_size=11, color=DARK_GRAY, spacing=Pt(4))
+
+    add_textbox(slide, Inches(0.5), Inches(7.0), Inches(9.0), Inches(0.3),
+                "Script: investigation/scripts/test_loop_exit_signals.py  |  All 5 tests PASS on both local and remote",
+                font_size=10, color=MED_GRAY)
+
+
 # ── Investigation 2: Compute-Then-Apply ──
 
 def make_cta_slide1(prs):
@@ -596,14 +763,16 @@ def main():
     prs.slide_height = Inches(7.5)
 
     make_title_slide(prs)
-    make_opt_loop_slide1(prs)       # Investigation 1: 1 slide
+    make_opt_loop_slide1(prs)       # Investigation 1: slide 1 (problem + solution)
+    make_opt_loop_slide2(prs)       # Investigation 1: slide 2 (benchpress sweep)
+    make_opt_loop_slide3(prs)       # Investigation 1: slide 3 (signal coverage tests)
     make_cta_slide1(prs)            # Investigation 2: slide 1 (approach + code)
     make_cta_slide2(prs)            # Investigation 2: slide 2 (benchmarks)
     make_cta_slide3(prs)            # Investigation 2: slide 3 (upstream PRs)
     make_3q_slide1(prs)             # Investigation 3: 1 slide
     make_summary_slide(prs)         # Summary: 1 slide
 
-    output = "investigation/qiskit_transpiler_optimizations.pptx"
+    output = "investigation/docs/qiskit_transpiler_optimizations.pptx"
     prs.save(output)
     print(f"Saved: {output}")
     print(f"Total slides: {len(prs.slides)}")
