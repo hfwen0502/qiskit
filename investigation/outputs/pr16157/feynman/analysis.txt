@@ -1,0 +1,30 @@
+========================================================================
+PR #16157 evidence: main=feynman/main.json  pr=feynman/pr.json
+Tests in common: 50
+========================================================================
+
+--- CORRECTNESS (gate/depth should be bit-identical) ---
+  PASS: all 50 circuits produce identical gate counts and depths
+
+--- TIMING ---
+  Total wall-clock (sum of means): main=24.4s  pr=18.7s  ratio=0.766x (-23.4%)
+
+  No circuits >5% slower on PR.
+
+  SPEEDUPS (>5% faster on PR):
+    hwb11                           main=   6.758s  pr=   5.061s  ratio=0.749x  (25.1% faster)
+    hwb12                           main=  13.979s  pr=  10.618s  ratio=0.760x  (24.0% faster)
+    hwb10                           main=   2.058s  pr=   1.582s  ratio=0.769x  (23.1% faster)
+    hwb8                            main=   0.358s  pr=   0.289s  ratio=0.809x  (19.1% faster)
+    rb                              main=   0.003s  pr=   0.003s  ratio=0.833x  (16.7% faster)
+    gf2^16_mult                     main=   0.100s  pr=   0.084s  ratio=0.842x  (15.8% faster)
+    gf2^32_mult                     main=   0.385s  pr=   0.327s  ratio=0.848x  (15.2% faster)
+    gf2^10_mult                     main=   0.042s  pr=   0.037s  ratio=0.877x  (12.3% faster)
+    ham15-low                       main=   0.022s  pr=   0.020s  ratio=0.881x  (11.9% faster)
+    gf2^8_mult                      main=   0.031s  pr=   0.027s  ratio=0.883x  (11.7% faster)
+    qcla_mod_7                      main=   0.028s  pr=   0.025s  ratio=0.902x  (9.8% faster)
+    W-state                         main=   0.009s  pr=   0.008s  ratio=0.918x  (8.2% faster)
+    mod_adder_1024                  main=   0.078s  pr=   0.073s  ratio=0.934x  (6.6% faster)
+    ham15-high                      main=   0.089s  pr=   0.084s  ratio=0.939x  (6.1% faster)
+
+  Within ±5%: 36 circuits

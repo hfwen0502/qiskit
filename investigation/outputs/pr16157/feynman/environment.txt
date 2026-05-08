@@ -1,0 +1,27 @@
+Date: 2026-05-08T20:31:11+00:00
+Host: hf-dev-worker-1-0
+QISKIT_TRANSPILER_SEED: 42
+
+Main build:
+  path: /mnt/data/qiskit-main
+  commit: c252163400635d38808d41581661ea51630b1173
+PR build:
+  path: /mnt/data/qiskit
+  commit: 5e077757ed08fe4cef35fc4c1333e52285b1711e
+
+Benchpress:
+  path: /mnt/data/benchpress
+  commit: 26fd5516486e1045833390b0b753bc7cf5c6efc8
+  local changes:
+ M benchpress/qiskit_gym/utils/io.py
+ M default.conf
+
+CPU topology:
+Model name:                              Intel Xeon Processor (SapphireRapids)
+BIOS Model name:                         pc-q35-jammy-hpb
+Thread(s) per core:                      2
+Core(s) per socket:                      40
+Socket(s):                               2
+NUMA node(s):                            2
+NUMA node0 CPU(s):                       0-79
+NUMA node1 CPU(s):                       80-159

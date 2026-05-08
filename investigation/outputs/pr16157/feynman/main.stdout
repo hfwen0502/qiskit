@@ -1,0 +1,129 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.11, pytest-9.0.2, pluggy-1.6.0
+benchmark: 4.0.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=1 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+qiskit: 2.5.0.dev0+c252163
+qiskit_ibm_runtime: 0.46.1
+timeout_skip_list: 0
+rootdir: /mnt/data/benchpress/benchpress
+configfile: pytest.ini
+plugins: anyio-4.12.1, timeout-2.4.0, benchmark-4.0.0, memray-1.8.0
+collected 53 items
+
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[W-state.qasm] PASSED [  1%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[adder.qasm] PASSED [  3%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[adder_8.qasm] PASSED [  5%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[barenco_tof_10.qasm] PASSED [  7%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[barenco_tof_3.qasm] PASSED [  9%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[barenco_tof_4.qasm] PASSED [ 11%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[barenco_tof_5.qasm] PASSED [ 13%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[bigadder.qasm] PASSED [ 15%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[csla_mux_3.qasm] PASSED [ 16%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[csum_mux_9.qasm] PASSED [ 18%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[gf2^10_mult.qasm] PASSED [ 20%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[gf2^128_mult.qasm] SKIPPED [ 22%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[gf2^16_mult.qasm] PASSED [ 24%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[gf2^256_mult.qasm] SKIPPED [ 26%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[gf2^32_mult.qasm] PASSED [ 28%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[gf2^4_mult.qasm] PASSED [ 30%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[gf2^5_mult.qasm] PASSED [ 32%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[gf2^64_mult.qasm] SKIPPED [ 33%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[gf2^6_mult.qasm] PASSED [ 35%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[gf2^7_mult.qasm] PASSED [ 37%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[gf2^8_mult.qasm] PASSED [ 39%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[gf2^9_mult.qasm] PASSED [ 41%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[grover_5.qasm] PASSED [ 43%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[ham15-high.qasm] PASSED [ 45%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[ham15-low.qasm] PASSED [ 47%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[ham15-med.qasm] PASSED [ 49%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[hwb10.qasm] PASSED [ 50%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[hwb11.qasm] PASSED [ 52%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[hwb12.qasm] PASSED [ 54%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[hwb6.qasm] PASSED [ 56%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[hwb8.qasm] PASSED [ 58%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[inverseqft1.qasm] PASSED [ 60%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[inverseqft2.qasm] PASSED [ 62%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[mod5_4.qasm] PASSED [ 64%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[mod_adder_1024.qasm] PASSED [ 66%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[mod_mult_55.qasm] PASSED [ 67%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[mod_red_21.qasm] PASSED [ 69%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[qcla_adder_10.qasm] PASSED [ 71%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[qcla_com_7.qasm] PASSED [ 73%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[qcla_mod_7.qasm] PASSED [ 75%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[qec.qasm] PASSED [ 77%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[qft.qasm] PASSED [ 79%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[qft_4.qasm] PASSED [ 81%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[qpt.qasm] PASSED [ 83%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[rb.qasm] PASSED [ 84%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[rc_adder_6.qasm] PASSED [ 86%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[teleport.qasm] PASSED [ 88%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[teleportv2.qasm] PASSED [ 90%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[tof_10.qasm] PASSED [ 92%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[tof_3.qasm] PASSED [ 94%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[tof_4.qasm] PASSED [ 96%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[tof_5.qasm] PASSED [ 98%]
+benchpress/qiskit_gym/device_transpile/test_feynman.py::TestWorkoutDeviceFeynman::test_feynman_transpile[vbe_adder_3.qasm] PASSED [100%]
+Wrote benchmark data in: <_io.BufferedWriter name='/mnt/data/pr16157_evidence/feynman/main.json'>
+
+
+
+-------------------------------------------------------------------------------------------- benchmark 'Transpile - Device': 50 tests -------------------------------------------------------------------------------------------
+Name (time in ms)                                       Min                    Max                   Mean            StdDev                 Median                IQR            Outliers       OPS            Rounds  Iterations
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_feynman_transpile[qpt.qasm]                     2.6717 (1.0)           3.5242 (1.0)           2.8125 (1.0)      0.1173 (inf)           2.7846 (1.0)       0.0673 (inf)         30;26  355.5538 (1.0)         363           1
+test_feynman_transpile[rb.qasm]                      3.0243 (1.13)          4.4153 (1.25)          3.2633 (1.16)     0.1689 (inf)           3.2457 (1.17)      0.1003 (inf)          16;9  306.4347 (0.86)        301           1
+test_feynman_transpile[teleport.qasm]                5.3641 (2.01)          6.1126 (1.73)          5.6168 (2.00)     0.1697 (inf)           5.5717 (2.00)      0.2571 (inf)          69;0  178.0370 (0.50)        193           1
+test_feynman_transpile[qec.qasm]                     5.9351 (2.22)          6.8862 (1.95)          6.3328 (2.25)     0.1787 (inf)           6.3258 (2.27)      0.2720 (inf)          52;1  157.9086 (0.44)        163           1
+test_feynman_transpile[qft.qasm]                     5.9531 (2.23)          7.0469 (2.00)          6.2154 (2.21)     0.1727 (inf)           6.1865 (2.22)      0.1477 (inf)          25;5  160.8919 (0.45)        159           1
+test_feynman_transpile[inverseqft2.qasm]             6.0339 (2.26)          7.6153 (2.16)          6.3722 (2.27)     0.2028 (inf)           6.3579 (2.28)      0.2442 (inf)          43;5  156.9316 (0.44)        179           1
+test_feynman_transpile[teleportv2.qasm]              6.1654 (2.31)          7.0970 (2.01)          6.4766 (2.30)     0.1819 (inf)           6.4597 (2.32)      0.2569 (inf)          50;2  154.4009 (0.43)        167           1
+test_feynman_transpile[tof_3.qasm]                   6.6758 (2.50)          8.1000 (2.30)          6.8868 (2.45)     0.1851 (inf)           6.8535 (2.46)      0.1303 (inf)          11;5  145.2049 (0.41)        144           1
+test_feynman_transpile[barenco_tof_3.qasm]           6.7494 (2.53)          8.4572 (2.40)          7.0309 (2.50)     0.2222 (inf)           6.9830 (2.51)      0.1393 (inf)         15;10  142.2294 (0.40)        144           1
+test_feynman_transpile[mod5_4.qasm]                  7.0355 (2.63)         11.5488 (3.28)          7.3652 (2.62)     0.4787 (inf)           7.2399 (2.60)      0.2532 (inf)           7;7  135.7744 (0.38)        114           1
+test_feynman_transpile[tof_4.qasm]                   7.1305 (2.67)          8.4999 (2.41)          7.3956 (2.63)     0.1961 (inf)           7.3590 (2.64)      0.1356 (inf)          11;6  135.2157 (0.38)        134           1
+test_feynman_transpile[W-state.qasm]                 7.7216 (2.89)         47.0840 (13.36)         8.7543 (3.11)     5.1329 (inf)           7.9693 (2.86)      0.2769 (inf)           1;7  114.2291 (0.32)         58           1
+test_feynman_transpile[barenco_tof_4.qasm]           7.7931 (2.92)          9.1466 (2.60)          8.0092 (2.85)     0.1936 (inf)           7.9739 (2.86)      0.1557 (inf)          13;7  124.8557 (0.35)        128           1
+test_feynman_transpile[tof_5.qasm]                   7.8452 (2.94)          9.3426 (2.65)          8.0774 (2.87)     0.2130 (inf)           8.0336 (2.88)      0.1328 (inf)           8;6  123.8025 (0.35)        121           1
+test_feynman_transpile[qft_4.qasm]                   8.1656 (3.06)         10.0126 (2.84)          8.4388 (3.00)     0.2744 (inf)           8.3589 (3.00)      0.1863 (inf)           9;9  118.5005 (0.33)        120           1
+test_feynman_transpile[mod_mult_55.qasm]             8.2000 (3.07)         10.4469 (2.96)          8.6159 (3.06)     0.3824 (inf)           8.5169 (3.06)      0.2330 (inf)           9;7  116.0642 (0.33)         96           1
+test_feynman_transpile[inverseqft1.qasm]             8.5420 (3.20)         10.8702 (3.08)          9.2153 (3.28)     0.3401 (inf)           9.2025 (3.30)      0.3447 (inf)          26;2  108.5147 (0.31)        106           1
+test_feynman_transpile[barenco_tof_5.qasm]           8.9862 (3.36)         10.1095 (2.87)          9.2106 (3.27)     0.1794 (inf)           9.1671 (3.29)      0.1445 (inf)          14;6  108.5704 (0.31)        105           1
+test_feynman_transpile[adder.qasm]                   9.0691 (3.39)         10.1098 (2.87)          9.3520 (3.33)     0.2266 (inf)           9.2809 (3.33)      0.2406 (inf)          14;6  106.9290 (0.30)         88           1
+test_feynman_transpile[vbe_adder_3.qasm]             9.1020 (3.41)         10.6004 (3.01)          9.3451 (3.32)     0.2055 (inf)           9.3113 (3.34)      0.1238 (inf)           9;6  107.0074 (0.30)        107           1
+test_feynman_transpile[csla_mux_3.qasm]             10.0233 (3.75)         11.4232 (3.24)         10.3661 (3.69)     0.2082 (inf)          10.3453 (3.72)      0.1748 (inf)          17;5   96.4684 (0.27)         95           1
+test_feynman_transpile[rc_adder_6.qasm]             10.0699 (3.77)         11.5319 (3.27)         10.4279 (3.71)     0.1961 (inf)          10.3851 (3.73)      0.1344 (inf)           8;5   95.8966 (0.27)         92           1
+test_feynman_transpile[mod_red_21.qasm]             10.4694 (3.92)         11.9960 (3.40)         10.7754 (3.83)     0.2430 (inf)          10.7222 (3.85)      0.2029 (inf)          10;5   92.8040 (0.26)         93           1
+test_feynman_transpile[hwb6.qasm]                   10.6730 (3.99)         12.3362 (3.50)         11.2489 (4.00)     0.3550 (inf)          11.1893 (4.02)      0.5243 (inf)          22;1   88.8975 (0.25)         69           1
+test_feynman_transpile[gf2^4_mult.qasm]             10.9192 (4.09)         12.0908 (3.43)         11.2359 (3.99)     0.2114 (inf)          11.2004 (4.02)      0.2265 (inf)          19;5   89.0002 (0.25)         82           1
+test_feynman_transpile[tof_10.qasm]                 12.2913 (4.60)         13.5597 (3.85)         12.5253 (4.45)     0.1669 (inf)          12.5151 (4.49)      0.1500 (inf)          11;2   79.8384 (0.22)         73           1
+test_feynman_transpile[bigadder.qasm]               13.5190 (5.06)         14.9993 (4.26)         13.9317 (4.95)     0.1955 (inf)          13.9154 (5.00)      0.2141 (inf)          12;1   71.7786 (0.20)         71           1
+test_feynman_transpile[gf2^5_mult.qasm]             13.8870 (5.20)         15.6404 (4.44)         14.2904 (5.08)     0.2905 (inf)          14.2337 (5.11)      0.2224 (inf)          14;6   69.9770 (0.20)         68           1
+test_feynman_transpile[barenco_tof_10.qasm]         15.8811 (5.94)         17.5985 (4.99)         16.2700 (5.78)     0.2956 (inf)          16.2195 (5.82)      0.2455 (inf)          10;4   61.4626 (0.17)         60           1
+test_feynman_transpile[grover_5.qasm]               17.4949 (6.55)         21.0578 (5.98)         18.2755 (6.50)     0.5651 (inf)          18.1817 (6.53)      0.4567 (inf)           9;3   54.7182 (0.15)         53           1
+test_feynman_transpile[gf2^6_mult.qasm]             17.7708 (6.65)         18.9841 (5.39)         18.1934 (6.47)     0.2741 (inf)          18.1749 (6.53)      0.2881 (inf)          12;4   54.9649 (0.15)         53           1
+test_feynman_transpile[qcla_com_7.qasm]             19.5815 (7.33)         21.8210 (6.19)         19.9110 (7.08)     0.3462 (inf)          19.8478 (7.13)      0.2590 (inf)           3;3   50.2235 (0.14)         51           1
+test_feynman_transpile[gf2^7_mult.qasm]             21.3488 (7.99)         23.6276 (6.70)         21.9634 (7.81)     0.4688 (inf)          21.7426 (7.81)      0.5241 (inf)          11;1   45.5303 (0.13)         45           1
+test_feynman_transpile[ham15-low.qasm]              21.5898 (8.08)         26.8564 (7.62)         22.2178 (7.90)     0.7785 (inf)          22.1143 (7.94)      0.4704 (inf)           2;2   45.0089 (0.13)         44           1
+test_feynman_transpile[csum_mux_9.qasm]             23.8597 (8.93)         25.2578 (7.17)         24.4069 (8.68)     0.2904 (inf)          24.3668 (8.75)      0.4518 (inf)          14;0   40.9721 (0.12)         43           1
+test_feynman_transpile[adder_8.qasm]                24.4516 (9.15)         26.7356 (7.59)         25.2282 (8.97)     0.6314 (inf)          25.0136 (8.98)      0.8756 (inf)          11;0   39.6382 (0.11)         38           1
+test_feynman_transpile[qcla_mod_7.qasm]             27.0910 (10.14)        30.0274 (8.52)         27.9593 (9.94)     0.4700 (inf)          27.8449 (10.00)     0.4449 (inf)           6;1   35.7662 (0.10)         36           1
+test_feynman_transpile[ham15-med.qasm]              28.4737 (10.66)        32.0930 (9.11)         29.4941 (10.49)    0.6930 (inf)          29.3984 (10.56)     0.5947 (inf)           7;2   33.9051 (0.10)         35           1
+test_feynman_transpile[gf2^8_mult.qasm]             29.6549 (11.10)        31.7615 (9.01)         30.5815 (10.87)    0.5813 (inf)          30.5146 (10.96)     0.8012 (inf)          12;0   32.6995 (0.09)         33           1
+test_feynman_transpile[gf2^9_mult.qasm]             31.3701 (11.74)        35.7193 (10.14)        32.8199 (11.67)    0.8387 (inf)          32.6648 (11.73)     0.9469 (inf)           6;1   30.4693 (0.09)         31           1
+test_feynman_transpile[qcla_adder_10.qasm]          33.9734 (12.72)        35.6312 (10.11)        34.5872 (12.30)    0.4086 (inf)          34.5117 (12.39)     0.3793 (inf)           8;2   28.9124 (0.08)         30           1
+test_feynman_transpile[gf2^10_mult.qasm]            41.0212 (15.35)        45.0394 (12.78)        42.3645 (15.06)    1.0516 (inf)          42.3855 (15.22)     1.3690 (inf)           6;1   23.6047 (0.07)         23           1
+test_feynman_transpile[mod_adder_1024.qasm]         75.7747 (28.36)        80.6585 (22.89)        78.1365 (27.78)    1.5340 (inf)          77.8643 (27.96)     2.6043 (inf)           4;0   12.7981 (0.04)         14           1
+test_feynman_transpile[ham15-high.qasm]             85.7067 (32.08)        92.0710 (26.13)        89.3147 (31.76)    1.8693 (inf)          89.6041 (32.18)     1.9813 (inf)           4;0   11.1964 (0.03)         11           1
+test_feynman_transpile[gf2^16_mult.qasm]            97.5132 (36.50)       101.9218 (28.92)        99.8961 (35.52)    1.6307 (inf)         100.1706 (35.97)     3.0807 (inf)           4;0   10.0104 (0.03)         10           1
+test_feynman_transpile[hwb8.qasm]                  351.8100 (131.68)      366.3262 (103.95)      357.6704 (127.17)   7.6512 (inf)         354.8749 (127.44)   10.8872 (inf)           1;0    2.7959 (0.01)          3           1
+test_feynman_transpile[gf2^32_mult.qasm]           379.3398 (141.98)      390.2416 (110.73)      385.3324 (137.01)   5.5311 (inf)         386.4158 (138.77)    8.1764 (inf)           1;0    2.5952 (0.01)          3           1
+test_feynman_transpile[hwb10.qasm]               2,057.6623 (770.16)    2,057.6623 (583.87)    2,057.6623 (731.61)   0.0000 (1.0)       2,057.6623 (738.93)    0.0000 (1.0)           0;0    0.4860 (0.00)          1           1
+test_feynman_transpile[hwb11.qasm]               6,757.9782 (>1000.0)   6,757.9782 (>1000.0)   6,757.9782 (>1000.0)  0.0000 (1.0)       6,757.9782 (>1000.0)   0.0000 (1.0)           0;0    0.1480 (0.00)          1           1
+test_feynman_transpile[hwb12.qasm]              13,979.4473 (>1000.0)  13,979.4473 (>1000.0)  13,979.4473 (>1000.0)  0.0000 (1.0)      13,979.4473 (>1000.0)   0.0000 (1.0)           0;0    0.0715 (0.00)          1           1
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+=========================== short test summary info ============================
+SKIPPED [3] benchpress/qiskit_gym/device_transpile/test_feynman.py:44: Circuit too large for given backend.
+================== 50 passed, 3 skipped in 150.95s (0:02:30) ===================

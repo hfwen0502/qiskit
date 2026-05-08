@@ -1,0 +1,20 @@
+=== MAIN build — 3 runs with QISKIT_TRANSPILER_SEED=42 only ===
+  Run 1: 2q=644633 1q= 1752972 tot= 2397605 | d2q=392970 d1q=689557 dtot=1074718 | time=14.23s
+  Run 2: 2q=644633 1q= 1752972 tot= 2397605 | d2q=392970 d1q=689557 dtot=1074718 | time=14.81s
+  Run 3: 2q=644633 1q= 1752972 tot= 2397605 | d2q=392970 d1q=689557 dtot=1074718 | time=13.78s
+  Deterministic across 3 runs: True
+
+=== PR build — 3 runs with QISKIT_TRANSPILER_SEED=42 only ===
+  Run 1: 2q=644633 1q= 1752972 tot= 2397605 | d2q=392970 d1q=689557 dtot=1074718 | time=10.56s
+  Run 2: 2q=644633 1q= 1752972 tot= 2397605 | d2q=392970 d1q=689557 dtot=1074718 | time=10.46s
+  Run 3: 2q=644633 1q= 1752972 tot= 2397605 | d2q=392970 d1q=689557 dtot=1074718 | time=10.37s
+  Deterministic across 3 runs: True
+
+=== MAIN vs PR cross-branch (hwb12, same seed, same config) ===
+  output_gate_count_2q        main=  644633  pr=  644633  diff=+0
+  output_gate_count_1q        main= 1752972  pr= 1752972  diff=+0
+  output_gate_count_total     main= 2397605  pr= 2397605  diff=+0
+  output_depth_2q             main=  392970  pr=  392970  diff=+0
+  output_depth_1q             main=  689557  pr=  689557  diff=+0
+  output_depth_total          main= 1074718  pr= 1074718  diff=+0
+  op dicts equal: True
