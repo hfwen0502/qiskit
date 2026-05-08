@@ -117,9 +117,12 @@ All benchmarks run on Intel Xeon Sapphire Rapids (160 vCPUs), release build, `se
 
 ### Loop Body Improvement
 
-Measuring only the optimization loop passes (excluding SABRE layout/routing which is ~69% of total time):
+Measuring only the optimization loop passes (excluding layout/routing). Backend: GenericBackendV2 127Q, `seed_transpiler=42`.
 
-**11.27s → 8.85s (22% faster)** on representative circuits.
+| Circuit | CZ Gates | Main (s) | Ours (s) | Speedup |
+|---------|:--------:|:--------:|:--------:|:-------:|
+| hwb12 | 191K | 5.84 | 3.97 | **1.47x (32%)** |
+| vqe_uccsd_n28 | 207K | 23.86 | 19.67 | **1.21x (18%)** |
 
 ### End-to-End: Benchpress Suite (59 Circuits, Seeded)
 
@@ -131,12 +134,12 @@ Full `generate_preset_pass_manager(optimization_level=2, backend, seed_transpile
 | device_feynman | 50 | 635.5 | 570.3 | **1.11x** | 0 |
 | **Total** | **59** | **813.9** | **741.5** | **1.10x** | **0** |
 
-Top per-circuit speedups (feynman suite):
-- hwb12 (639K CZ): 349s → 312s = **1.12x**
-- hwb11 (335K CZ): 179s → 161s = **1.12x**
-- clifford_100 (66K CZ): 23.6s → 20.8s = **1.13x**
+Top per-circuit speedups:
+- hwb12 (feynman, 639K CZ): 349s → 312s = **1.12x**
+- hwb11 (feynman, 335K CZ): 179s → 161s = **1.12x**
+- clifford_100 (device_transpile, 66K CZ): 23.6s → 20.9s = **1.13x**
 
-The end-to-end speedup (10-11%) is lower than the loop-body speedup (22%) because SABRE layout and routing — which are unchanged — dominate total transpile time.
+The end-to-end speedup (4–11%) is lower than the loop-body speedup (18–32%) because layout/routing is unchanged and dominates total transpile time for smaller circuits.
 
 ### End-to-End: Custom Sweep (22 Circuits, Seeded)
 

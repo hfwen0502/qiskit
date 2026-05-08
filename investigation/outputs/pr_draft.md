@@ -26,8 +26,8 @@ Benchmarked on Intel Xeon Sapphire Rapids (160 vCPUs), release build, `seed_tran
 
 | Circuit | CZ Gates | Main (s) | Ours (s) | Speedup |
 |---------|:--------:|:--------:|:--------:|:-------:|
-| hwb12 | 191K | 5.84 | 3.97 | **1.47x (32% faster)** |
-| vqe_uccsd_n28 | 207K | 23.86 | 19.67 | **1.21x (18% faster)** |
+| hwb12 | 191K | 5.84 | 3.97 | **1.47x (32%)** |
+| vqe_uccsd_n28 | 207K | 23.86 | 19.67 | **1.21x (18%)** |
 
 **End-to-end per-circuit improvements** (full `pm.run()`, larger circuits benefit most):
 
@@ -36,8 +36,8 @@ Benchmarked on Intel Xeon Sapphire Rapids (160 vCPUs), release build, `seed_tran
 | hwb12 | feynman | 639K | 349.3 | 312.4 | **1.12x** |
 | hwb11 | feynman | 335K | 179.2 | 160.5 | **1.12x** |
 | clifford_100 | device_transpile | 66K | 23.6 | 20.9 | **1.13x** |
-| vqe_uccsd_n28 | custom sweep | 207K | 26.3 | 22.8 | **1.15x** |
-| hwb12 | custom sweep | 191K | 9.7 | 7.9 | **1.22x** |
+| vqe_uccsd_n28 | custom sweep | 207K | 27.8 | 23.4 | **1.19x** |
+| hwb12 | custom sweep | 191K | 11.7 | 9.5 | **1.23x** |
 
 Across all 81 tested circuits (59 from [Qiskit/benchpress](https://github.com/Qiskit/benchpress) + 22 custom), the aggregate speedup is **1.10x** (908.5s → 826.9s). End-to-end gains are lower than loop-body because layout/routing is unchanged and dominates total time for smaller circuits.
 
