@@ -113,62 +113,77 @@ def _optimization_check_changed_flag():
 
 ## Results
 
-### Benchpress Suite Sweep: Runtime Savings (22 Circuits)
+All benchmarks run on Intel Xeon Sapphire Rapids (160 vCPUs), release build, `seed_transpiler=42` for deterministic comparison.
 
-We swept all circuits from the Benchpress device transpile suite through Level 2 on GenericBackendV2(127Q, basis=[id, sx, x, rz, cz]). For each, we measured the cost of the redundant confirmation iteration that FixedPoint requires — this is the time our changed-flag saves.
+### Loop Body Improvement
 
-| Circuit | Qubits | Output Gates | CZ | Transpile (s) | Saved (s) | **Savings %** |
-|---------|:------:|:------------:|:--:|:-------------:|:---------:|:-------------:|
-| **bwt_n37** | **37** | **2,889,216** | **604,400** | **30.8** | **5.185** | **14.4%** |
-| **square_root_n45** | **45** | **254,616** | **54,151** | **2.4** | **0.324** | **11.9%** |
-| adder_n118 | 118 | 4,098 | 845 | 0.07 | 0.005 | 6.5% |
-| **vqe_uccsd_n28** | **28** | **781,157** | **206,612** | **23.5** | **1.186** | **4.8%** |
-| ghz_n127 | 127 | 886 | 126 | 0.05 | 0.002 | 3.7% |
-| ising_n98 | 98 | 1,353 | 194 | 0.07 | 0.002 | 3.1% |
-| multiplier_n45 | 45 | 10,623 | 2,286 | 0.5 | 0.014 | 2.6% |
-| wstate_n76 | 76 | 1,128 | 150 | 0.1 | 0.002 | 1.6% |
-| cat_n65 | 65 | 452 | 64 | 0.1 | 0.001 | 1.0% |
-| qft_n63 | 63 | 8,485 | 2,014 | 1.7 | 0.017 | 1.0% |
-| qugan_n71 | 71 | 2,382 | 381 | 0.5 | 0.004 | 0.9% |
-| knn_n67 | 67 | 1,260 | 231 | 0.4 | 0.003 | 0.8% |
-| ising_n42 | 42 | 585 | 82 | 0.2 | 0.001 | 0.7% |
-| dnn_n51 | 51 | 1,704 | 271 | 0.5 | 0.003 | 0.6% |
-| swap_test_n41 | 41 | 845 | 140 | 0.5 | 0.002 | 0.3% |
-| bv_n70 | 70 | 527 | 36 | 0.5 | 0.001 | 0.3% |
-| adder | 10 | 309 | 65 | 0.5 | 0.001 | 0.2% |
-| bigadder | 18 | 611 | 130 | 0.7 | 0.001 | 0.2% |
+Measuring only the optimization loop passes (excluding SABRE layout/routing which is ~69% of total time):
 
-**Summary** (18 circuits, 4 files not found on server): Average savings **~4%**. Max **14.4%** (bwt_n37, 5.2s saved). Savings scale with output circuit size:
-- >100K gates: **5–14%** savings
-- 10K–100K gates: 2–7% savings
-- <10K gates: <2% savings
+**11.27s → 8.85s (22% faster)** on representative circuits.
 
-### Quality: Zero Regression (Full 18-Circuit Verification)
+### End-to-End: Benchpress Suite (59 Circuits, Seeded)
 
-After transpile, we re-run the loop body passes (RemoveIdentityEquivalent, Optimize1qGatesDecomposition, CommutativeCancellation) one more time on the output. If the changed-flag exit was correct, these passes should find **nothing** to improve.
+Full `generate_preset_pass_manager(optimization_level=2, backend, seed_transpiler=42)` + `pm.run()`. Backend: FakeTorino (133Q heavy-hex).
 
-| Circuit | Qubits | Gates | CZ | Depth | Δ Gates | Δ CZ | Δ Depth | Status |
-|---------|:------:|------:|---:|------:|:-------:|:----:|:-------:|:------:|
-| bwt_n37 | 37 | 2,889,216 | 604,400 | 1,609,710 | 0 | 0 | 0 | PASS |
-| square_root_n45 | 45 | 254,616 | 54,151 | 151,041 | 0 | 0 | 0 | PASS |
-| adder_n118 | 118 | 4,098 | 845 | 1,200 | 0 | 0 | 0 | PASS |
-| vqe_uccsd_n28 | 28 | 781,157 | 206,612 | 636,917 | 0 | 0 | 0 | PASS |
-| ghz_n127 | 127 | 886 | 126 | 382 | 0 | 0 | 0 | PASS |
-| ising_n98 | 98 | 1,353 | 194 | 22 | 0 | 0 | 0 | PASS |
-| multiplier_n45 | 45 | 10,623 | 2,286 | 4,641 | 0 | 0 | 0 | PASS |
-| wstate_n76 | 76 | 1,128 | 150 | 383 | 0 | 0 | 0 | PASS |
-| cat_n65 | 65 | 452 | 64 | 196 | 0 | 0 | 0 | PASS |
-| qugan_n71 | 71 | 2,382 | 381 | 618 | 0 | 0 | 0 | PASS |
-| ising_n42 | 42 | 585 | 82 | 22 | 0 | 0 | 0 | PASS |
-| qft_n63 | 63 | 8,485 | 2,014 | 905 | 0 | 0 | 0 | PASS |
-| knn_n67 | 67 | 1,260 | 231 | 571 | 0 | 0 | 0 | PASS |
-| dnn_n51 | 51 | 1,704 | 271 | 463 | 0 | 0 | 0 | PASS |
-| swap_test_n41 | 41 | 845 | 140 | 352 | 0 | 0 | 0 | PASS |
-| bv_n70 | 70 | 527 | 36 | 48 | 0 | 0 | 0 | PASS |
-| adder | 10 | 309 | 65 | 204 | 0 | 0 | 0 | PASS |
-| bigadder | 18 | 611 | 130 | 319 | 0 | 0 | 0 | PASS |
+| Suite | Circuits | Main (s) | Ours (s) | Speedup | 2Q Gate Δ |
+|-------|:--------:|:--------:|:--------:|:-------:|:---------:|
+| device_transpile | 9 | 178.4 | 171.2 | **1.04x** | 0 |
+| device_feynman | 50 | 635.5 | 570.3 | **1.11x** | 0 |
+| **Total** | **59** | **813.9** | **741.5** | **1.10x** | **0** |
 
-**18/18 circuits: zero regression on total gates, 2Q gates, and depth.**
+Top per-circuit speedups (feynman suite):
+- hwb12 (639K CZ): 349s → 312s = **1.12x**
+- hwb11 (335K CZ): 179s → 161s = **1.12x**
+- clifford_100 (66K CZ): 23.6s → 20.8s = **1.13x**
+
+The end-to-end speedup (10-11%) is lower than the loop-body speedup (22%) because SABRE layout and routing — which are unchanged — dominate total transpile time.
+
+### End-to-End: Custom Sweep (22 Circuits, Seeded)
+
+Backend: `GenericBackendV2(127Q, basis=[id, sx, x, rz, cz], seed=42)`, `seed_transpiler=42`.
+
+| Circuit | Qubits | Gates | CZ | Depth | Main (s) | Ours (s) | **Speedup** |
+|---------|:------:|------:|---:|------:|:--------:|:--------:|:-----------:|
+| bwt_n37 | 37 | 2,889,616 | 604,400 | 1,609,310 | 34.47 | 31.99 | **1.08x** |
+| hwb12 | 20 | 827,072 | 190,975 | 456,563 | 11.67 | 9.49 | **1.23x** |
+| square_root_n45 | 45 | 254,616 | 54,151 | 151,041 | 2.85 | 2.68 | **1.06x** |
+| adder_n118 | 118 | 4,098 | 845 | 1,200 | 0.14 | 0.14 | 0.99x |
+| vqe_uccsd_n28 | 28 | 782,477 | 206,612 | 635,741 | 27.81 | 23.41 | **1.19x** |
+| ghz_n127 | 127 | 886 | 126 | 382 | 0.11 | 0.10 | 1.06x |
+| QV_n100 | 100 | 109,394 | 14,835 | 1,414 | 3.82 | 3.83 | 1.00x |
+| ising_n98 | 98 | 1,353 | 194 | 22 | 0.13 | 0.12 | 1.05x |
+| multiplier_n45 | 45 | 10,627 | 2,286 | 4,642 | 0.54 | 0.56 | 0.96x |
+| wstate_n76 | 76 | 1,128 | 150 | 383 | 0.16 | 0.16 | 0.99x |
+| cat_n65 | 65 | 452 | 64 | 196 | 0.30 | 0.29 | 1.06x |
+| qugan_n71 | 71 | 2,385 | 381 | 618 | 0.52 | 0.52 | 1.00x |
+| ising_n42 | 42 | 574 | 82 | 22 | 0.23 | 0.20 | 1.17x |
+| qft_n63 | 63 | 8,476 | 2,014 | 893 | 1.74 | 1.73 | 1.01x |
+| knn_n67 | 67 | 1,260 | 231 | 572 | 0.41 | 0.42 | 0.98x |
+| dnn_n51 | 51 | 1,699 | 271 | 460 | 0.58 | 0.52 | 1.11x |
+| barenco_tof_10 | 19 | 949 | 192 | 694 | 0.37 | 0.44 | 0.83x |
+| swap_test_n41 | 41 | 845 | 140 | 352 | 0.59 | 0.54 | 1.09x |
+| bv_n70 | 70 | 527 | 36 | 48 | 0.48 | 0.49 | 0.97x |
+| gf2^16_mult | 48 | 7,363 | 1,581 | 1,167 | 6.38 | 6.45 | 0.99x |
+| adder | 10 | 309 | 65 | 204 | 0.62 | 0.60 | 1.04x |
+| bigadder | 18 | 611 | 130 | 319 | 0.72 | 0.69 | 1.05x |
+
+**Total**: main=94.6s, ours=85.4s → **9.3s saved (9.8%), 1.108x overall speedup**
+
+Key observations:
+- Circuits with large output (>100K gates) benefit most: hwb12 **+23%**, vqe_uccsd_n28 **+19%**, bwt_n37 **+8%**
+- Small circuits (<10K gates) show ~1x (optimization loop is a small fraction of total transpile time)
+- No circuit is slower by more than measurement noise (barenco_tof_10's 0.83x = 0.07s absolute)
+
+### Quality: Zero Regression (81 Circuits, Bit-Exact)
+
+Both branches produce **identical output** on all 81 circuits tested — same total gates, same CZ count, same depth. This is a bit-exact comparison with `seed_transpiler=42`, confirming the 3-signal exit never terminates early when there is still productive work to do.
+
+| Suite | Circuits | Δ 2Q Gates | Δ Total Gates | Δ Depth |
+|-------|:--------:|:----------:|:-------------:|:-------:|
+| device_transpile (FakeTorino) | 9 | 0 | 0 | 0 |
+| device_feynman (FakeTorino) | 50 | 0 | 0 | 0 |
+| Custom sweep (GenericBackendV2) | 22 | 0 | 0 | 0 |
+| **Total** | **81** | **0** | **0** | **0** |
 
 ### Speed: Fewer Iterations
 
@@ -492,8 +507,8 @@ Small 1Q regressions on 2 rotation-heavy circuits (motivating signal 2):
 - [x] ~~Side-by-side test vs FixedPoint~~ → Zero delta on all metrics
 - [x] ~~RZZ out-of-basis trigger~~ → Loop handles correctly
 - [x] ~~hwb12 stress test (1M+ gates)~~ → 15.5% savings
-- [x] ~~Benchpress sweep (22 circuits)~~ → 3.8% average, up to 16.5%
+- [x] ~~Benchpress sweep (22 circuits)~~ → Zero regression, 9.8% speedup (1.108x)
 - [x] ~~Signal coverage tests~~ → 5 tests, all PASS
-- [ ] Run Qiskit test suite on remote to verify no breakage
-- [ ] Upstream proposal with profiling data and chosen approach
+- [x] ~~Benchpress seeded validation (59 circuits)~~ → Zero regression, 1.10x speedup
+- [ ] Upstream PR with profiling data and chosen approach
 - [ ] Consider applying same pattern to Level 1

@@ -1,0 +1,100 @@
+============================================================================================================================================
+Fair Sweep (SEEDED): main (FixedPoint) vs test-3signal-only (3-Signal Exit)
+============================================================================================================================================
+Base commit: 29fdcad78 (Move unitary matrix circuit simulator to qiskit-synthesis)
+Backend: GenericBackendV2(127Q, basis=[id, sx, x, rz, cz], seed=42)  <-- SEEDED
+Build: release mode (QISKIT_BUILD_PROFILE=release)
+seed_transpiler=42
+Circuits: 22
+Start time: 2026-05-07 20:30:28
+
+[main] HEAD: 29fdcad78 Move unitary matrix circuit simulator to `qiskit-synthesis` (#15913)
+[main] Building (release)...
+[main] Build OK
+[main] Transpiling 22 circuits...
+  bwt_n37: 2889616 gates, 604400 CZ, depth 1609310, 34.47s
+  hwb12: 827072 gates, 190975 CZ, depth 456563, 11.67s
+  square_root_n45: 254616 gates, 54151 CZ, depth 151041, 2.84s
+  adder_n118: 4098 gates, 845 CZ, depth 1200, 0.14s
+  vqe_uccsd_n28: 782477 gates, 206612 CZ, depth 635741, 27.81s
+  ghz_n127: 886 gates, 126 CZ, depth 382, 0.11s
+  QV_n100: 109394 gates, 14835 CZ, depth 1414, 3.82s
+  ising_n98: 1353 gates, 194 CZ, depth 22, 0.13s
+  multiplier_n45: 10627 gates, 2286 CZ, depth 4642, 0.54s
+  wstate_n76: 1128 gates, 150 CZ, depth 383, 0.16s
+  cat_n65: 452 gates, 64 CZ, depth 196, 0.30s
+  qugan_n71: 2385 gates, 381 CZ, depth 618, 0.52s
+  ising_n42: 574 gates, 82 CZ, depth 22, 0.23s
+  qft_n63: 8476 gates, 2014 CZ, depth 893, 1.74s
+  knn_n67: 1260 gates, 231 CZ, depth 572, 0.41s
+  dnn_n51: 1699 gates, 271 CZ, depth 460, 0.58s
+  barenco_tof_10: 949 gates, 192 CZ, depth 694, 0.37s
+  swap_test_n41: 845 gates, 140 CZ, depth 352, 0.59s
+  bv_n70: 527 gates, 36 CZ, depth 48, 0.48s
+  gf2^16_mult: 7363 gates, 1581 CZ, depth 1167, 6.38s
+  adder: 309 gates, 65 CZ, depth 204, 0.62s
+  bigadder: 611 gates, 130 CZ, depth 319, 0.72s
+
+[test-3signal-only] HEAD: 08d956ad7 Add third loop signal: out-of-basis gates trigger re-optimization
+[test-3signal-only] Building (release)...
+[test-3signal-only] Build OK
+[test-3signal-only] Transpiling 22 circuits...
+  bwt_n37: 2889616 gates, 604400 CZ, depth 1609310, 31.99s
+  hwb12: 827072 gates, 190975 CZ, depth 456563, 9.49s
+  square_root_n45: 254616 gates, 54151 CZ, depth 151041, 2.68s
+  adder_n118: 4098 gates, 845 CZ, depth 1200, 0.14s
+  vqe_uccsd_n28: 782477 gates, 206612 CZ, depth 635741, 23.41s
+  ghz_n127: 886 gates, 126 CZ, depth 382, 0.10s
+  QV_n100: 109394 gates, 14835 CZ, depth 1414, 3.82s
+  ising_n98: 1353 gates, 194 CZ, depth 22, 0.12s
+  multiplier_n45: 10627 gates, 2286 CZ, depth 4642, 0.56s
+  wstate_n76: 1128 gates, 150 CZ, depth 383, 0.16s
+  cat_n65: 452 gates, 64 CZ, depth 196, 0.29s
+  qugan_n71: 2385 gates, 381 CZ, depth 618, 0.52s
+  ising_n42: 574 gates, 82 CZ, depth 22, 0.20s
+  qft_n63: 8476 gates, 2014 CZ, depth 893, 1.73s
+  knn_n67: 1260 gates, 231 CZ, depth 572, 0.42s
+  dnn_n51: 1699 gates, 271 CZ, depth 460, 0.52s
+  barenco_tof_10: 949 gates, 192 CZ, depth 694, 0.44s
+  swap_test_n41: 845 gates, 140 CZ, depth 352, 0.54s
+  bv_n70: 527 gates, 36 CZ, depth 48, 0.49s
+  gf2^16_mult: 7363 gates, 1581 CZ, depth 1167, 6.45s
+  adder: 309 gates, 65 CZ, depth 204, 0.60s
+  bigadder: 611 gates, 130 CZ, depth 319, 0.69s
+
+
+============================================================================================================================================
+COMPARISON
+============================================================================================================================================
+Circuit             Qb Main Gates Ours Gates  ΔGates  Main CZ  Ours CZ   ΔCZ Main Dep Ours Dep   ΔDep  Main(s)  Ours(s)  Speedup
+--------------------------------------------------------------------------------------------------------------------------------------------
+bwt_n37             37  2,889,616  2,889,616      +0  604,400  604,400    +0 1,609,310 1,609,310     +0    34.47    31.99    1.08x
+hwb12               20    827,072    827,072      +0  190,975  190,975    +0  456,563  456,563     +0    11.67     9.49    1.23x
+square_root_n45     45    254,616    254,616      +0   54,151   54,151    +0  151,041  151,041     +0     2.85     2.68    1.06x
+adder_n118         118      4,098      4,098      +0      845      845    +0    1,200    1,200     +0     0.14     0.14    0.99x
+vqe_uccsd_n28       28    782,477    782,477      +0  206,612  206,612    +0  635,741  635,741     +0    27.81    23.41    1.19x
+ghz_n127           127        886        886      +0      126      126    +0      382      382     +0     0.11     0.10    1.06x
+QV_n100            100    109,394    109,394      +0   14,835   14,835    +0    1,414    1,414     +0     3.82     3.83    1.00x
+ising_n98           98      1,353      1,353      +0      194      194    +0       22       22     +0     0.13     0.12    1.05x
+multiplier_n45      45     10,627     10,627      +0    2,286    2,286    +0    4,642    4,642     +0     0.54     0.56    0.96x
+wstate_n76          76      1,128      1,128      +0      150      150    +0      383      383     +0     0.16     0.16    0.99x
+cat_n65             65        452        452      +0       64       64    +0      196      196     +0     0.30     0.29    1.06x
+qugan_n71           71      2,385      2,385      +0      381      381    +0      618      618     +0     0.52     0.52    1.00x
+ising_n42           42        574        574      +0       82       82    +0       22       22     +0     0.23     0.20    1.17x
+qft_n63             63      8,476      8,476      +0    2,014    2,014    +0      893      893     +0     1.74     1.73    1.01x
+knn_n67             67      1,260      1,260      +0      231      231    +0      572      572     +0     0.41     0.42    0.98x
+dnn_n51             51      1,699      1,699      +0      271      271    +0      460      460     +0     0.58     0.52    1.11x
+barenco_tof_10      19        949        949      +0      192      192    +0      694      694     +0     0.37     0.44    0.83x
+swap_test_n41       41        845        845      +0      140      140    +0      352      352     +0     0.59     0.54    1.09x
+bv_n70              70        527        527      +0       36       36    +0       48       48     +0     0.48     0.49    0.97x
+gf2^16_mult         48      7,363      7,363      +0    1,581    1,581    +0    1,167    1,167     +0     6.38     6.45    0.99x
+adder               10        309        309      +0       65       65    +0      204      204     +0     0.62     0.60    1.04x
+bigadder            18        611        611      +0      130      130    +0      319      319     +0     0.72     0.69    1.05x
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+Total time: main=94.6s  ours=85.4s  saved=9.3s (9.8%)  speedup=1.108x
+
+QUALITY: IDENTICAL — zero difference in ALL gate counts (including 1Q) between branches.
+
+End time: 2026-05-07 20:40:11
+Raw data saved to /tmp/sweep_fair_seeded_raw.json
