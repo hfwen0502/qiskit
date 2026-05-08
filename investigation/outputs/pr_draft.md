@@ -47,20 +47,10 @@ We have not yet run the `abstract_transpile` suite from benchpress (QASMBench ci
 
 Detailed investigation: [optimization_loop.md](https://github.com/hfwen0502/qiskit/blob/pass-manager-investigation/investigation/docs/optimization_loop.md)
 
-### Files Changed (6 files)
+### Code Changes
 
-| File | Change |
-|------|--------|
-| `crates/transpiler/src/passes/commutation_cancellation.rs` | Return `(bool, bool)` — `(multi_qubit_changed, rotations_consolidated)` |
-| `crates/transpiler/src/passes/optimize_1q_gates_decomposition.rs` | Return `bool` (not used for loop control) |
-| `crates/transpiler/src/passes/remove_identity_equiv.rs` | Return `bool` (true = multi-qubit identity removed) |
-| `qiskit/transpiler/passes/optimization/commutative_cancellation.py` | Set `_opt_pass_changed` and `_opt_1q_consolidated` |
-| `qiskit/transpiler/passes/optimization/remove_identity_equiv.py` | Set `_opt_pass_changed` |
-| `qiskit/transpiler/preset_passmanagers/builtin_plugins.py` | Add `_optimization_check_changed_flag()`, use at Level 2 |
+~80 lines across 6 files. Level 3 unchanged (keeps `MinimumPoint` loop). All existing transpiler tests pass.
 
-### Backward Compatibility
-
-- ~80 lines changed across 6 files
-- Rust return-type changes are additive; existing callers discard return values
-- Level 3 unchanged (keeps `MinimumPoint` loop)
-- All existing transpiler tests pass. Validated on 81 benchmark circuits with zero quality regressions.
+- **Rust**: `commutation_cancellation.rs`, `remove_identity_equiv.rs`, `optimize_1q_gates_decomposition.rs` — return booleans indicating whether optimization opportunities were created
+- **Python**: `commutative_cancellation.py`, `remove_identity_equiv.py` — set `property_set` flags from Rust return values
+- **Pass manager**: `builtin_plugins.py` — new `_optimization_check_changed_flag()` replaces `FixedPoint` at Level 2
