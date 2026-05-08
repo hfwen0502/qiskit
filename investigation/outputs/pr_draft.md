@@ -43,6 +43,8 @@ Across all 81 tested circuits (59 from [Qiskit/benchpress](https://github.com/Qi
 
 **Zero regressions**: All 81 circuits produce bit-identical 2Q gate count, total gate count, and depth.
 
+We have not yet run the `abstract_transpile` suite from benchpress (QASMBench circuits across all-to-all, square, heavy-hex, and linear topologies). We can include those results if needed.
+
 Detailed investigation: [optimization_loop.md](https://github.com/hfwen0502/qiskit/blob/pass-manager-investigation/investigation/docs/optimization_loop.md)
 
 ### Files Changed (6 files)
