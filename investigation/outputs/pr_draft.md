@@ -20,32 +20,26 @@ If none fires, re-running passes would produce identical results → exit.
 
 ### Results
 
-Benchmarked on Intel Xeon Sapphire Rapids (160 vCPUs), release build, `seed_transpiler=42` for deterministic comparison.
+Benchmarked on Intel Xeon Sapphire Rapids (160 vCPUs), release build, `seed_transpiler=42` for deterministic comparison. Backend: FakeTorino 133Q (device suites) and GenericBackendV2 127Q (custom sweep).
 
-**Optimization loop speedup** (isolating just the loop body, excluding layout/routing):
+**Optimization loop speedup** (isolating the loop body, excluding layout/routing):
 
 | Circuit | CZ Gates | Main (s) | Ours (s) | Speedup |
 |---------|:--------:|:--------:|:--------:|:-------:|
 | hwb12 | 191K | 5.84 | 3.97 | **1.47x (32% faster)** |
 | vqe_uccsd_n28 | 207K | 23.86 | 19.67 | **1.21x (18% faster)** |
 
-**End-to-end** (`generate_preset_pass_manager(optimization_level=2, backend, seed_transpiler=42).run()`):
+**End-to-end per-circuit improvements** (full `pm.run()`, larger circuits benefit most):
 
-| Suite | Backend | Circuits | Main (s) | Ours (s) | Speedup |
-|-------|---------|:--------:|:--------:|:--------:|:-------:|
-| device_transpile | FakeTorino 133Q | 9 | 178.4 | 171.2 | **1.04x** |
-| device_feynman | FakeTorino 133Q | 50 | 635.5 | 570.3 | **1.11x** |
-| Custom sweep | GenericBackendV2 127Q | 22 | 94.6 | 85.4 | **1.11x** |
+| Circuit | Suite | CZ Gates | Main (s) | Ours (s) | Speedup |
+|---------|-------|:--------:|:--------:|:--------:|:-------:|
+| hwb12 | feynman | 639K | 349.3 | 312.4 | **1.12x** |
+| hwb11 | feynman | 335K | 179.2 | 160.5 | **1.12x** |
+| clifford_100 | device_transpile | 66K | 23.6 | 20.9 | **1.13x** |
+| vqe_uccsd_n28 | custom sweep | 207K | 26.3 | 22.8 | **1.15x** |
+| hwb12 | custom sweep | 191K | 9.7 | 7.9 | **1.22x** |
 
-End-to-end speedup (4–15%) is lower than loop-body (18–32%) because layout/routing is unchanged and dominates total transpile time for smaller circuits.
-
-**Top per-circuit end-to-end improvements** (larger circuits benefit most):
-
-| Circuit | CZ Gates | Main (s) | Ours (s) | Speedup |
-|---------|:--------:|:--------:|:--------:|:-------:|
-| hwb12 (feynman) | 639K | 349.3 | 312.4 | **1.12x** |
-| vqe_uccsd_n28 | 207K | 26.3 | 22.8 | **1.15x** |
-| hwb12 (sweep) | 191K | 9.7 | 7.9 | **1.22x** |
+Across all 81 tested circuits (59 from [Qiskit/benchpress](https://github.com/Qiskit/benchpress) + 22 custom), the aggregate speedup is **1.10x** (908.5s → 826.9s). End-to-end gains are lower than loop-body because layout/routing is unchanged and dominates total time for smaller circuits.
 
 **Zero regressions**: All 81 circuits produce bit-identical 2Q gate count, total gate count, and depth.
 
