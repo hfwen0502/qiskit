@@ -60,6 +60,7 @@ Detailed investigation: [optimization_loop.md](https://github.com/hfwen0502/qisk
 
 ### Backward Compatibility
 
+- ~80 lines changed across 6 files
 - Rust return-type changes are additive; existing callers discard return values
 - Level 3 unchanged (keeps `MinimumPoint` loop)
-- All 152 existing pass tests pass
+- All existing transpiler tests pass. Validated on 81 benchmark circuits with zero quality regressions.
