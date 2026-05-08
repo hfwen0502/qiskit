@@ -20,21 +20,32 @@ If none fires, re-running passes would produce identical results → exit.
 
 ### Results
 
-Benchmarked on Intel Xeon Sapphire Rapids (160 vCPUs), release build, `seed_transpiler=42`.
+Benchmarked on Intel Xeon Sapphire Rapids (160 vCPUs), release build, `seed_transpiler=42` for deterministic comparison.
 
-**Loop body improvement**: 11.27s → 8.85s (**22% faster**) on representative circuits.
+**Loop body improvement**: 11.27s → 8.85s (**22% faster**).
 
-**End-to-end (full `pm.run()`)** — the loop savings are diluted by fixed costs (SABRE layout/routing = ~69% of total time):
+**End-to-end** (`generate_preset_pass_manager(optimization_level=2, backend, seed_transpiler=42).run()`):
 
-| Suite | Backend | Circuits | Main (s) | Ours (s) | Speedup | 2Q Gate Δ |
-|-------|---------|:--------:|:--------:|:--------:|:-------:|:---------:|
-| device_transpile | FakeTorino 133Q | 9 | 178.4 | 171.2 | **1.04x** | 0 |
-| device_feynman | FakeTorino 133Q | 50 | 635.5 | 570.3 | **1.11x** | 0 |
-| Custom sweep | GenericBackendV2 127Q | 22 | 94.6 | 85.4 | **1.11x** | 0 |
+| Suite | Backend | Circuits | Main (s) | Ours (s) | Speedup |
+|-------|---------|:--------:|:--------:|:--------:|:-------:|
+| device_transpile | FakeTorino 133Q | 9 | 178.4 | 171.2 | **1.04x** |
+| device_feynman | FakeTorino 133Q | 50 | 635.5 | 570.3 | **1.11x** |
+| Custom sweep | GenericBackendV2 127Q | 22 | 94.6 | 85.4 | **1.11x** |
 
-**Zero regressions**: All 81 circuits produce bit-identical gate counts (total, 2Q, 1Q) and depth.
+End-to-end speedup (4–11%) is lower than loop-body (22%) because SABRE layout/routing (~69% of total time) is unchanged.
 
-Detailed investigation: [optimization_loop.md](investigation/docs/optimization_loop.md)
+**Top per-circuit improvements** (larger circuits benefit most):
+
+| Circuit | CZ Gates | Main (s) | Ours (s) | Speedup |
+|---------|:--------:|:--------:|:--------:|:-------:|
+| hwb12 (feynman) | 639K | 349.3 | 312.4 | **1.12x** |
+| hwb11 (feynman) | 335K | 179.2 | 160.5 | **1.12x** |
+| vqe_uccsd_n28 (sweep) | 207K | 27.8 | 23.4 | **1.19x** |
+| hwb12 (sweep) | 191K | 11.7 | 9.5 | **1.23x** |
+
+**Zero regressions**: All 81 circuits produce bit-identical 2Q gate count, total gate count, and depth.
+
+Detailed investigation: [optimization_loop.md](https://github.com/hfwen0502/qiskit/blob/pass-manager-investigation/investigation/docs/optimization_loop.md)
 
 ### Files Changed (6 files)
 
