@@ -1,0 +1,36 @@
+========================================================================
+PR #16157 evidence: main=/Users/hfwen/IBMWORK/QCSC/qiskit-inv/investigation/outputs/pr16157/abstract_medium/main.json  pr=/Users/hfwen/IBMWORK/QCSC/qiskit-inv/investigation/outputs/pr16157/abstract_medium/pr.json
+Tests in common: 92
+========================================================================
+
+--- CORRECTNESS (gate/depth should be bit-identical) ---
+  PASS: all 92 circuits produce identical gate counts and depths
+
+--- TIMING ---
+  Total wall-clock (sum of means): main=98.6s  pr=79.8s  ratio=0.809x (-19.1%)
+
+  No circuits >5% slower on PR.
+
+  SPEEDUPS (>5% faster on PR):
+    factor247_n15-heavy-hex         main=  14.325s  pr=  11.029s  ratio=0.770x  (23.0% faster)
+    bwt_n21-linear                  main=  15.459s  pr=  11.921s  ratio=0.771x  (22.9% faster)
+    factor247_n15-linear            main=  14.990s  pr=  11.606s  ratio=0.774x  (22.6% faster)
+    factor247_n15-square            main=  13.570s  pr=  10.817s  ratio=0.797x  (20.3% faster)
+    bwt_n21-heavy-hex               main=  12.570s  pr=  10.143s  ratio=0.807x  (19.3% faster)
+    factor247_n15-all-to-all        main=  10.789s  pr=   8.810s  ratio=0.817x  (18.3% faster)
+    ising_n26-linear                main=   0.005s  pr=   0.004s  ratio=0.828x  (17.2% faster)
+    qft_n18-linear                  main=   0.017s  pr=   0.015s  ratio=0.857x  (14.3% faster)
+    dnn_n16-heavy-hex               main=   0.008s  pr=   0.007s  ratio=0.860x  (14.0% faster)
+    qft_n18-heavy-hex               main=   0.017s  pr=   0.015s  ratio=0.871x  (12.9% faster)
+    qft_n18-square                  main=   0.017s  pr=   0.015s  ratio=0.873x  (12.7% faster)
+    multiplier_n15-linear           main=   0.014s  pr=   0.013s  ratio=0.877x  (12.3% faster)
+    dnn_n16-linear                  main=   0.011s  pr=   0.010s  ratio=0.877x  (12.3% faster)
+    dnn_n16-all-to-all              main=   0.012s  pr=   0.011s  ratio=0.884x  (11.6% faster)
+    qram_n20-square                 main=   0.011s  pr=   0.010s  ratio=0.888x  (11.2% faster)
+    multiplier_n15-all-to-all       main=   0.014s  pr=   0.012s  ratio=0.890x  (11.0% faster)
+    ising_n26-heavy-hex             main=   0.010s  pr=   0.009s  ratio=0.897x  (10.3% faster)
+    ising_n26-square                main=   0.010s  pr=   0.009s  ratio=0.898x  (10.2% faster)
+    sat_n11-all-to-all              main=   0.011s  pr=   0.010s  ratio=0.903x  (9.7% faster)
+    bwt_n21-all-to-all              main=   5.464s  pr=   4.943s  ratio=0.905x  (9.5% faster)
+
+  Within ±5%: 53 circuits

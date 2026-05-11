@@ -1,0 +1,37 @@
+========================================================================
+PR #16157 evidence: main=/Users/hfwen/IBMWORK/QCSC/qiskit-inv/investigation/outputs/pr16157/abstract_small/main.json  pr=/Users/hfwen/IBMWORK/QCSC/qiskit-inv/investigation/outputs/pr16157/abstract_small/pr.json
+Tests in common: 168
+========================================================================
+
+--- CORRECTNESS (gate/depth should be bit-identical) ---
+  PASS: all 168 circuits produce identical gate counts and depths
+
+--- TIMING ---
+  Total wall-clock (sum of means): main=1.1s  pr=1.0s  ratio=0.905x (-9.5%)
+
+  SLOWDOWNS (>5% slower on PR):
+    simon_n6-all-to-all             main=   0.002s  pr=   0.002s  ratio=1.082x
+
+  SPEEDUPS (>5% faster on PR):
+    bb84_n8-heavy-hex               main=   0.002s  pr=   0.001s  ratio=0.759x  (24.1% faster)
+    bb84_n8-linear                  main=   0.001s  pr=   0.001s  ratio=0.766x  (23.4% faster)
+    bb84_n8-all-to-all              main=   0.001s  pr=   0.001s  ratio=0.781x  (21.9% faster)
+    variational_n4-linear           main=   0.001s  pr=   0.001s  ratio=0.796x  (20.4% faster)
+    bb84_n8-square                  main=   0.001s  pr=   0.001s  ratio=0.799x  (20.1% faster)
+    bell_n4-linear                  main=   0.002s  pr=   0.001s  ratio=0.812x  (18.8% faster)
+    bell_n4-heavy-hex               main=   0.003s  pr=   0.002s  ratio=0.825x  (17.5% faster)
+    vqe_uccsd_n8-square             main=   0.106s  pr=   0.088s  ratio=0.828x  (17.2% faster)
+    qec_en_n5-all-to-all            main=   0.002s  pr=   0.001s  ratio=0.829x  (17.1% faster)
+    vqe_uccsd_n8-linear             main=   0.106s  pr=   0.088s  ratio=0.831x  (16.9% faster)
+    vqe_uccsd_n8-heavy-hex          main=   0.111s  pr=   0.092s  ratio=0.832x  (16.8% faster)
+    ising_n10-linear                main=   0.005s  pr=   0.004s  ratio=0.838x  (16.2% faster)
+    vqe_uccsd_n6-all-to-all         main=   0.020s  pr=   0.017s  ratio=0.847x  (15.3% faster)
+    vqe_uccsd_n8-all-to-all         main=   0.094s  pr=   0.081s  ratio=0.856x  (14.4% faster)
+    ising_n10-heavy-hex             main=   0.005s  pr=   0.004s  ratio=0.859x  (14.1% faster)
+    vqe_uccsd_n6-heavy-hex          main=   0.026s  pr=   0.022s  ratio=0.861x  (13.9% faster)
+    quantumwalks_n2-linear          main=   0.001s  pr=   0.001s  ratio=0.861x  (13.9% faster)
+    vqe_uccsd_n6-square             main=   0.023s  pr=   0.020s  ratio=0.870x  (13.0% faster)
+    bell_n4-all-to-all              main=   0.002s  pr=   0.001s  ratio=0.876x  (12.4% faster)
+    qaoa_n6-all-to-all              main=   0.003s  pr=   0.002s  ratio=0.877x  (12.3% faster)
+
+  Within ±5%: 107 circuits

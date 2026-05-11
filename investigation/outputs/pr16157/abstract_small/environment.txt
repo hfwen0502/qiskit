@@ -1,7 +1,7 @@
-Date: 2026-05-08T22:06:38+00:00
+Date: 2026-05-09T03:21:00+00:00
 Host: hf-dev-worker-1-0
-Group: feynman
-Pytest target: benchpress/qiskit_gym/device_transpile/test_feynman.py
+Group: abstract_small
+Pytest target: benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py -k test_QASMBench_small
 QISKIT_TRANSPILER_SEED: 1
 
 Main build commit: c252163400635d38808d41581661ea51630b1173
@@ -9,6 +9,7 @@ PR build commit:   5e077757ed08fe4cef35fc4c1333e52285b1711e
 Benchpress commit: 26fd5516486e1045833390b0b753bc7cf5c6efc8
 Benchpress local changes:
  M benchpress/qiskit_gym/utils/io.py
+ M benchpress/utilities/backends/flexible_backend.py
  M default.conf
 
 CPU topology:

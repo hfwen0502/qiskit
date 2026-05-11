@@ -1,0 +1,38 @@
+========================================================================
+PR #16157 evidence: main=/Users/hfwen/IBMWORK/QCSC/qiskit-inv/investigation/outputs/pr16157/abstract_large/main.json  pr=/Users/hfwen/IBMWORK/QCSC/qiskit-inv/investigation/outputs/pr16157/abstract_large/pr.json
+Tests in common: 232
+========================================================================
+
+--- CORRECTNESS (gate/depth should be bit-identical) ---
+  PASS: all 232 circuits produce identical gate counts and depths
+
+--- TIMING ---
+  Total wall-clock (sum of means): main=603.1s  pr=497.7s  ratio=0.825x (-17.5%)
+
+  SLOWDOWNS (>5% slower on PR):
+    ghz_state_n255-heavy-hex        main=   6.372s  pr=   7.028s  ratio=1.103x
+    swap_test_n361-linear           main=   0.387s  pr=   0.415s  ratio=1.072x
+
+  SPEEDUPS (>5% faster on PR):
+    100-linear                      main=   6.387s  pr=   4.684s  ratio=0.733x  (26.7% faster)
+    vqe_uccsd_n28-square            main=  18.087s  pr=  13.619s  ratio=0.753x  (24.7% faster)
+    bwt_n37-linear                  main=  67.383s  pr=  50.813s  ratio=0.754x  (24.6% faster)
+    multiplier_n400-linear          main=  26.241s  pr=  19.912s  ratio=0.759x  (24.1% faster)
+    vqe_uccsd_n28-heavy-hex         main=  13.884s  pr=  10.555s  ratio=0.760x  (24.0% faster)
+    multiplier_n400-heavy-hex       main=  17.486s  pr=  13.347s  ratio=0.763x  (23.7% faster)
+    square_root_n60-heavy-hex       main=  43.274s  pr=  33.075s  ratio=0.764x  (23.6% faster)
+    vqe_uccsd_n28-linear            main=  18.060s  pr=  13.897s  ratio=0.770x  (23.0% faster)
+    square_root_n60-square          main=  34.420s  pr=  26.659s  ratio=0.775x  (22.5% faster)
+    multiplier_n400-square          main=  14.712s  pr=  11.396s  ratio=0.775x  (22.5% faster)
+    qft_n160-linear                 main=   0.588s  pr=   0.456s  ratio=0.775x  (22.5% faster)
+    bwt_n37-heavy-hex               main=  51.585s  pr=  39.981s  ratio=0.775x  (22.5% faster)
+    square_root_n45-square          main=   3.473s  pr=   2.712s  ratio=0.781x  (21.9% faster)
+    vqe_uccsd_n28-all-to-all        main=  15.099s  pr=  11.833s  ratio=0.784x  (21.6% faster)
+    multiplier_n350-linear          main=  19.446s  pr=  15.262s  ratio=0.785x  (21.5% faster)
+    qft_n320-linear                 main=   1.869s  pr=   1.482s  ratio=0.793x  (20.7% faster)
+    multiplier_n350-heavy-hex       main=  12.905s  pr=  10.356s  ratio=0.802x  (19.8% faster)
+    multiplier_n75-linear           main=   0.430s  pr=   0.347s  ratio=0.806x  (19.4% faster)
+    qft_n63-linear                  main=   0.130s  pr=   0.105s  ratio=0.808x  (19.2% faster)
+    multiplier_n350-square          main=  10.522s  pr=   8.511s  ratio=0.809x  (19.1% faster)
+
+  Within ±5%: 137 circuits

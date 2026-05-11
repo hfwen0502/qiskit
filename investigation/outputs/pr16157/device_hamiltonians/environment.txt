@@ -1,7 +1,7 @@
-Date: 2026-05-08T22:06:38+00:00
+Date: 2026-05-08T22:22:01+00:00
 Host: hf-dev-worker-1-0
-Group: feynman
-Pytest target: benchpress/qiskit_gym/device_transpile/test_feynman.py
+Group: device_hamiltonians
+Pytest target: benchpress/qiskit_gym/device_transpile/test_hamiltonians.py
 QISKIT_TRANSPILER_SEED: 1
 
 Main build commit: c252163400635d38808d41581661ea51630b1173

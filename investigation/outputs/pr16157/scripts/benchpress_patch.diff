@@ -25,3 +25,15 @@ index 4790614..8f5efad 100644
 +        filter_function=lambda x: len(x.qubits) == 1
 +    )
 +    benchmark.extra_info["output_depth_total"] = circuit.depth()
+diff --git a/benchpress/utilities/backends/flexible_backend.py b/benchpress/utilities/backends/flexible_backend.py
+index 0a1e740..52a25e2 100644
+--- a/benchpress/utilities/backends/flexible_backend.py
++++ b/benchpress/utilities/backends/flexible_backend.py
+@@ -113,6 +113,7 @@ class FlexibleBackend(GenericBackendV2):
+             basis_gates=self._basis_gates,
+             coupling_map=cmap,
+             control_flow=control_flow,
++            seed=12345,
+         )
+ 
+     def __repr__(self):

@@ -1,0 +1,42 @@
+========================================================================
+PR #16157 evidence: main=/Users/hfwen/IBMWORK/QCSC/qiskit-inv/investigation/outputs/pr16157/device_hamiltonians/main.json  pr=/Users/hfwen/IBMWORK/QCSC/qiskit-inv/investigation/outputs/pr16157/device_hamiltonians/pr.json
+Tests in common: 81
+========================================================================
+
+--- CORRECTNESS (gate/depth should be bit-identical) ---
+  FAIL: 4 metric mismatches across 1 circuits
+    ham_mu_z_prime_enc_gray_dvalues_4-4-4-4  output_gate_count_1q       main=34  pr=33  diff=-1
+    ham_mu_z_prime_enc_gray_dvalues_4-4-4-4  output_gate_count_total    main=38  pr=37  diff=-1
+    ham_mu_z_prime_enc_gray_dvalues_4-4-4-4  output_depth_1q            main=12  pr=9  diff=-3
+    ham_mu_z_prime_enc_gray_dvalues_4-4-4-4  output_depth_total         main=14  pr=11  diff=-3
+  1 circuits with op-dict differences (first 5):
+    ham_mu_z_prime_enc_gray_dvalues_4-4-4-4  main={'rz': 16, 'sx': 16, 'cz': 4, 'x': 2}  pr={'rz': 17, 'sx': 16, 'cz': 4}
+
+--- TIMING ---
+  Total wall-clock (sum of means): main=34.1s  pr=28.1s  ratio=0.825x (-17.5%)
+
+  No circuits >5% slower on PR.
+
+  SPEEDUPS (>5% faster on PR):
+    ham_gnp-k_5_n-90_rinst-02       main=   0.428s  pr=   0.326s  ratio=0.762x  (23.8% faster)
+    ham_ham_JW24                    main=  10.751s  pr=   8.423s  ratio=0.783x  (21.7% faster)
+    ham_ham_BK22                    main=   4.687s  pr=   3.720s  ratio=0.794x  (20.6% faster)
+    ham_ham_JW-22                   main=   5.462s  pr=   4.374s  ratio=0.801x  (19.9% faster)
+    ham_gnp-k_5_n-60_rinst-19       main=   0.254s  pr=   0.204s  ratio=0.802x  (19.8% faster)
+    ham_ham_JW-18                   main=   1.549s  pr=   1.248s  ratio=0.805x  (19.5% faster)
+    ham_bh_graph-2D-grid-nonpbc-qubitnodes_Lx-7_Ly-7_U-70_enc-gray_d-4  main=   0.341s  pr=   0.277s  ratio=0.812x  (18.8% faster)
+    ham_gnp-k_4_n-40_rinst-07       main=   0.096s  pr=   0.079s  ratio=0.820x  (18.0% faster)
+    ham_tsp_prob-kroD100_Ncity-16_enc-stdbinary  main=   0.434s  pr=   0.357s  ratio=0.822x  (17.8% faster)
+    ham_tsp_prob-fl417_Ncity-16_enc-stdbinary  main=   0.438s  pr=   0.367s  ratio=0.837x  (16.3% faster)
+    ham_bh_graph-2D-triag-pbc-qubitnodes_Lx-10_Ly-10_U-30_enc-stdbinary_d-4  main=   0.601s  pr=   0.508s  ratio=0.845x  (15.5% faster)
+    ham_ham_JW12                    main=   0.209s  pr=   0.178s  ratio=0.852x  (14.8% faster)
+    ham_ham_JW-10                   main=   0.084s  pr=   0.072s  ratio=0.858x  (14.2% faster)
+    ham_ham_JW10                    main=   0.085s  pr=   0.073s  ratio=0.865x  (13.5% faster)
+    ham_bh_graph-2D-triag-nonpbc-qubitnodes_Lx-3_Ly-5_U-30_enc-gray_d-4  main=   0.097s  pr=   0.084s  ratio=0.866x  (13.4% faster)
+    ham_reg-4_n-90_rinst-07         main=   0.084s  pr=   0.073s  ratio=0.866x  (13.4% faster)
+    ham_bh_graph-2D-triag-pbc-qubitnodes_Lx-3_Ly-22_U-70_enc-unary_d-4  main=   1.505s  pr=   1.309s  ratio=0.869x  (13.1% faster)
+    ham_bh_graph-2D-triag-pbc-qubitnodes_Lx-5_Ly-5_U-30_enc-unary_d-4  main=   0.633s  pr=   0.552s  ratio=0.872x  (12.8% faster)
+    ham_fh-graph-1D-grid-pbc-qubitnodes_Lx-50_U-2_enc-jw  main=   0.068s  pr=   0.060s  ratio=0.881x  (11.9% faster)
+    ham_bh_graph-1D-grid-pbc-qubitnodes_Lx-10_U-30_enc-unary_d-8  main=   0.769s  pr=   0.678s  ratio=0.881x  (11.9% faster)
+
+  Within ±5%: 37 circuits

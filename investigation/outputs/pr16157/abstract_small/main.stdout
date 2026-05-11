@@ -1,0 +1,360 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.11, pytest-9.0.2, pluggy-1.6.0
+benchmark: 4.0.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=1 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+qiskit: 2.5.0.dev0+c252163
+qiskit_ibm_runtime: 0.46.1
+timeout_skip_list: 0
+rootdir: /mnt/data/benchpress/benchpress
+configfile: pytest.ini
+plugins: anyio-4.12.1, timeout-2.4.0, benchmark-4.0.0, memray-1.8.0
+collected 492 items / 324 deselected / 168 selected
+
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[adder_n10-all-to-all] PASSED [  0%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[adder_n10-square] PASSED [  1%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[adder_n10-heavy-hex] PASSED [  1%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[adder_n10-linear] PASSED [  2%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[adder_n4-all-to-all] PASSED [  2%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[adder_n4-square] PASSED [  3%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[adder_n4-heavy-hex] PASSED [  4%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[adder_n4-linear] PASSED [  4%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[basis_change_n3-all-to-all] PASSED [  5%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[basis_change_n3-square] PASSED [  5%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[basis_change_n3-heavy-hex] PASSED [  6%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[basis_change_n3-linear] PASSED [  7%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[basis_test_n4-all-to-all] PASSED [  7%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[basis_test_n4-square] PASSED [  8%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[basis_test_n4-heavy-hex] PASSED [  8%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[basis_test_n4-linear] PASSED [  9%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[basis_trotter_n4-all-to-all] PASSED [ 10%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[basis_trotter_n4-square] PASSED [ 10%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[basis_trotter_n4-heavy-hex] PASSED [ 11%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[basis_trotter_n4-linear] PASSED [ 11%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[bb84_n8-all-to-all] PASSED [ 12%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[bb84_n8-square] PASSED [ 13%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[bb84_n8-heavy-hex] PASSED [ 13%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[bb84_n8-linear] PASSED [ 14%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[bell_n4-all-to-all] PASSED [ 14%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[bell_n4-square] PASSED [ 15%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[bell_n4-heavy-hex] PASSED [ 16%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[bell_n4-linear] PASSED [ 16%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[cat_state_n4-all-to-all] PASSED [ 17%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[cat_state_n4-square] PASSED [ 17%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[cat_state_n4-heavy-hex] PASSED [ 18%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[cat_state_n4-linear] PASSED [ 19%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[deutsch_n2-all-to-all] PASSED [ 19%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[deutsch_n2-square] PASSED [ 20%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[deutsch_n2-heavy-hex] PASSED [ 20%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[deutsch_n2-linear] PASSED [ 21%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[dnn_n2-all-to-all] PASSED [ 22%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[dnn_n2-square] PASSED [ 22%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[dnn_n2-heavy-hex] PASSED [ 23%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[dnn_n2-linear] PASSED [ 23%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[dnn_n8-all-to-all] PASSED [ 24%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[dnn_n8-square] PASSED [ 25%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[dnn_n8-heavy-hex] PASSED [ 25%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[dnn_n8-linear] PASSED [ 26%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[error_correctiond3_n5-all-to-all] PASSED [ 26%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[error_correctiond3_n5-square] PASSED [ 27%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[error_correctiond3_n5-heavy-hex] PASSED [ 27%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[error_correctiond3_n5-linear] PASSED [ 28%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[fredkin_n3-all-to-all] PASSED [ 29%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[fredkin_n3-square] PASSED [ 29%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[fredkin_n3-heavy-hex] PASSED [ 30%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[fredkin_n3-linear] PASSED [ 30%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[grover_n2-all-to-all] PASSED [ 31%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[grover_n2-square] PASSED [ 32%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[grover_n2-heavy-hex] PASSED [ 32%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[grover_n2-linear] PASSED [ 33%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[hhl_n7-all-to-all] PASSED [ 33%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[hhl_n7-square] PASSED [ 34%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[hhl_n7-heavy-hex] PASSED [ 35%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[hhl_n7-linear] PASSED [ 35%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[hs4_n4-all-to-all] PASSED [ 36%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[hs4_n4-square] PASSED [ 36%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[hs4_n4-heavy-hex] PASSED [ 37%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[hs4_n4-linear] PASSED [ 38%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[inverseqft_n4-all-to-all] PASSED [ 38%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[inverseqft_n4-square] PASSED [ 39%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[inverseqft_n4-heavy-hex] PASSED [ 39%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[inverseqft_n4-linear] PASSED [ 40%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[ipea_n2-all-to-all] PASSED [ 41%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[ipea_n2-square] PASSED [ 41%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[ipea_n2-heavy-hex] PASSED [ 42%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[ipea_n2-linear] PASSED [ 42%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[ising_n10-all-to-all] PASSED [ 43%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[ising_n10-square] PASSED [ 44%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[ising_n10-heavy-hex] PASSED [ 44%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[ising_n10-linear] PASSED [ 45%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[iswap_n2-all-to-all] PASSED [ 45%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[iswap_n2-square] PASSED [ 46%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[iswap_n2-heavy-hex] PASSED [ 47%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[iswap_n2-linear] PASSED [ 47%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[linearsolver_n3-all-to-all] PASSED [ 48%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[linearsolver_n3-square] PASSED [ 48%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[linearsolver_n3-heavy-hex] PASSED [ 49%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[linearsolver_n3-linear] PASSED [ 50%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[lpn_n5-all-to-all] PASSED [ 50%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[lpn_n5-square] PASSED [ 51%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[lpn_n5-heavy-hex] PASSED [ 51%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[lpn_n5-linear] PASSED [ 52%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[pea_n5-all-to-all] PASSED [ 52%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[pea_n5-square] PASSED [ 53%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[pea_n5-heavy-hex] PASSED [ 54%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[pea_n5-linear] PASSED [ 54%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qaoa_n3-all-to-all] PASSED [ 55%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qaoa_n3-square] PASSED [ 55%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qaoa_n3-heavy-hex] PASSED [ 56%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qaoa_n3-linear] PASSED [ 57%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qaoa_n6-all-to-all] PASSED [ 57%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qaoa_n6-square] PASSED [ 58%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qaoa_n6-heavy-hex] PASSED [ 58%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qaoa_n6-linear] PASSED [ 59%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qec_en_n5-all-to-all] PASSED [ 60%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qec_en_n5-square] PASSED [ 60%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qec_en_n5-heavy-hex] PASSED [ 61%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qec_en_n5-linear] PASSED [ 61%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qec_sm_n5-all-to-all] PASSED [ 62%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qec_sm_n5-square] PASSED [ 63%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qec_sm_n5-heavy-hex] PASSED [ 63%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qec_sm_n5-linear] PASSED [ 64%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qft_n4-all-to-all] PASSED [ 64%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qft_n4-square] PASSED [ 65%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qft_n4-heavy-hex] PASSED [ 66%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qft_n4-linear] PASSED [ 66%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qpe_n9-all-to-all] PASSED [ 67%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qpe_n9-square] PASSED [ 67%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qpe_n9-heavy-hex] PASSED [ 68%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qpe_n9-linear] PASSED [ 69%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qrng_n4-all-to-all] PASSED [ 69%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qrng_n4-square] PASSED [ 70%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qrng_n4-heavy-hex] PASSED [ 70%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[qrng_n4-linear] PASSED [ 71%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[quantumwalks_n2-all-to-all] PASSED [ 72%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[quantumwalks_n2-square] PASSED [ 72%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[quantumwalks_n2-heavy-hex] PASSED [ 73%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[quantumwalks_n2-linear] PASSED [ 73%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[sat_n7-all-to-all] PASSED [ 74%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[sat_n7-square] PASSED [ 75%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[sat_n7-heavy-hex] PASSED [ 75%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[sat_n7-linear] PASSED [ 76%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[shor_n5-all-to-all] PASSED [ 76%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[shor_n5-square] PASSED [ 77%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[shor_n5-heavy-hex] PASSED [ 77%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[shor_n5-linear] PASSED [ 78%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[simon_n6-all-to-all] PASSED [ 79%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[simon_n6-square] PASSED [ 79%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[simon_n6-heavy-hex] PASSED [ 80%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[simon_n6-linear] PASSED [ 80%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[teleportation_n3-all-to-all] PASSED [ 81%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[teleportation_n3-square] PASSED [ 82%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[teleportation_n3-heavy-hex] PASSED [ 82%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[teleportation_n3-linear] PASSED [ 83%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[toffoli_n3-all-to-all] PASSED [ 83%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[toffoli_n3-square] PASSED [ 84%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[toffoli_n3-heavy-hex] PASSED [ 85%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[toffoli_n3-linear] PASSED [ 85%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[variational_n4-all-to-all] PASSED [ 86%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[variational_n4-square] PASSED [ 86%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[variational_n4-heavy-hex] PASSED [ 87%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[variational_n4-linear] PASSED [ 88%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_n4-all-to-all] PASSED [ 88%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_n4-square] PASSED [ 89%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_n4-heavy-hex] PASSED [ 89%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_n4-linear] PASSED [ 90%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_uccsd_n4-all-to-all] PASSED [ 91%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_uccsd_n4-square] PASSED [ 91%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_uccsd_n4-heavy-hex] PASSED [ 92%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_uccsd_n4-linear] PASSED [ 92%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_uccsd_n6-all-to-all] PASSED [ 93%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_uccsd_n6-square] PASSED [ 94%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_uccsd_n6-heavy-hex] PASSED [ 94%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_uccsd_n6-linear] PASSED [ 95%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_uccsd_n8-all-to-all] PASSED [ 95%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_uccsd_n8-square] PASSED [ 96%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_uccsd_n8-heavy-hex] PASSED [ 97%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[vqe_uccsd_n8-linear] PASSED [ 97%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[wstate_n3-all-to-all] PASSED [ 98%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[wstate_n3-square] PASSED [ 98%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[wstate_n3-heavy-hex] PASSED [ 99%]
+benchpress/qiskit_gym/abstract_transpile/test_qasmbench.py::TestWorkoutAbstractQasmBenchSmall::test_QASMBench_small[wstate_n3-linear] PASSED [100%]
+Wrote benchmark data in: <_io.BufferedWriter name='/mnt/data/pr16157_evidence/abstract_small/main.json'>
+
+
+
+------------------------------------------------------------------------------------------------------ benchmark 'Transpile - Abstract': 168 tests ------------------------------------------------------------------------------------------------------
+Name (time in us)                                                   Min                     Max                    Mean                StdDev                  Median                   IQR            Outliers         OPS            Rounds  Iterations
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_QASMBench_small[qrng_n4-linear]                           520.0459 (1.0)        1,412.5789 (1.46)         594.7619 (1.0)         61.9963 (2.01)         585.5309 (1.0)         34.4175 (1.35)        69;50  1,681.3452 (1.0)        1175           1
+test_QASMBench_small[qrng_n4-square]                           525.6990 (1.01)       1,323.4848 (1.37)         617.7887 (1.04)        67.4645 (2.19)         601.2339 (1.03)        55.0440 (2.16)       167;63  1,618.6764 (0.96)       1226           1
+test_QASMBench_small[qrng_n4-all-to-all]                       526.6881 (1.01)       1,010.5036 (1.04)         649.9948 (1.09)        57.4699 (1.87)         643.9844 (1.10)        71.7184 (2.81)       288;20  1,538.4737 (0.92)       1090           1
+test_QASMBench_small[deutsch_n2-linear]                        639.5830 (1.23)         968.6565 (1.0)          701.5028 (1.18)        31.6677 (1.03)         696.7597 (1.19)        28.0074 (1.10)       144;47  1,425.5110 (0.85)        993           1
+test_QASMBench_small[deutsch_n2-all-to-all]                    645.1942 (1.24)       1,044.7511 (1.08)         696.7716 (1.17)        35.0474 (1.14)         692.1580 (1.18)        25.5154 (1.0)         82;34  1,435.1905 (0.85)       1034           1
+test_QASMBench_small[grover_n2-linear]                         745.9521 (1.43)       1,039.4566 (1.07)         799.8450 (1.34)        30.7774 (1.0)          796.1476 (1.36)        25.7560 (1.01)       127;34  1,250.2423 (0.74)        931           1
+test_QASMBench_small[grover_n2-all-to-all]                     756.0486 (1.45)       1,115.0269 (1.15)         815.6533 (1.37)        38.5605 (1.25)         808.3014 (1.38)        27.2873 (1.07)        88;49  1,226.0111 (0.73)        760           1
+test_QASMBench_small[iswap_n2-linear]                          757.5219 (1.46)       1,108.9342 (1.14)         821.2641 (1.38)        36.2018 (1.18)         815.2928 (1.39)        29.0591 (1.14)       117;48  1,217.6351 (0.72)        902           1
+test_QASMBench_small[iswap_n2-all-to-all]                      772.8236 (1.49)       1,148.0050 (1.19)         831.9453 (1.40)        40.8887 (1.33)         823.5555 (1.41)        29.7211 (1.16)       104;68  1,202.0021 (0.71)        893           1
+test_QASMBench_small[dnn_n2-all-to-all]                        786.2253 (1.51)       1,178.3354 (1.22)         858.9075 (1.44)        42.5429 (1.38)         850.5550 (1.45)        35.5812 (1.39)       152;58  1,164.2697 (0.69)        930           1
+test_QASMBench_small[teleportation_n3-all-to-all]              790.9918 (1.52)       1,245.4549 (1.29)         902.0881 (1.52)        49.4907 (1.61)         888.4147 (1.52)        54.2272 (2.13)       168;34  1,108.5392 (0.66)        851           1
+test_QASMBench_small[dnn_n2-linear]                            796.9029 (1.53)       1,234.5240 (1.27)         855.6157 (1.44)        40.0988 (1.30)         848.4274 (1.45)        29.3432 (1.15)        95;49  1,168.7490 (0.70)        854           1
+test_QASMBench_small[deutsch_n2-square]                        800.3460 (1.54)       1,242.5166 (1.28)         871.9038 (1.47)        35.6746 (1.16)         867.4776 (1.48)        31.1506 (1.22)       138;36  1,146.9155 (0.68)        995           1
+test_QASMBench_small[teleportation_n3-linear]                  801.3314 (1.54)       1,225.0580 (1.26)         887.7997 (1.49)        44.2520 (1.44)         877.3217 (1.50)        33.3800 (1.31)       129;68  1,126.3802 (0.67)        860           1
+test_QASMBench_small[cat_state_n4-all-to-all]                  833.6417 (1.60)       1,316.8249 (1.36)         941.2833 (1.58)        44.0159 (1.43)         933.9228 (1.60)        41.1468 (1.61)       136;41  1,062.3794 (0.63)        827           1
+test_QASMBench_small[cat_state_n4-square]                      856.0047 (1.65)       1,172.4867 (1.21)         929.2906 (1.56)        38.1534 (1.24)         926.0857 (1.58)        35.3809 (1.39)       160;27  1,076.0897 (0.64)        921           1
+test_QASMBench_small[quantumwalks_n2-all-to-all]               861.7342 (1.66)       1,362.2278 (1.41)         942.5333 (1.58)        53.3068 (1.73)         931.0110 (1.59)        35.7544 (1.40)        96;60  1,060.9705 (0.63)        770           1
+test_QASMBench_small[cat_state_n4-linear]                      864.6529 (1.66)       1,344.3939 (1.39)         995.6411 (1.67)        69.5677 (2.26)         988.9803 (1.69)       109.2968 (4.28)        256;9  1,004.3780 (0.60)        784           1
+test_QASMBench_small[quantumwalks_n2-linear]                   871.2672 (1.68)      47,975.0158 (49.53)      1,017.3866 (1.71)     1,661.6946 (53.99)        952.3733 (1.63)        28.6386 (1.12)         1;56    982.9106 (0.58)        801           1
+test_QASMBench_small[dnn_n2-square]                            887.5215 (1.71)       1,474.6115 (1.52)       1,013.8053 (1.70)        51.7261 (1.68)       1,009.3162 (1.72)        40.7354 (1.60)       116;44    986.3827 (0.59)        871           1
+test_QASMBench_small[teleportation_n3-square]                  904.4250 (1.74)       1,392.4288 (1.44)       1,029.1966 (1.73)        47.8146 (1.55)       1,024.8609 (1.75)        51.6009 (2.02)       180;28    971.6317 (0.58)        862           1
+test_QASMBench_small[iswap_n2-square]                          909.5175 (1.75)       1,359.2634 (1.40)       1,006.2151 (1.69)        34.4352 (1.12)       1,001.4670 (1.71)        28.8333 (1.13)       113;35    993.8233 (0.59)        921           1
+test_QASMBench_small[grover_n2-square]                         911.4528 (1.75)       1,361.9615 (1.41)       1,007.6419 (1.69)        44.3360 (1.44)       1,003.8768 (1.71)        34.9735 (1.37)       130;54    992.4160 (0.59)        880           1
+test_QASMBench_small[lpn_n5-linear]                            915.9707 (1.76)       1,415.4892 (1.46)       1,009.0818 (1.70)        41.8330 (1.36)       1,005.5099 (1.72)        39.4499 (1.55)       148;27    990.9999 (0.59)        796           1
+test_QASMBench_small[toffoli_n3-all-to-all]                    936.4774 (1.80)       1,295.0208 (1.34)         998.4479 (1.68)        41.7166 (1.36)         987.4790 (1.69)        38.1703 (1.50)       179;52  1,001.5546 (0.60)        902           1
+test_QASMBench_small[linearsolver_n3-all-to-all]               942.1017 (1.81)       1,412.3721 (1.46)       1,048.9573 (1.76)        49.8350 (1.62)       1,046.0494 (1.79)        71.2462 (2.79)       202;14    953.3276 (0.57)        838           1
+test_QASMBench_small[fredkin_n3-all-to-all]                    955.0834 (1.84)       1,319.6105 (1.36)       1,073.4952 (1.80)        50.1768 (1.63)       1,070.4240 (1.83)        60.0128 (2.35)       241;27    931.5365 (0.55)        855           1
+test_QASMBench_small[variational_n4-linear]                    960.8557 (1.85)       1,506.8408 (1.56)       1,073.7285 (1.81)        59.8128 (1.94)       1,069.8843 (1.83)        53.4905 (2.10)       152;30    931.3341 (0.55)        748           1
+test_QASMBench_small[lpn_n5-all-to-all]                        962.7417 (1.85)       1,395.0355 (1.44)       1,056.9116 (1.78)        45.7588 (1.49)       1,052.9263 (1.80)        47.4062 (1.86)       167;25    946.1529 (0.56)        888           1
+test_QASMBench_small[linearsolver_n3-linear]                   977.5767 (1.88)       1,472.3213 (1.52)       1,075.0232 (1.81)        51.2081 (1.66)       1,069.2123 (1.83)        44.0625 (1.73)       147;52    930.2125 (0.55)        725           1
+test_QASMBench_small[hs4_n4-linear]                            982.6431 (1.89)       1,304.2996 (1.35)       1,083.5360 (1.82)        39.6281 (1.29)       1,083.2241 (1.85)        33.1136 (1.30)       140;64    922.9042 (0.55)        759           1
+test_QASMBench_small[hs4_n4-square]                            985.9493 (1.90)       1,415.8562 (1.46)       1,094.6200 (1.84)        37.0746 (1.20)       1,091.2805 (1.86)        29.7953 (1.17)        98;43    913.5591 (0.54)        788           1
+test_QASMBench_small[quantumwalks_n2-square]                   998.8556 (1.92)       1,515.3456 (1.56)       1,130.3154 (1.90)        49.2588 (1.60)       1,132.5330 (1.93)        49.1375 (1.93)       207;35    884.7088 (0.53)        884           1
+test_QASMBench_small[hs4_n4-all-to-all]                      1,010.3593 (1.94)       1,428.9161 (1.48)       1,110.3590 (1.87)        41.0211 (1.33)       1,106.1034 (1.89)        35.0284 (1.37)       120;43    900.6096 (0.54)        744           1
+test_QASMBench_small[variational_n4-square]                  1,015.0243 (1.95)       1,613.4595 (1.67)       1,141.5588 (1.92)        59.4396 (1.93)       1,137.1784 (1.94)        54.7741 (2.15)       157;28    875.9952 (0.52)        831           1
+test_QASMBench_small[qrng_n4-heavy-hex]                      1,015.6473 (1.95)       1,611.4237 (1.66)       1,176.3843 (1.98)        71.0548 (2.31)       1,176.2334 (2.01)        92.0156 (3.61)       190;14    850.0624 (0.51)        728           1
+test_QASMBench_small[variational_n4-all-to-all]              1,020.1428 (1.96)       1,627.0448 (1.68)       1,107.4840 (1.86)        66.4999 (2.16)       1,090.5312 (1.86)        50.3864 (1.97)       104;64    902.9476 (0.54)        794           1
+test_QASMBench_small[bb84_n8-linear]                         1,030.7077 (1.98)       1,799.8135 (1.86)       1,184.9312 (1.99)        89.1307 (2.90)       1,161.9907 (1.98)       115.9825 (4.55)        199;9    843.9309 (0.50)        687           1
+test_QASMBench_small[basis_change_n3-linear]                 1,032.9979 (1.99)       1,431.6151 (1.48)       1,108.0834 (1.86)        49.4884 (1.61)       1,097.2274 (1.87)        30.7474 (1.21)        83;69    902.4592 (0.54)        697           1
+test_QASMBench_small[basis_change_n3-all-to-all]             1,061.4619 (2.04)       1,359.1666 (1.40)       1,119.0494 (1.88)        34.3354 (1.12)       1,114.4923 (1.90)        25.9078 (1.02)        72;29    893.6156 (0.53)        669           1
+test_QASMBench_small[qaoa_n3-all-to-all]                     1,082.8832 (2.08)       1,818.8432 (1.88)       1,180.2585 (1.98)        58.0936 (1.89)       1,179.7594 (2.01)        48.1459 (1.89)       136;42    847.2720 (0.50)        737           1
+test_QASMBench_small[linearsolver_n3-square]                 1,084.5996 (2.09)       1,493.0032 (1.54)       1,154.1568 (1.94)        40.9751 (1.33)       1,147.7154 (1.96)        32.6370 (1.28)       108;35    866.4334 (0.52)        793           1
+test_QASMBench_small[bb84_n8-square]                         1,085.1752 (2.09)       1,635.2460 (1.69)       1,288.2517 (2.17)        94.0361 (3.06)       1,283.4482 (2.19)       148.5269 (5.82)        231;5    776.2458 (0.46)        680           1
+test_QASMBench_small[basis_test_n4-linear]                   1,100.5290 (2.12)       1,649.9544 (1.70)       1,222.3773 (2.06)        50.7977 (1.65)       1,215.1739 (2.08)        38.9311 (1.53)       108;62    818.0780 (0.49)        678           1
+test_QASMBench_small[bb84_n8-all-to-all]                     1,107.2084 (2.13)       1,791.4083 (1.85)       1,294.2750 (2.18)        79.9730 (2.60)       1,289.7532 (2.20)       105.9487 (4.15)       189;11    772.6333 (0.46)        675           1
+test_QASMBench_small[basis_change_n3-square]                 1,115.7738 (2.15)       1,565.5346 (1.62)       1,242.7202 (2.09)        53.4241 (1.74)       1,246.8146 (2.13)        48.2986 (1.89)       167;36    804.6864 (0.48)        725           1
+test_QASMBench_small[basis_test_n4-all-to-all]               1,119.6798 (2.15)       1,601.8534 (1.65)       1,236.3371 (2.08)        48.3050 (1.57)       1,233.1400 (2.11)        37.9623 (1.49)       101;52    808.8409 (0.48)        729           1
+test_QASMBench_small[lpn_n5-square]                          1,136.2191 (2.18)       1,684.6918 (1.74)       1,245.2433 (2.09)        57.2976 (1.86)       1,239.0679 (2.12)        56.4440 (2.21)       148;24    803.0559 (0.48)        679           1
+test_QASMBench_small[adder_n4-square]                        1,136.5097 (2.19)       1,583.9348 (1.64)       1,226.0260 (2.06)        54.6351 (1.78)       1,219.5809 (2.08)        80.3408 (3.15)       205;12    815.6434 (0.49)        723           1
+test_QASMBench_small[adder_n4-all-to-all]                    1,139.7339 (2.19)       1,510.0446 (1.56)       1,211.0111 (2.04)        49.5162 (1.61)       1,197.4806 (2.05)        44.3507 (1.74)       150;51    825.7563 (0.49)        637           1
+test_QASMBench_small[basis_test_n4-square]                   1,139.8923 (2.19)      43,470.9657 (44.88)      1,288.4385 (2.17)     1,592.6471 (51.75)      1,221.4924 (2.09)        39.6222 (1.55)         1;28    776.1333 (0.46)        704           1
+test_QASMBench_small[vqe_n4-square]                          1,185.9462 (2.28)       1,733.4810 (1.79)       1,278.6078 (2.15)        63.6625 (2.07)       1,261.7367 (2.15)        78.6595 (3.08)       134;17    782.1007 (0.47)        684           1
+test_QASMBench_small[vqe_n4-linear]                          1,202.8813 (2.31)       1,594.9020 (1.65)       1,304.7193 (2.19)        51.7068 (1.68)       1,311.6561 (2.24)        64.4499 (2.53)       180;10    766.4484 (0.46)        629           1
+test_QASMBench_small[vqe_n4-all-to-all]                      1,206.1326 (2.32)       1,658.1165 (1.71)       1,313.6428 (2.21)        63.2389 (2.05)       1,307.6933 (2.23)        82.4321 (3.23)       170;13    761.2420 (0.45)        629           1
+test_QASMBench_small[bell_n4-square]                         1,269.6479 (2.44)       1,729.4902 (1.79)       1,383.6311 (2.33)        44.6000 (1.45)       1,382.0501 (2.36)        28.1257 (1.10)        85;68    722.7360 (0.43)        637           1
+test_QASMBench_small[qec_en_n5-square]                       1,414.4154 (2.72)       1,891.7508 (1.95)       1,535.7777 (2.58)        53.7536 (1.75)       1,529.3346 (2.61)        59.4272 (2.33)       131;16    651.1359 (0.39)        564           1
+test_QASMBench_small[qft_n4-all-to-all]                      1,457.6269 (2.80)       1,891.2675 (1.95)       1,529.0458 (2.57)        53.5334 (1.74)       1,515.1985 (2.59)        33.3984 (1.31)        71;57    654.0026 (0.39)        611           1
+test_QASMBench_small[qec_en_n5-all-to-all]                   1,462.5294 (2.81)       1,894.2244 (1.96)       1,549.1322 (2.60)        46.5294 (1.51)       1,543.0348 (2.64)        39.8047 (1.56)        77;24    645.5227 (0.38)        572           1
+test_QASMBench_small[bell_n4-all-to-all]                     1,466.0023 (2.82)       1,916.1562 (1.98)       1,547.2825 (2.60)        42.9779 (1.40)       1,539.4622 (2.63)        42.2206 (1.65)        98;21    646.2944 (0.38)        561           1
+test_QASMBench_small[bell_n4-linear]                         1,477.1577 (2.84)       2,046.3821 (2.11)       1,629.2307 (2.74)        67.3364 (2.19)       1,641.1790 (2.80)        89.4750 (3.51)        152;7    613.7866 (0.37)        530           1
+test_QASMBench_small[deutsch_n2-heavy-hex]                   1,513.6730 (2.91)       2,074.8368 (2.14)       1,643.5211 (2.76)        65.5411 (2.13)       1,640.8670 (2.80)        73.4422 (2.88)       125;12    608.4498 (0.36)        566           1
+test_QASMBench_small[teleportation_n3-heavy-hex]             1,530.8587 (2.94)       2,246.6062 (2.32)       1,756.7101 (2.95)        75.9421 (2.47)       1,756.5480 (3.00)        77.8993 (3.05)       121;18    569.2459 (0.34)        531           1
+test_QASMBench_small[cat_state_n4-heavy-hex]                 1,548.8239 (2.98)       2,195.9124 (2.27)       1,761.1874 (2.96)        71.0100 (2.31)       1,757.8965 (3.00)        75.4278 (2.96)       109;23    567.7988 (0.34)        537           1
+test_QASMBench_small[grover_n2-heavy-hex]                    1,568.0930 (3.02)       2,342.2204 (2.42)       1,800.2147 (3.03)        81.5444 (2.65)       1,793.2132 (3.06)        93.1688 (3.65)       108;16    555.4893 (0.33)        475           1
+test_QASMBench_small[bb84_n8-heavy-hex]                      1,573.8131 (3.03)       2,257.2689 (2.33)       1,782.9181 (3.00)        83.8955 (2.73)       1,776.1621 (3.03)       104.8930 (4.11)       134;11    560.8782 (0.33)        516           1
+test_QASMBench_small[iswap_n2-heavy-hex]                     1,580.0968 (3.04)       2,096.0383 (2.16)       1,767.8940 (2.97)        69.4113 (2.26)       1,766.0772 (3.02)        78.0136 (3.06)       119;21    565.6448 (0.34)        543           1
+test_QASMBench_small[lpn_n5-heavy-hex]                       1,632.4613 (3.14)       2,763.5256 (2.85)       1,757.9320 (2.96)        85.7580 (2.79)       1,747.3632 (2.98)        63.0135 (2.47)        62;21    568.8502 (0.34)        529           1
+test_QASMBench_small[quantumwalks_n2-heavy-hex]              1,649.5315 (3.17)       2,347.9862 (2.42)       1,881.9726 (3.16)        79.7710 (2.59)       1,872.6960 (3.20)        92.6375 (3.63)       127;12    531.3574 (0.32)        495           1
+test_QASMBench_small[dnn_n2-heavy-hex]                       1,667.6541 (3.21)       2,317.9958 (2.39)       1,813.4710 (3.05)        67.1871 (2.18)       1,805.6808 (3.08)        77.6830 (3.04)       131;12    551.4287 (0.33)        515           1
+test_QASMBench_small[linearsolver_n3-heavy-hex]              1,682.9632 (3.24)       2,366.8939 (2.44)       1,901.0031 (3.20)        78.6732 (2.56)       1,891.3345 (3.23)        92.6186 (3.63)       130;15    526.0381 (0.31)        547           1
+test_QASMBench_small[hs4_n4-heavy-hex]                       1,783.4650 (3.43)       2,313.4258 (2.39)       1,913.9956 (3.22)        60.2979 (1.96)       1,905.9447 (3.26)        60.0875 (2.35)        93;18    522.4672 (0.31)        488           1
+test_QASMBench_small[variational_n4-heavy-hex]               1,813.1603 (3.49)       2,927.0221 (3.02)       1,961.3878 (3.30)        85.5224 (2.78)       1,951.1837 (3.33)        62.0293 (2.43)        47;14    509.8431 (0.30)        508           1
+test_QASMBench_small[error_correctiond3_n5-all-to-all]       1,860.2042 (3.58)      44,782.9263 (46.23)      2,099.3683 (3.53)     1,941.4753 (63.08)      2,025.3682 (3.46)        56.2835 (2.21)         1;67    476.3338 (0.28)        486           1
+test_QASMBench_small[basis_change_n3-heavy-hex]              1,929.6398 (3.71)       2,567.8566 (2.65)       2,094.7936 (3.52)        89.0385 (2.89)       2,084.0485 (3.56)        93.0484 (3.65)        99;16    477.3740 (0.28)        402           1
+test_QASMBench_small[toffoli_n3-square]                      1,949.1687 (3.75)       2,585.4297 (2.67)       2,218.0772 (3.73)       120.3954 (3.91)       2,200.4466 (3.76)       174.1480 (6.83)        127;2    450.8409 (0.27)        374           1
+test_QASMBench_small[fredkin_n3-linear]                      1,956.2915 (3.76)       2,542.1390 (2.62)       2,174.7931 (3.66)        91.5944 (2.98)       2,162.9850 (3.69)       113.9054 (4.46)       126;10    459.8139 (0.27)        426           1
+test_QASMBench_small[basis_test_n4-heavy-hex]                1,956.8410 (3.76)       2,496.4651 (2.58)       2,156.3474 (3.63)        70.2100 (2.28)       2,153.7198 (3.68)        69.8124 (2.74)       106;20    463.7472 (0.28)        435           1
+test_QASMBench_small[toffoli_n3-linear]                      1,996.3812 (3.84)       2,601.3758 (2.69)       2,175.0001 (3.66)        87.5032 (2.84)       2,166.3187 (3.70)       109.2576 (4.28)        114;9    459.7701 (0.27)        413           1
+test_QASMBench_small[qaoa_n3-linear]                         2,029.3817 (3.90)       2,755.5367 (2.84)       2,247.8760 (3.78)        99.2420 (3.22)       2,231.6775 (3.81)       107.9077 (4.23)        95;17    444.8644 (0.26)        426           1
+test_QASMBench_small[simon_n6-all-to-all]                    2,056.9246 (3.96)       2,570.5677 (2.65)       2,123.6100 (3.57)        49.0318 (1.59)       2,114.9516 (3.61)        37.8799 (1.48)        48;22    470.8963 (0.28)        421           1
+test_QASMBench_small[vqe_n4-heavy-hex]                       2,060.5931 (3.96)       2,678.5079 (2.77)       2,184.2671 (3.67)        60.6230 (1.97)       2,178.1987 (3.72)        55.9615 (2.19)        61;10    457.8195 (0.27)        439           1
+test_QASMBench_small[fredkin_n3-square]                      2,112.0878 (4.06)       2,965.5294 (3.06)       2,357.4615 (3.96)       112.5572 (3.66)       2,336.3996 (3.99)       123.0682 (4.82)        86;17    424.1851 (0.25)        357           1
+test_QASMBench_small[qaoa_n3-square]                         2,174.2377 (4.18)       3,069.2201 (3.17)       2,386.3024 (4.01)       103.2009 (3.35)       2,373.8183 (4.05)       127.8317 (5.01)         92;4    419.0584 (0.25)        343           1
+test_QASMBench_small[adder_n4-linear]                        2,270.7554 (4.37)       2,926.9019 (3.02)       2,500.7717 (4.20)       108.1849 (3.52)       2,482.8706 (4.24)       125.1027 (4.90)       116;12    399.8766 (0.24)        406           1
+test_QASMBench_small[vqe_uccsd_n4-linear]                    2,342.6311 (4.50)       2,853.9309 (2.95)       2,421.2446 (4.07)        84.8651 (2.76)       2,393.7142 (4.09)        38.2559 (1.50)        45;57    413.0107 (0.25)        365           1
+test_QASMBench_small[vqe_uccsd_n4-square]                    2,373.1356 (4.56)       2,904.5753 (3.00)       2,453.4098 (4.13)        77.0252 (2.50)       2,423.3554 (4.14)        74.8043 (2.93)        55;27    407.5960 (0.24)        361           1
+test_QASMBench_small[qft_n4-linear]                          2,382.1453 (4.58)       2,994.5737 (3.09)       2,649.1270 (4.45)       106.4350 (3.46)       2,640.6734 (4.51)       154.5227 (6.06)        118;3    377.4828 (0.22)        368           1
+test_QASMBench_small[bell_n4-heavy-hex]                      2,393.7961 (4.60)       3,035.5956 (3.13)       2,667.0990 (4.48)        76.9767 (2.50)       2,664.8622 (4.55)        77.1014 (3.02)        73;16    374.9392 (0.22)        328           1
+test_QASMBench_small[qft_n4-square]                          2,431.9105 (4.68)       3,182.6450 (3.29)       2,696.0649 (4.53)       138.6481 (4.50)       2,678.8651 (4.58)       190.3111 (7.46)        112;6    370.9110 (0.22)        342           1
+test_QASMBench_small[vqe_uccsd_n4-all-to-all]                2,470.9515 (4.75)       3,028.9637 (3.13)       2,547.0185 (4.28)        63.2250 (2.05)       2,532.6898 (4.33)        28.6810 (1.12)        27;38    392.6159 (0.23)        362           1
+test_QASMBench_small[qec_en_n5-linear]                       2,521.9098 (4.85)       3,556.5514 (3.67)       2,710.6025 (4.56)       107.0261 (3.48)       2,699.9712 (4.61)       125.1479 (4.90)         88;6    368.9217 (0.22)        364           1
+test_QASMBench_small[qaoa_n6-all-to-all]                     2,617.1040 (5.03)       3,154.9064 (3.26)       2,720.3211 (4.57)        64.7479 (2.10)       2,702.5202 (4.62)        64.7069 (2.54)        47;14    367.6037 (0.22)        328           1
+test_QASMBench_small[wstate_n3-all-to-all]                   2,669.3176 (5.13)       3,589.1980 (3.71)       2,836.4535 (4.77)       120.1526 (3.90)       2,805.7089 (4.79)        87.8451 (3.44)        58;40    352.5529 (0.21)        290           1
+test_QASMBench_small[toffoli_n3-heavy-hex]                   2,815.2810 (5.41)       3,754.7871 (3.88)       3,123.1397 (5.25)       120.6714 (3.92)       3,106.0502 (5.30)       120.1853 (4.71)        65;16    320.1906 (0.19)        299           1
+test_QASMBench_small[fredkin_n3-heavy-hex]                   2,877.0799 (5.53)       4,069.7828 (4.20)       3,096.8610 (5.21)       171.8589 (5.58)       3,062.0079 (5.23)       136.1743 (5.34)        24;10    322.9076 (0.19)        238           1
+test_QASMBench_small[qec_sm_n5-linear]                       2,941.9539 (5.66)       3,599.7983 (3.72)       3,177.1188 (5.34)       126.5405 (4.11)       3,130.8662 (5.35)       198.7116 (7.79)         78;3    314.7506 (0.19)        286           1
+test_QASMBench_small[qec_sm_n5-all-to-all]                   2,977.3200 (5.73)       3,795.4720 (3.92)       3,174.9480 (5.34)       136.4293 (4.43)       3,128.2967 (5.34)       179.4379 (7.03)         61;6    314.9658 (0.19)        289           1
+test_QASMBench_small[qaoa_n3-heavy-hex]                      2,998.9807 (5.77)       4,085.6777 (4.22)       3,198.7058 (5.38)       110.4977 (3.59)       3,182.4205 (5.44)       111.5471 (4.37)        49;10    312.6264 (0.19)        247           1
+test_QASMBench_small[adder_n4-heavy-hex]                     3,080.4221 (5.92)       4,406.4010 (4.55)       3,327.2785 (5.59)       196.8886 (6.40)       3,281.4173 (5.60)       165.5289 (6.49)        35;16    300.5459 (0.18)        277           1
+test_QASMBench_small[error_correctiond3_n5-linear]           3,168.0977 (6.09)       4,272.0102 (4.41)       3,405.8734 (5.73)       117.1148 (3.81)       3,393.3730 (5.80)       126.0070 (4.94)         64;9    293.6104 (0.17)        296           1
+test_QASMBench_small[qft_n4-heavy-hex]                       3,205.4419 (6.16)       4,315.7181 (4.46)       3,436.8403 (5.78)       138.8866 (4.51)       3,412.2812 (5.83)       125.0501 (4.90)        48;13    290.9649 (0.17)        233           1
+test_QASMBench_small[inverseqft_n4-all-to-all]               3,211.4610 (6.18)       3,971.3252 (4.10)       3,448.4893 (5.80)       143.7454 (4.67)       3,424.4666 (5.85)       172.5182 (6.76)         62;8    289.9821 (0.17)        262           1
+test_QASMBench_small[inverseqft_n4-square]                   3,260.1338 (6.27)       4,092.1662 (4.22)       3,530.1963 (5.94)       170.2571 (5.53)       3,495.6494 (5.97)       186.2666 (7.30)        89;12    283.2704 (0.17)        291           1
+test_QASMBench_small[inverseqft_n4-linear]                   3,272.3928 (6.29)       4,027.1571 (4.16)       3,487.9934 (5.86)       125.7201 (4.08)       3,492.2953 (5.96)       155.9695 (6.11)        79;10    286.6978 (0.17)        278           1
+test_QASMBench_small[error_correctiond3_n5-square]           3,368.4056 (6.48)       4,593.6164 (4.74)       3,912.7092 (6.58)       192.7018 (6.26)       3,928.9631 (6.71)       268.8635 (10.54)        70;2    255.5774 (0.15)        226           1
+test_QASMBench_small[vqe_uccsd_n4-heavy-hex]                 3,390.6559 (6.52)       3,965.6330 (4.09)       3,549.6654 (5.97)        78.9566 (2.57)       3,536.0456 (6.04)        61.1939 (2.40)        34;15    281.7167 (0.17)        285           1
+test_QASMBench_small[qec_en_n5-heavy-hex]                    3,392.7020 (6.52)       4,566.9973 (4.71)       3,674.1378 (6.18)       179.8195 (5.84)       3,637.1909 (6.21)       136.0085 (5.33)        22;11    272.1727 (0.16)        210           1
+test_QASMBench_small[simon_n6-linear]                        3,423.1395 (6.58)       4,219.1772 (4.36)       3,737.2623 (6.28)       141.7201 (4.60)       3,703.0969 (6.32)       159.2739 (6.24)         71;9    267.5755 (0.16)        264           1
+test_QASMBench_small[qec_sm_n5-square]                       3,454.8016 (6.64)       4,469.0100 (4.61)       3,710.7746 (6.24)       143.0230 (4.65)       3,677.1465 (6.28)       208.3478 (8.17)         87;3    269.4855 (0.16)        285           1
+test_QASMBench_small[dnn_n8-square]                          3,549.6363 (6.83)       4,266.7529 (4.40)       3,779.5960 (6.35)       101.3275 (3.29)       3,767.6729 (6.43)        77.1051 (3.02)        35;23    264.5785 (0.16)        265           1
+test_QASMBench_small[simon_n6-square]                        3,626.3093 (6.97)       4,734.4631 (4.89)       4,129.5647 (6.94)       191.5662 (6.22)       4,139.8481 (7.07)       261.6290 (10.25)        76;2    242.1563 (0.14)        230           1
+test_QASMBench_small[error_correctiond3_n5-heavy-hex]        3,850.5252 (7.40)       4,971.7333 (5.13)       4,056.2887 (6.82)       123.5733 (4.02)       4,036.7600 (6.89)       124.3714 (4.87)         46;6    246.5308 (0.15)        201           1
+test_QASMBench_small[wstate_n3-linear]                       4,009.7414 (7.71)       4,762.5806 (4.92)       4,193.1037 (7.05)       106.2422 (3.45)       4,179.0502 (7.14)       109.0351 (4.27)         46;9    238.4868 (0.14)        220           1
+test_QASMBench_small[wstate_n3-square]                       4,092.8815 (7.87)       6,391.9034 (6.60)       4,397.8986 (7.39)       198.1427 (6.44)       4,354.7601 (7.44)       201.8546 (7.91)         30;6    227.3813 (0.14)        227           1
+test_QASMBench_small[simon_n6-heavy-hex]                     4,101.6769 (7.89)       5,608.3994 (5.79)       4,308.1740 (7.24)       200.0269 (6.50)       4,258.8273 (7.27)       156.3949 (6.13)        20;14    232.1169 (0.14)        231           1
+test_QASMBench_small[qec_sm_n5-heavy-hex]                    4,115.5899 (7.91)       4,884.5941 (5.04)       4,349.1548 (7.31)       136.9679 (4.45)       4,328.1484 (7.39)       202.8279 (7.95)         76;1    229.9297 (0.14)        247           1
+test_QASMBench_small[sat_n7-all-to-all]                      4,316.1437 (8.30)       5,123.3079 (5.29)       4,466.9064 (7.51)       100.0917 (3.25)       4,461.3127 (7.62)       108.1184 (4.24)         51;6    223.8686 (0.13)        211           1
+test_QASMBench_small[inverseqft_n4-heavy-hex]                4,316.2173 (8.30)       5,130.6970 (5.30)       4,589.9259 (7.72)       133.2037 (4.33)       4,601.9573 (7.86)       183.1795 (7.18)         59;4    217.8684 (0.13)        227           1
+test_QASMBench_small[qaoa_n6-linear]                         4,346.0084 (8.36)       5,153.8907 (5.32)       4,641.0995 (7.80)       149.4493 (4.86)       4,625.0168 (7.90)       204.9608 (8.03)         57;3    215.4662 (0.13)        214           1
+test_QASMBench_small[ising_n10-linear]                       4,392.3175 (8.45)       5,426.4320 (5.60)       4,555.7528 (7.66)       117.3714 (3.81)       4,544.7834 (7.76)        98.2676 (3.85)        33;11    219.5027 (0.13)        210           1
+test_QASMBench_small[qaoa_n6-square]                         4,419.8632 (8.50)       5,526.3303 (5.71)       4,922.2801 (8.28)       196.1839 (6.37)       4,926.2745 (8.41)       268.5795 (10.53)        49;2    203.1579 (0.12)        176           1
+test_QASMBench_small[qpe_n9-square]                          4,652.0643 (8.95)       7,208.2635 (7.44)       5,206.5812 (8.75)       229.3093 (7.45)       5,200.4391 (8.88)       232.4784 (9.11)         32;3    192.0646 (0.11)        189           1
+test_QASMBench_small[qpe_n9-linear]                          4,678.3583 (9.00)       5,582.7592 (5.76)       5,122.8064 (8.61)       187.5251 (6.09)       5,137.8715 (8.77)       249.7230 (9.79)         55;0    195.2055 (0.12)        164           1
+test_QASMBench_small[wstate_n3-heavy-hex]                    4,896.2357 (9.42)      50,028.8075 (51.65)      5,384.1949 (9.05)     3,230.6603 (104.97)     5,109.4089 (8.73)       142.6293 (5.59)          1;7    185.7288 (0.11)        194           1
+test_QASMBench_small[ising_n10-heavy-hex]                    4,930.8073 (9.48)       5,756.8597 (5.94)       5,194.7834 (8.73)       106.6926 (3.47)       5,190.2439 (8.86)       118.2221 (4.63)         47;6    192.5008 (0.11)        194           1
+test_QASMBench_small[qaoa_n6-heavy-hex]                      5,062.8828 (9.74)       6,134.8295 (6.33)       5,306.1400 (8.92)       168.6781 (5.48)       5,273.9782 (9.01)       169.8146 (6.66)        32;11    188.4609 (0.11)        186           1
+test_QASMBench_small[qpe_n9-heavy-hex]                       5,090.1184 (9.79)       6,422.1490 (6.63)       5,407.3868 (9.09)       184.8692 (6.01)       5,369.0551 (9.17)       155.6217 (6.10)        41;12    184.9322 (0.11)        175           1
+test_QASMBench_small[dnn_n8-all-to-all]                      5,097.1601 (9.80)       5,958.2088 (6.15)       5,374.1970 (9.04)       126.8555 (4.12)       5,373.1548 (9.18)       165.1854 (6.47)         55;2    186.0743 (0.11)        180           1
+test_QASMBench_small[sat_n7-square]                          5,171.5011 (9.94)       6,186.9184 (6.39)       5,552.2407 (9.34)       183.6072 (5.97)       5,537.6794 (9.46)       218.6592 (8.57)         50;3    180.1075 (0.11)        167           1
+test_QASMBench_small[shor_n5-all-to-all]                     5,271.6555 (10.14)      6,654.3082 (6.87)       5,654.3859 (9.51)       253.5461 (8.24)       5,610.0078 (9.58)       297.7960 (11.67)        52;3    176.8539 (0.11)        174           1
+test_QASMBench_small[sat_n7-linear]                          5,339.6840 (10.27)      5,989.2246 (6.18)       5,635.4992 (9.48)       115.3957 (3.75)       5,630.3493 (9.62)       146.2903 (5.73)         53;2    177.4466 (0.11)        178           1
+test_QASMBench_small[adder_n10-linear]                       5,439.3644 (10.46)      6,703.6767 (6.92)       5,875.8234 (9.88)       208.6112 (6.78)       5,883.3081 (10.05)      277.6221 (10.88)        50;1    170.1889 (0.10)        148           1
+test_QASMBench_small[qpe_n9-all-to-all]                      5,463.1280 (10.51)      6,423.7425 (6.63)       5,705.9729 (9.59)       117.4785 (3.82)       5,685.7346 (9.71)       134.0872 (5.26)         38;3    175.2550 (0.10)        166           1
+test_QASMBench_small[sat_n7-heavy-hex]                       5,639.2178 (10.84)      6,624.5776 (6.84)       5,935.8747 (9.98)       162.5411 (5.28)       5,890.2549 (10.06)      164.7654 (6.46)         43;9    168.4672 (0.10)        169           1
+test_QASMBench_small[adder_n10-square]                       5,769.5014 (11.09)      7,470.0732 (7.71)       6,093.2114 (10.24)      328.9479 (10.69)      5,998.1435 (10.24)      191.3952 (7.50)          9;9    164.1171 (0.10)         90           1
+test_QASMBench_small[adder_n10-heavy-hex]                    5,907.4275 (11.36)      7,257.4168 (7.49)       6,168.1994 (10.37)      188.9820 (6.14)       6,135.0353 (10.48)      153.2135 (6.00)         15;7    162.1219 (0.10)        127           1
+test_QASMBench_small[dnn_n8-linear]                          5,934.6519 (11.41)      6,882.0482 (7.10)       6,389.8925 (10.74)      167.6091 (5.45)       6,390.2382 (10.91)      216.1050 (8.47)         42;2    156.4972 (0.09)        149           1
+test_QASMBench_small[dnn_n8-heavy-hex]                       6,032.2545 (11.60)      7,291.2527 (7.53)       6,329.5351 (10.64)      246.7686 (8.02)       6,272.2554 (10.71)      152.6524 (5.98)        19;16    157.9895 (0.09)        137           1
+test_QASMBench_small[ising_n10-square]                       6,183.9186 (11.89)      7,070.3030 (7.30)       6,409.8013 (10.78)      141.7908 (4.61)       6,387.3366 (10.91)      173.5380 (6.80)         43;4    156.0111 (0.09)        154           1
+test_QASMBench_small[hhl_n7-square]                          6,653.1599 (12.79)      7,792.7560 (8.04)       7,164.8927 (12.05)      173.4129 (5.63)       7,154.9611 (12.22)      207.2025 (8.12)         32;5    139.5694 (0.08)        130           1
+test_QASMBench_small[ising_n10-all-to-all]                   6,700.5400 (12.88)      7,502.2904 (7.75)       6,968.6433 (11.72)      137.5753 (4.47)       6,937.9853 (11.85)      106.6537 (4.18)        25;16    143.5000 (0.09)        143           1
+test_QASMBench_small[hhl_n7-all-to-all]                      6,787.4538 (13.05)      7,403.1549 (7.64)       6,960.9580 (11.70)      119.9571 (3.90)       6,925.8725 (11.83)      163.2320 (6.40)         34;4    143.6584 (0.09)        142           1
+test_QASMBench_small[basis_trotter_n4-all-to-all]            6,816.7318 (13.11)      8,346.3667 (8.62)       7,291.0875 (12.26)      236.7655 (7.69)       7,239.1611 (12.36)      170.4437 (6.68)        30;14    137.1538 (0.08)        112           1
+test_QASMBench_small[adder_n10-all-to-all]                   6,959.9161 (13.38)      7,932.1964 (8.19)       7,222.5298 (12.14)      179.5479 (5.83)       7,185.9476 (12.27)      198.0793 (7.76)         28;5    138.4556 (0.08)        106           1
+test_QASMBench_small[hhl_n7-linear]                          7,636.1718 (14.68)      8,703.7832 (8.99)       7,990.0806 (13.43)      137.8141 (4.48)       7,982.7923 (13.63)      176.7352 (6.93)         31;1    125.1552 (0.07)        118           1
+test_QASMBench_small[shor_n5-linear]                         7,670.6000 (14.75)      8,801.3457 (9.09)       8,084.9079 (13.59)      234.5723 (7.62)       8,048.6657 (13.75)      315.7302 (12.37)        44;1    123.6872 (0.07)        131           1
+test_QASMBench_small[hhl_n7-heavy-hex]                       7,707.1451 (14.82)      9,119.7696 (9.41)       8,011.5678 (13.47)      218.0576 (7.08)       7,958.5509 (13.59)      171.9843 (6.74)         16;7    124.8195 (0.07)        105           1
+test_QASMBench_small[shor_n5-square]                         7,957.2704 (15.30)      9,288.7394 (9.59)       8,556.1081 (14.39)      251.3270 (8.17)       8,565.4585 (14.63)      381.6928 (14.96)        37;0    116.8756 (0.07)        109           1
+test_QASMBench_small[shor_n5-heavy-hex]                      8,299.7037 (15.96)      9,183.7086 (9.48)       8,698.3818 (14.62)      174.8567 (5.68)       8,706.6945 (14.87)      256.0404 (10.03)        37;0    114.9639 (0.07)        111           1
+test_QASMBench_small[basis_trotter_n4-square]                9,753.6026 (18.76)     11,397.9168 (11.77)     10,312.2140 (17.34)      255.3306 (8.30)      10,256.1982 (17.52)      262.7035 (10.30)        19;6     96.9724 (0.06)         93           1
+test_QASMBench_small[basis_trotter_n4-linear]               10,860.4487 (20.88)     12,837.1092 (13.25)     11,266.1260 (18.94)      304.3954 (9.89)      11,208.5156 (19.14)      274.2966 (10.75)        17;3     88.7617 (0.05)         87           1
+test_QASMBench_small[basis_trotter_n4-heavy-hex]            11,716.4571 (22.53)     13,056.8566 (13.48)     12,102.7370 (20.35)      302.4067 (9.83)      11,994.7633 (20.49)      316.0832 (12.39)        19;5     82.6259 (0.05)         77           1
+test_QASMBench_small[pea_n5-all-to-all]                     12,538.1425 (24.11)     61,111.4400 (63.09)     13,628.0936 (22.91)    5,602.6306 (182.04)    12,927.2565 (22.08)      357.4453 (14.01)         1;3     73.3778 (0.04)         74           1
+test_QASMBench_small[pea_n5-linear]                         14,051.1692 (27.02)     70,670.7686 (72.96)     15,497.8839 (26.06)    6,747.9630 (219.25)    14,639.1988 (25.00)      499.1924 (19.56)         1;2     64.5249 (0.04)         69           1
+test_QASMBench_small[pea_n5-square]                         15,043.9162 (28.93)     16,710.0290 (17.25)     15,724.2823 (26.44)      379.9760 (12.35)     15,684.4393 (26.79)      500.8206 (19.63)        20;1     63.5959 (0.04)         66           1
+test_QASMBench_small[pea_n5-heavy-hex]                      15,975.3645 (30.72)     18,075.3032 (18.66)     16,715.8881 (28.11)      460.9743 (14.98)     16,564.3957 (28.29)      728.9918 (28.57)        18;0     59.8233 (0.04)         66           1
+test_QASMBench_small[ipea_n2-all-to-all]                    17,579.7977 (33.80)     60,926.2418 (62.90)     19,060.2797 (32.05)    5,949.6493 (193.31)    18,081.3782 (30.88)      742.2939 (29.09)         1;2     52.4651 (0.03)         52           1
+test_QASMBench_small[ipea_n2-linear]                        17,618.7754 (33.88)     71,607.5907 (73.92)     19,427.3986 (32.66)    7,549.1277 (245.28)    18,301.5470 (31.26)      629.6756 (24.68)         1;3     51.4737 (0.03)         50           1
+test_QASMBench_small[ipea_n2-square]                        17,983.9442 (34.58)     21,093.7439 (21.78)     18,604.5413 (31.28)      540.5769 (17.56)     18,439.0587 (31.49)      531.3288 (20.82)         9;2     53.7503 (0.03)         50           1
+test_QASMBench_small[vqe_uccsd_n6-all-to-all]               18,912.5808 (36.37)     20,568.0206 (21.23)     19,581.6666 (32.92)      430.9095 (14.00)     19,511.5344 (33.32)      516.0142 (20.22)        14;2     51.0682 (0.03)         44           1
+test_QASMBench_small[ipea_n2-heavy-hex]                     20,628.9124 (39.67)     23,365.6960 (24.12)     21,484.1049 (36.12)      521.6643 (16.95)     21,347.3588 (36.46)      771.3248 (30.23)        14;1     46.5460 (0.03)         51           1
+test_QASMBench_small[vqe_uccsd_n6-linear]                   21,551.9834 (41.44)     23,662.9173 (24.43)     22,465.0645 (37.77)      419.8798 (13.64)     22,454.9538 (38.35)      521.5858 (20.44)        15;1     44.5136 (0.03)         44           1
+test_QASMBench_small[vqe_uccsd_n6-square]                   22,234.3756 (42.75)     25,302.2555 (26.12)     23,224.7219 (39.05)      728.7200 (23.68)     23,045.1263 (39.36)      922.7796 (36.17)        11;1     43.0576 (0.03)         38           1
+test_QASMBench_small[vqe_uccsd_n6-heavy-hex]                24,897.6871 (47.88)     28,651.3204 (29.58)     25,946.7784 (43.63)      722.0541 (23.46)     25,823.7114 (44.10)      869.7601 (34.09)         9;1     38.5404 (0.02)         41           1
+test_QASMBench_small[vqe_uccsd_n8-all-to-all]               91,572.0752 (176.08)    96,514.4653 (99.64)     94,122.5127 (158.25)   1,398.6837 (45.45)     94,456.7025 (161.32)   1,959.0303 (76.78)         2;0     10.6245 (0.01)         11           1
+test_QASMBench_small[vqe_uccsd_n8-linear]                  100,967.2601 (194.15)   108,066.1556 (111.56)   105,746.5467 (177.80)   2,305.3661 (74.90)    106,829.9925 (182.45)   2,961.7352 (116.08)        3;0      9.4566 (0.01)         10           1
+test_QASMBench_small[vqe_uccsd_n8-square]                  103,924.1860 (199.84)   108,727.9608 (112.25)   106,064.8581 (178.33)   1,457.5498 (47.36)    105,821.8488 (180.73)   1,726.5249 (67.67)         3;0      9.4282 (0.01)         10           1
+test_QASMBench_small[vqe_uccsd_n8-heavy-hex]               108,867.6425 (209.34)   113,397.0888 (117.07)   110,846.4013 (186.37)   1,740.3893 (56.55)    110,208.1449 (188.22)   3,053.2302 (119.66)        3;0      9.0215 (0.01)         10           1
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+=============== 168 passed, 324 deselected in 159.40s (0:02:39) ================
