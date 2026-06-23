@@ -54,7 +54,7 @@ fewer optimization-loop iteration**; the rest keep the same count; **none take m
 (every delta is exactly +1 or 0). The effect concentrates in larger circuits (e.g.
 abstract Hamiltonians: 249/400).
 
-![Level-2 optimization-loop iterations, main vs PR](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/iteration_histogram.png)
+![Per-circuit change in Level-2 loop iterations (PR − main), colored by group](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/iteration_delta.png)
 
 **Output is unchanged.** Across all 1,023 circuits and all 5 runs, **2Q-gate counts and
 circuit depths are bit-identical** between `main` and the PR — every point on the diagonal.
