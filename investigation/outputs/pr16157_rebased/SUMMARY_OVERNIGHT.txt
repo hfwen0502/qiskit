@@ -1,0 +1,29 @@
+Overnight full-suite repeat — 5 iterations: ['iter_1', 'iter_2', 'iter_3', 'iter_4', 'iter_5']
+
+group                         main wall (s)          PR wall (s)   speedup  PR<main
+------------------------------------------------------------------------------------
+feynman                      18.64 ±  0.18        14.89 ±  0.15  -20.14%     5/5
+device_hamiltonians          25.80 ±  0.11        22.90 ±  0.10  -11.26%     5/5
+abstract_small                1.16 ±  0.00         1.06 ±  0.00   -8.64%     5/5
+abstract_medium              80.77 ±  0.29        68.60 ±  0.36  -15.07%     5/5
+abstract_large              511.67 ±  1.60       453.61 ±  2.61  -11.35%     5/5
+abstract_hamiltonians       230.14 ±  2.64       214.68 ±  1.04   -6.72%     5/5
+------------------------------------------------------------------------------------
+GRAND TOTAL                 868.19 ±  2.46       775.74 ±  2.70  -10.65%     5/5
+
+per-iteration grand-total wall (s): main [872.0, 864.5, 867.0, 869.2, 868.3]
+                                    PR   [771.5, 773.8, 778.5, 776.7, 778.2]
+
+=== gate/depth stability across iterations ===
+circuits compared: 1023
+  output_gate_count_2q    : 0 circuit(s) vary across iterations
+  output_gate_count_1q    : 2 circuit(s) vary across iterations
+  output_gate_count_total : 2 circuit(s) vary across iterations
+  output_depth_total      : 3 circuit(s) vary across iterations
+  varying circuits (expected: 1Q/total only — pre-existing non-determinism):
+    abstract_medium: test_QASMBench_medium[knn_n25-all-to-all]
+    abstract_medium: test_QASMBench_medium[swap_test_n25-all-to-all]
+    abstract_small: test_QASMBench_small[lpn_n5-heavy-hex]
+    abstract_small: test_QASMBench_small[qec_en_n5-square]
+
+main-vs-PR gate/depth mismatches (all iters x circuits x metrics): 17

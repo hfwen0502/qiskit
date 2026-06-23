@@ -3,94 +3,102 @@
 ## The problem
 
 At `optimization_level=2`, the transpiler runs a small group of peephole passes in a
-loop — 1Q-rotation decomposition, commutative cancellation, identity removal — and
-repeats it until the circuit stops improving. Today "stop" is decided by a `FixedPoint`
-on circuit **depth and size**: the loop keeps going until both are unchanged across
-**two consecutive** iterations.
+loop — 1Q-rotation decomposition, commutative cancellation, identity removal — repeating
+until the circuit stops improving. Today that "stop" is decided by a `FixedPoint` on
+circuit **depth and size**: the loop continues until both are unchanged across **two
+consecutive** iterations.
 
-The two-in-a-row rule has a built-in cost: the loop always runs **one extra iteration
-that does no useful work**. After the last iteration that actually improves the circuit,
-the loop must run the whole pass group once more, observe that nothing changed, and only
-*then* declare convergence. That confirmation pass scales with circuit size and runs on
-every circuit.
+The two-in-a-row rule means that whenever the loop *does* converge, it pays for **one
+extra iteration that does no useful work**: after the last iteration that actually
+improves the circuit, the loop must run the whole pass group once more, observe that
+nothing changed, and only then declare convergence. That confirmation pass scales with
+circuit size.
 
-## The idea
+## The solution
 
-We don't have to *infer* convergence from "the metrics stopped moving." Each pass already
-knows whether it did something that a later pass could build on. If, in a given iteration,
-**no pass created a new optimization opportunity**, the circuit is already at a fixed
-point and the loop can stop immediately — the confirmation iteration is redundant.
+Don't *infer* convergence from "the metrics stopped moving" — ask each pass whether it
+did something a later pass could build on. If, in an iteration, **no pass created a new
+optimization opportunity**, the circuit is already at a fixed point and the loop can stop
+immediately, with no confirmation iteration.
 
-So the exit condition is no longer `FixedPoint("size", "depth")`. Instead the passes raise
-three boolean signals, and the loop continues only if at least one of them fired.
+The exit condition is no longer `FixedPoint("size","depth")`; the passes raise three
+boolean signals and the loop continues only if at least one fired. Each signal is an
+event that can expose further optimization next iteration — and, crucially, their
+**absence is a sufficient condition for convergence**, so exiting early produces the
+*same circuit* as the fixed-point loop:
 
-## Why these three signals
+1. **A 2-qubit gate was removed** (`CommutativeCancellation` cancelled a CX/CZ pair, or
+   `RemoveIdentityEquivalent` dropped a near-identity 2Q gate) — changes adjacency, can
+   expose new commutations/cancellations.
+2. **1-qubit rotations were consolidated** (`Optimize1qGatesDecomposition` merged
+   same-axis rotations) — reshapes 1Q runs, can open further merges. *Needed for
+   correctness:* with a 2Q-only signal, a few circuits (QFT, QAOA) exited one iteration
+   early and kept un-merged 1Q rotations; this signal closes that gap.
+3. **Out-of-basis gates were produced** (`CommutativeCancellation` can emit e.g. an `RX`;
+   `GatesInBasis` then flags the circuit and `BasisTranslator` runs in-loop) — a fresh
+   translation yields unoptimized sequences the peephole passes can still clean up.
+   *(Added after review.)*
 
-Each signal is a concrete event that can expose *further* optimization on the next
-iteration. The important property is the **converse**: if none fired, nothing happened
-that another iteration could act on, so exiting now yields the *same circuit* as the
-fixed-point loop — just one iteration sooner.
+**Scope:** `optimization_level=2` only. Levels 1 and 3 are unchanged.
 
-1. **A 2-qubit gate was removed** — `CommutativeCancellation` cancelled a CX/CZ pair, or
-   `RemoveIdentityEquivalent` dropped a near-identity 2Q gate. Removing a 2Q gate changes
-   which gates are now adjacent, which can expose new commutations and cancellations.
-
-2. **1-qubit rotations were consolidated** — `Optimize1qGatesDecomposition` merged
-   same-axis rotations into a shorter run. Consolidation reshapes 1Q runs and can open
-   further merges. This signal matters for correctness, not just speed: with a 2Q-only
-   exit, a few circuits (e.g. QFT, QAOA) stopped one iteration early and kept a handful of
-   un-merged 1Q rotations — a small gate-count increase versus the fixed-point loop. This
-   signal closes that gap.
-
-3. **Out-of-basis gates were produced** — while consolidating, `CommutativeCancellation`
-   can emit a gate outside the target basis (e.g. an `RX`); `GatesInBasis` then flags the
-   circuit and `BasisTranslator` runs inside the loop. A fresh translation produces
-   *unoptimized* sequences that the peephole passes can still clean up, so the loop must
-   continue. (Added after review — without it the loop could exit leaving a
-   freshly-translated, unoptimized sequence in place.)
-
-## Scope
-
-`optimization_level=2` only — levels 1 and 3 are unchanged. The three passes now return
-whether they raised each signal, and the preset pass manager's loop condition consumes
-those signals in place of the `FixedPoint`.
-
-## Results
+## Summary
 
 Benchmarked on the full [Benchpress](https://github.com/Qiskit/benchpress) transpile
-suite — **1,023 circuits** (feynman, device-Hamiltonian, and abstract QASMBench /
-Hamiltonian groups) — comparing current `main` against `main` + this PR. Both built
-release + mimalloc; baseline and PR run concurrently on separate NUMA sockets;
-`QISKIT_TRANSPILER_SEED=1`. Each point is one circuit; the dashed line is `y = x`.
+suite — **1,023 circuits** (feynman, device-Hamiltonian, abstract QASMBench, abstract
+Hamiltonian) — comparing current `main` against `main` + this PR, both built
+release+mimalloc, run on a 2-socket NUMA host with baseline and PR pinned to separate
+sockets, `QISKIT_TRANSPILER_SEED=1`. Timing is the mean of **5 full-suite runs**.
 
-**The output does not change.** Across all 1,023 circuits the 2Q-gate count, total-gate
-count, and depth are bit-identical between `main` and the PR — every point sits on the
-diagonal.
+**Fewer loop iterations, never more.** ~**43% of circuits (435 / 1,021) compile with one
+fewer optimization-loop iteration**; the rest keep the same count; **none take more**
+(every delta is exactly +1 or 0). The effect concentrates in larger circuits (e.g.
+abstract Hamiltonians: 249/400). → `iteration_histogram.png`
 
-| 2Q gate count | total gate count | total depth |
-|:---:|:---:|:---:|
-| ![2Q gate count](scatter_2q.png) | ![total gate count](scatter_total_gates.png) | ![total depth](scatter_depth.png) |
+**Output is unchanged.** Across all 1,023 circuits and all 5 runs, **2Q-gate counts and
+circuit depths are bit-identical** between `main` and the PR — every point on the
+diagonal. → `scatter_2q.png`, `scatter_depth.png`
 
-**The compile is faster.** Removing the confirmation iteration reduces end-to-end
-`pm.run` wall-clock by **≈13%** in aggregate. Nearly every substantial circuit falls
-below the diagonal (faster); the points on or above it are sub-10 ms circuits where the
-difference is timing noise.
+**Compilation is faster.** Total suite compile time drops **−10.6% ± 0.3%** (5 runs), and
+the PR is **faster in every group in every run**. Per group the reduction ranges **−6.7%
+to −20.1%**. → `runtime_scatter.png` (per-circuit mean, main vs PR), `runtime_by_group.png`
+(per-group mean ± stdev).
 
-![transpile time](scatter_time.png)
+In one line: **the PR helps ~43% of circuits, by ~13% each (median −13.5%), cutting total
+suite compile time by 10.6%** — and the ~57% of circuits whose iteration count is unchanged
+show **no slowdown** (mean Δ −2.6%, i.e. within run-to-run noise, if anything marginally
+faster), confirming the added signal checks are cheap.
 
-The single off-diagonal point in the total-gate plot is a **pre-existing, unseeded
-1Q-rotation tie-break** in Qiskit (verified to vary on `main` by itself across repeated
-runs) — not a change introduced by this PR.
+## Details — reproducing the data
 
-## Reproducing
+All raw data, scripts, and plots are in this directory (see `REPRODUCE.md`):
 
-Raw per-group benchmark JSON, the run/analysis scripts, the Benchpress recording patch,
-the rebased commits, and these plots are all in this directory. Start with `REPRODUCE.md`.
+- **Run / measure:** `scripts/run_group.sh` runs one group with `main` on NUMA socket 0
+  and the PR on socket 1 concurrently; `scripts/run_all.sh` / the overnight harness repeat
+  the full suite 5×. Per-group `main.json` / `pr.json` are pytest-benchmark output.
+- **Iteration counts:** `scripts/iter_sweep_full.py` + `iter_sweep_ham.py` count loop
+  iterations per circuit via a pass-execution callback (one `CommutativeCancellation`
+  execution = one loop iteration); `scripts/iter_compare.py` produces the main-vs-PR
+  distribution.
+- **Benchpress recording patch:** `scripts/benchpress_patch.diff` adds total/1Q gate
+  counts and 1Q/total depths to the recorder (benchpress records only the 2Q count by
+  default) and seeds the abstract-group backend.
+- **Plots:** `scripts/plot_pr_charts.py` regenerates every figure from the per-circuit TSVs.
+- **The change itself:** `scripts/000{1,2,3}-*.patch` (the three commits, applied on
+  current `main`).
+
+## Issues — pre-existing 1Q non-determinism (not introduced here)
+
+A handful of circuits (4 of 1,023: `qec_en_n5-square`, `lpn_n5-heavy-hex`,
+`knn_n25-all-to-all`, `swap_test_n25-all-to-all`) show **1Q-gate-count variation across
+runs** in the 1Q scatter (`scatter_1q.png`) — on **both** `main` and the PR, independent
+of this change. This is a pre-existing, seed-independent tie-break in 1Q-rotation
+decomposition (it varies even with a fixed `PassManager` and `seed_transpiler`; verified
+on `main` alone — see `recheck/` and `NONDETERMINISM_ISSUE.md`). The 2Q-gate count and
+depth are unaffected. It is called out here only so the off-diagonal points in the 1Q
+plot are not mistaken for a PR-induced change.
 
 ## AI / LLM disclosure
 
-- [x] I used the following tool to help write this PR description, the benchmark harness,
-  and the code: **Claude Code (Claude Opus)** — the rebase onto current `main`, the
-  conflict resolution in the parallelized 1Q-decomposition pass, the benchmark
-  orchestration/analysis, and this write-up were produced with Claude Code; a human
-  reviewed every line.
+- [x] I used **Claude Code (Claude Opus)** to help with the rebase onto current `main` and
+  the conflict resolution in the parallelized 1Q-decomposition pass, the benchmark
+  orchestration/analysis, and this write-up. A human reviewed every line.
