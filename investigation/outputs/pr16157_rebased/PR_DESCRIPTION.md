@@ -49,6 +49,11 @@ Hamiltonian) — comparing current `main` against `main` + this PR, both built
 release+mimalloc, run on a 2-socket NUMA host with baseline and PR pinned to separate
 sockets, `QISKIT_TRANSPILER_SEED=1`. Timing is the mean of **5 full-suite runs**.
 
+**Versions (pinned for reproducibility):** baseline = `qiskit` `main` @ **`ea2546703`**
+("Open development for 2.6", #16451); the PR build is that commit plus the three commits in
+this PR (`scripts/0001..0003-*.patch`); Benchpress @ `a9744133` + `scripts/benchpress_patch.diff`.
+Per-run commit SHAs are also recorded in each group's `environment.txt`.
+
 **Fewer loop iterations, never more.** ~**43% of circuits (435 / 1,021) compile with one
 fewer optimization-loop iteration**; the rest keep the same count; **none take more**
 (every delta is exactly +1 or 0). The effect concentrates in larger circuits (e.g.
