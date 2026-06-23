@@ -154,7 +154,7 @@ def scatter_metric(keyname, label, fname, highlight=False):
     if highlight and offpts:
         ax.scatter([a for a, _, _ in offpts], [b for _, b, _ in offpts], s=70,
                    facecolors="none", edgecolors="red", linewidths=1.3, zorder=6,
-                   label="off-diagonal (1Q non-determinism)")
+                   label="off-diagonal (pre-existing non-determinism)")
         names = sorted(set(cid for _, _, cid in offpts))
         ax.text(0.03, 0.97, "off-diagonal circuits:\n" + "\n".join(names),
                 transform=ax.transAxes, va="top", ha="left", fontsize=7, color="red")
@@ -167,7 +167,7 @@ def scatter_metric(keyname, label, fname, highlight=False):
 
 off2q = scatter_metric("2q", "2Q gate count", "scatter_2q.png")
 off1q = scatter_metric("1q", "1Q gate count", "scatter_1q.png", highlight=True)
-offdp = scatter_metric("dp", "circuit depth", "scatter_depth.png")
+offdp = scatter_metric("dp", "circuit depth", "scatter_depth.png", highlight=True)
 
 # === stats for the draft ==================================================
 savers_red, unch_red = [], []

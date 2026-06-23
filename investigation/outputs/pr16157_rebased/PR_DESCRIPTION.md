@@ -56,14 +56,15 @@ abstract Hamiltonians: 249/400).
 
 ![Per-circuit change in Level-2 loop iterations (PR − main), colored by group](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/iteration_delta.png)
 
-**Output is unchanged.** Across all 1,023 circuits and all 5 runs, **2Q-gate counts and
-circuit depths are bit-identical** between `main` and the PR — every point on the diagonal.
-The **1Q-gate count** is identical too, except on four circuits affected by a pre-existing,
-PR-independent tie-break non-determinism (discussed in **Issues** below).
+**Output is unchanged.** The **2Q-gate count is bit-identical** between `main` and the PR on
+**every circuit across all 5 runs** (0 of 5,115 points off the diagonal). **1Q-gate counts
+and depths match too**, except on a few circuits that exhibit a **pre-existing,
+PR-independent** tie-break non-determinism — those vary on `main` *by itself*, and are
+detailed in **Issues** below.
 
 ![2Q gate count, main vs PR — every point on the diagonal](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/scatter_2q.png)
 
-![Circuit depth, main vs PR — every point on the diagonal](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/scatter_depth.png)
+![Circuit depth, main vs PR — identical except 3 ringed non-determinism circuits](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/scatter_depth.png)
 
 **Compilation is faster.** Total suite compile time drops **−10.6% ± 0.3%** (5 runs), and
 the PR is **faster in every group in every run**. Per group the reduction ranges **−6.7%
@@ -157,22 +158,25 @@ unchanged-iteration circuits:    mean  −2.6%                    ← ≈0, i.e.
 i.e. **the PR helps ~43% of circuits by ~13% each, which cuts total suite compile time by
 10.6%**, and the rest are not slowed.
 
-## Issues — pre-existing 1Q non-determinism (not introduced here)
+## Issues — pre-existing non-determinism (not introduced here)
 
-A handful of circuits (4 of 1,023: `qec_en_n5-square`, `lpn_n5-heavy-hex`,
-`knn_n25-all-to-all`, `swap_test_n25-all-to-all`) show **1Q-gate-count variation across
-runs** in the 1Q scatter (`scatter_1q.png`) — on **both** `main` and the PR, independent
-of this change. This is a pre-existing, seed-independent tie-break in 1Q-rotation
-decomposition (it varies even with a fixed `PassManager` and `seed_transpiler`; verified
-on `main` alone — see `recheck/` and `NONDETERMINISM_ISSUE.md`). The 2Q-gate count and
-depth are unaffected. It is called out here only so the off-diagonal points in the 1Q
-plot are not mistaken for a PR-induced change.
+A few circuits show a small tie-break non-determinism that is **pre-existing and
+PR-independent**: it varies on `main` *by itself* across repeated runs (5 runs each in the
+overnight sweep; `qec_en_n5-square` additionally has 8 dedicated main-only runs in
+`recheck/`). Measured on `main` alone:
 
-![1Q gate count, main vs PR — only the 4 non-determinism circuits leave the diagonal](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/scatter_1q.png)
+- **1Q-gate count** varies on `qec_en_n5-square` (47 ↔ 48) and `lpn_n5-heavy-hex` (18 ↔ 19);
+- **circuit depth** varies by ±1 on `lpn_n5-heavy-hex`, `knn_n25-all-to-all`,
+  `swap_test_n25-all-to-all`.
 
-The red-ringed off-diagonal points above come entirely from those four circuits; every
-other point is on the diagonal. This non-determinism is independent of this PR, so we will
-**open a separate PR** to address it (root-cause analysis in `NONDETERMINISM_ISSUE.md`).
+The **2Q-gate count is stable on every one of these — and on all 1,023 circuits.** The
+cause is a seed-independent tie-break in 1Q-rotation decomposition: it persists even with a
+fixed `PassManager` and an explicit `seed_transpiler` (root-cause analysis in
+`NONDETERMINISM_ISSUE.md`). The red-ringed off-diagonal points in the 1Q scatter (and the
+depth scatter above) come entirely from these circuits; every other point is on the
+diagonal. Because it is not introduced by this PR, we will **open a separate PR** to fix it.
+
+![1Q gate count, main vs PR — only the non-determinism circuits leave the diagonal](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/scatter_1q.png)
 
 ## AI / LLM disclosure
 
