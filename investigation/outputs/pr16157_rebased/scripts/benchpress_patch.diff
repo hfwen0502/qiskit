@@ -1,0 +1,39 @@
+diff --git a/benchpress/qiskit_gym/utils/io.py b/benchpress/qiskit_gym/utils/io.py
+index 4790614..8f5efad 100644
+--- a/benchpress/qiskit_gym/utils/io.py
++++ b/benchpress/qiskit_gym/utils/io.py
+@@ -38,11 +38,18 @@ def qiskit_input_circuit_properties(circuit, benchmark):
+
+
+ def qiskit_output_circuit_properties(circuit, two_qubit_gate, benchmark):
++    ops = circuit.count_ops()
++    gate_count_2q = ops.get(two_qubit_gate, 0)
++    gate_count_total = sum(ops.values())
+     benchmark.extra_info["output_num_qubits"] = circuit.num_qubits
+-    benchmark.extra_info["output_circuit_operations"] = circuit.count_ops()
+-    benchmark.extra_info["output_gate_count_2q"] = circuit.count_ops().get(
+-        two_qubit_gate, 0
+-    )
++    benchmark.extra_info["output_circuit_operations"] = ops
++    benchmark.extra_info["output_gate_count_2q"] = gate_count_2q
++    benchmark.extra_info["output_gate_count_1q"] = gate_count_total - gate_count_2q
++    benchmark.extra_info["output_gate_count_total"] = gate_count_total
+     benchmark.extra_info["output_depth_2q"] = circuit.depth(
+         filter_function=lambda x: x.operation.name == two_qubit_gate
+     )
++    benchmark.extra_info["output_depth_1q"] = circuit.depth(
++        filter_function=lambda x: len(x.qubits) == 1
++    )
++    benchmark.extra_info["output_depth_total"] = circuit.depth()
+diff --git a/benchpress/utilities/backends/flexible_backend.py b/benchpress/utilities/backends/flexible_backend.py
+index 0a1e740..52a25e2 100644
+--- a/benchpress/utilities/backends/flexible_backend.py
++++ b/benchpress/utilities/backends/flexible_backend.py
+@@ -113,6 +113,7 @@ class FlexibleBackend(GenericBackendV2):
+             basis_gates=self._basis_gates,
+             coupling_map=cmap,
+             control_flow=control_flow,
++            seed=12345,
+         )
+
+     def __repr__(self):

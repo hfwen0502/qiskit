@@ -1,0 +1,14 @@
+=== abstract_medium: main vs PR ===
+circuits compared: 92
+
+metric                               main             pr        delta       pct
+-------------------------------------------------------------------------------
+output_gate_count_2q              3395302        3395302           +0    +0.00%
+output_gate_count_1q             11420688       11420688           +0    +0.00%
+output_gate_count_total          14815990       14815990           +0    +0.00%
+output_depth_2q                   2448326        2448326           +0    +0.00%
+output_depth_1q                   5704746        5704746           +0    +0.00%
+output_depth_total                8128531        8128531           +0    +0.00%
+wall_clock_sum_s                    81.16          68.42       -12.74   -15.70%
+
+OK: gate counts + depths bit-identical; PR not slower end-to-end.

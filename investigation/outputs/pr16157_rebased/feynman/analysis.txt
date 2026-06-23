@@ -1,0 +1,14 @@
+=== feynman: main vs PR ===
+circuits compared: 50
+
+metric                               main             pr        delta       pct
+-------------------------------------------------------------------------------
+output_gate_count_2q              1149134        1149134           +0    +0.00%
+output_gate_count_1q              3168207        3168207           +0    +0.00%
+output_gate_count_total           4317341        4317341           +0    +0.00%
+output_depth_2q                    696264         696264           +0    +0.00%
+output_depth_1q                   1215302        1215302           +0    +0.00%
+output_depth_total                1898688        1898688           +0    +0.00%
+wall_clock_sum_s                    18.89          15.52        -3.36   -17.81%
+
+OK: gate counts + depths bit-identical; PR not slower end-to-end.

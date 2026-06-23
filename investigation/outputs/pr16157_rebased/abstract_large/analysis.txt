@@ -1,0 +1,15 @@
+=== abstract_large: main vs PR ===
+circuits compared: 232
+
+metric                               main             pr        delta       pct
+-------------------------------------------------------------------------------
+output_gate_count_2q             22659929       22659929           +0    +0.00%
+output_gate_count_1q             67231719       67231719           +0    +0.00%
+output_gate_count_total          89891648       89891648           +0    +0.00%
+output_depth_2q                  11983380       11983380           +0    +0.00%
+output_depth_1q                  24228626       24228626           +0    +0.00%
+output_depth_total               36100835       36100835           +0    +0.00%
+wall_clock_sum_s                   515.23         452.93       -62.30   -12.09%
+
+!!! 1 REGRESSION(S) DETECTED:
+  - WALL test_QASMBench_large[bv_n280-all-to-all]: 1.587s -> 1.793s (+13.0%)

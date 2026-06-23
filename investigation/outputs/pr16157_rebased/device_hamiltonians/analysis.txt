@@ -1,0 +1,14 @@
+=== device_hamiltonians: main vs PR ===
+circuits compared: 81
+
+metric                               main             pr        delta       pct
+-------------------------------------------------------------------------------
+output_gate_count_2q               888286         888286           +0    +0.00%
+output_gate_count_1q              2490603        2490603           +0    +0.00%
+output_gate_count_total           3378889        3378889           +0    +0.00%
+output_depth_2q                    690258         690258           +0    +0.00%
+output_depth_1q                   1241826        1241826           +0    +0.00%
+output_depth_total                1922685        1922685           +0    +0.00%
+wall_clock_sum_s                    26.32          22.73        -3.58   -13.62%
+
+OK: gate counts + depths bit-identical; PR not slower end-to-end.

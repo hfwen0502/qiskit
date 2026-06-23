@@ -1,0 +1,256 @@
+From 0e70f50cc7175c1de2a56b06f35be9f0872e749f Mon Sep 17 00:00:00 2001
+From: Sophia Wen <h_f_wen@yahoo.com>
+Date: Mon, 20 Apr 2026 11:50:42 -0400
+Subject: [PATCH 1/3] Add 2Q-aware changed-flag loop exit for Level 2
+ optimization
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Replace FixedPoint(size) + FixedPoint(depth) convergence check with a
+direct changed-flag from Rust optimization passes. Only multi-qubit gate
+changes (RemoveIdentityEquivalent, CommutativeCancellation) trigger
+re-iteration — 1Q-only changes do not, since they cannot create new 2Q
+optimization opportunities.
+
+Result: 5/6 test circuits exit after 1 iteration (was 2-3 with
+FixedPoint), zero 2Q gate regressions. Level 1 and Level 3 are
+unchanged.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+---
+ .../src/passes/commutation_cancellation.rs    |  8 ++++--
+ .../passes/optimize_1q_gates_decomposition.rs | 20 ++++++++++++---
+ .../src/passes/remove_identity_equiv.rs       | 14 +++++++----
+ .../optimization/commutative_cancellation.py  |  4 ++-
+ .../optimization/remove_identity_equiv.py     |  4 ++-
+ .../preset_passmanagers/builtin_plugins.py    | 25 ++++++++++++++++++-
+ 6 files changed, 61 insertions(+), 14 deletions(-)
+
+diff --git a/crates/transpiler/src/passes/commutation_cancellation.rs b/crates/transpiler/src/passes/commutation_cancellation.rs
+index 914727c8a..f4ad44f65 100644
+--- a/crates/transpiler/src/passes/commutation_cancellation.rs
++++ b/crates/transpiler/src/passes/commutation_cancellation.rs
+@@ -80,7 +80,7 @@ pub fn cancel_commutations(
+     commutation_checker: &mut CommutationChecker,
+     basis_gates: Option<Vec<String>>,
+     approximation_degree: f64,
+-) -> PyResult<()> {
++) -> PyResult<bool> {
+     let basis = basis_gates.unwrap_or_default();
+     let z_var_gate = dag
+         .get_op_counts()
+@@ -216,10 +216,14 @@ pub fn cancel_commutations(
+         }
+     });
+ 
++    let mut changed = false;
+     for (cancel_key, cancel_set) in &cancellation_sets {
+         if cancel_set.len() > 1 {
+             if let GateOrRotation::Gate(g) = cancel_key.gate {
+                 if SUPPORTED_GATES.contains(&g) {
++                    if cancel_key.qubits.len() > 1 {
++                        changed = true;
++                    }
+                     for &c_node in &cancel_set[0..(cancel_set.len() / 2) * 2] {
+                         dag.remove_op_node(c_node);
+                     }
+@@ -312,7 +316,7 @@ pub fn cancel_commutations(
+         }
+     }
+ 
+-    Ok(())
++    Ok(changed)
+ }
+ 
+ /// Checks if angle is an integer multiple of ``factor * PI``.
+diff --git a/crates/transpiler/src/passes/optimize_1q_gates_decomposition.rs b/crates/transpiler/src/passes/optimize_1q_gates_decomposition.rs
+index f4d3447e5..bc4772e05 100644
+--- a/crates/transpiler/src/passes/optimize_1q_gates_decomposition.rs
++++ b/crates/transpiler/src/passes/optimize_1q_gates_decomposition.rs
+@@ -352,7 +352,7 @@ pub fn run_optimize_1q_gates_decomposition(
+     target: Option<&Target>,
+     basis_gates: Option<HashSet<String>>,
+     global_decomposers: Option<Vec<String>>,
+-) -> PyResult<()> {
++) -> PyResult<bool> {
+     let runs: Vec<Vec<NodeIndex>> = dag.collect_1q_runs().unwrap().collect();
+     let process_run =
+         |raw_run: &[NodeIndex], dag: &DAGCircuit| -> PyResult<Option<OneQubitGateSequence>> {
+@@ -452,15 +452,23 @@ pub fn run_optimize_1q_gates_decomposition(
+                 Ok(None)
+             }
+         };
+-    if getenv_use_multiple_threads() {
++    // `changed` tracks whether this pass modified the DAG, so the Level-2
++    // optimization loop can decide whether to re-iterate. We set it at the
++    // actual mutation site (the sequential application step) — note the
++    // `par_iter` above only parallelizes the analysis (`process_run`); the
++    // application below is sequential, so a plain `&mut bool` is correct and
++    // captures any run from any thread whose sequence gets applied.
++    let changed = if getenv_use_multiple_threads() {
+         let sequences = runs
+             .par_iter()
+             .map(|raw_run| process_run(raw_run, dag))
+             .collect::<PyResult<Vec<_>>>()?;
++        let mut changed = false;
+         runs.into_iter()
+             .zip(sequences)
+             .filter_map(|(raw_run, sequence)| sequence.map(|x| (raw_run, x)))
+             .try_for_each(|(raw_run, sequence)| -> PyResult<()> {
++                changed = true;
+                 for gate in sequence.gates {
+                     dag.insert_1q_on_incoming_qubit((gate.0, &gate.1), raw_run[0]);
+                 }
+@@ -468,10 +476,13 @@ pub fn run_optimize_1q_gates_decomposition(
+                 dag.remove_1q_sequence(&raw_run);
+                 Ok(())
+             })?;
++        changed
+     } else {
++        let mut changed = false;
+         for raw_run in runs {
+             let sequence = process_run(&raw_run, dag)?;
+             if let Some(sequence) = sequence {
++                changed = true;
+                 for gate in sequence.gates {
+                     dag.insert_1q_on_incoming_qubit((gate.0, &gate.1), raw_run[0]);
+                 }
+@@ -479,8 +490,9 @@ pub fn run_optimize_1q_gates_decomposition(
+                 dag.remove_1q_sequence(&raw_run);
+             }
+         }
+-    }
+-    Ok(())
++        changed
++    };
++    Ok(changed)
+ }
+ 
+ #[inline(always)]
+diff --git a/crates/transpiler/src/passes/remove_identity_equiv.rs b/crates/transpiler/src/passes/remove_identity_equiv.rs
+index 8f28da2c3..0b71c82af 100644
+--- a/crates/transpiler/src/passes/remove_identity_equiv.rs
++++ b/crates/transpiler/src/passes/remove_identity_equiv.rs
+@@ -241,7 +241,7 @@ pub fn py_remove_identity_equiv(
+     dag: &mut DAGCircuit,
+     approx_degree: Option<f64>,
+     target: Option<&Target>,
+-) -> PyResult<()> {
++) -> PyResult<bool> {
+     // TODO: This is a hack to avoid panicking in the case that the global phase contains `Py`
+     // pointers (such as backrefs to `ParameterVector` objects in an expression `Symbol`) that would
+     // get cloned when updating the global phase.  It's easier to do it out here than to try to
+@@ -254,17 +254,17 @@ pub fn py_remove_identity_equiv(
+ 
+     // Explicitly release GIL because threads may call Python to get
+     // the matrix for a PyGate
+-    py.detach(|| run_remove_identity_equiv(dag, approx_degree, target))?;
++    let changed = py.detach(|| run_remove_identity_equiv(dag, approx_degree, target))?;
+ 
+     dag.add_global_phase(&old_phase)?;
+-    Ok(())
++    Ok(changed)
+ }
+ 
+ pub fn run_remove_identity_equiv(
+     dag: &mut DAGCircuit,
+     approx_degree: Option<f64>,
+     target: Option<&Target>,
+-) -> PyResult<()> {
++) -> PyResult<bool> {
+     // Minimum threshold to compare average gate fidelity to 1. This is chosen to account
+     // for roundoff errors and to be consistent with other places.
+     let get_error_cutoff = |inst: &PackedInstruction| -> f64 {
+@@ -332,12 +332,16 @@ pub fn run_remove_identity_equiv(
+                 .collect::<PyResult<Vec<(NodeIndex, f64)>>>()?
+         };
+ 
++    let mut multi_qubit_changed = false;
+     for (node, phase_update) in remove_list {
++        if dag.get_qargs(dag[node].unwrap_operation().qubits).len() > 1 {
++            multi_qubit_changed = true;
++        }
+         dag.remove_op_node(node);
+         dag.add_global_phase(&Param::Float(phase_update))
+             .expect("The global phase is guaranteed to be a float");
+     }
+-    Ok(())
++    Ok(multi_qubit_changed)
+ }
+ 
+ pub fn remove_identity_equiv_mod(m: &Bound<PyModule>) -> PyResult<()> {
+diff --git a/qiskit/transpiler/passes/optimization/commutative_cancellation.py b/qiskit/transpiler/passes/optimization/commutative_cancellation.py
+index 1fe137248..e843dadd9 100644
+--- a/qiskit/transpiler/passes/optimization/commutative_cancellation.py
++++ b/qiskit/transpiler/passes/optimization/commutative_cancellation.py
+@@ -85,7 +85,9 @@ class CommutativeCancellation(TransformationPass):
+         Returns:
+             DAGCircuit: the optimized DAG.
+         """
+-        commutation_cancellation.cancel_commutations(
++        changed = commutation_cancellation.cancel_commutations(
+             dag, self._commutation_checker, sorted(self.basis)
+         )
++        if changed:
++            self.property_set["_opt_pass_changed"] = True
+         return dag
+diff --git a/qiskit/transpiler/passes/optimization/remove_identity_equiv.py b/qiskit/transpiler/passes/optimization/remove_identity_equiv.py
+index 098546577..448277270 100644
+--- a/qiskit/transpiler/passes/optimization/remove_identity_equiv.py
++++ b/qiskit/transpiler/passes/optimization/remove_identity_equiv.py
+@@ -71,5 +71,7 @@ class RemoveIdentityEquivalent(TransformationPass):
+         self._target = target
+ 
+     def run(self, dag: DAGCircuit) -> DAGCircuit:
+-        remove_identity_equiv(dag, self._approximation_degree, self._target)
++        changed = remove_identity_equiv(dag, self._approximation_degree, self._target)
++        if changed:
++            self.property_set["_opt_pass_changed"] = True
+         return dag
+diff --git a/qiskit/transpiler/preset_passmanagers/builtin_plugins.py b/qiskit/transpiler/preset_passmanagers/builtin_plugins.py
+index 966c950d2..b632b0be5 100644
+--- a/qiskit/transpiler/preset_passmanagers/builtin_plugins.py
++++ b/qiskit/transpiler/preset_passmanagers/builtin_plugins.py
+@@ -517,6 +517,27 @@ def _optimization_check_minimum_point(prefix: str):
+     return (setup, check)
+ 
+ 
++def _optimization_check_changed_flag():
++    """Loop condition based on per-pass changed flags.
++
++    Each optimization pass sets property_set["_opt_pass_changed"] = True if it
++    modified the DAG. The loop continues only if at least one pass made a change.
++    The reset pass clears the flag at the start of each iteration.
++    """
++    from qiskit.transpiler.basepasses import AnalysisPass
++
++    class _ResetChangedFlag(AnalysisPass):
++        """Reset the _opt_pass_changed flag at the start of each loop iteration."""
++
++        def run(self, dag):
++            self.property_set["_opt_pass_changed"] = False
++
++    def check(property_set):
++        return property_set.get("_opt_pass_changed", False)
++
++    return (_ResetChangedFlag(), check)
++
++
+ class OptimizationPassManager(PassManagerStagePlugin):
+     """Plugin class for optimization stage"""
+ 
+@@ -557,7 +578,9 @@ class OptimizationPassManager(PassManagerStagePlugin):
+                     ContractIdleWiresInControlFlow(),
+                 ]
+                 post_loop = []
+-                loop_check, continue_loop = _optimization_check_fixed_point()
++                reset_changed, continue_loop = _optimization_check_changed_flag()
++                loop = [reset_changed] + loop
++                loop_check = []
+             case 3:
+                 pre_loop = []
+                 loop = [
+-- 
+2.47.3
+

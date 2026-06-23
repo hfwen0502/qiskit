@@ -1,0 +1,14 @@
+Date: 2026-06-22T21:56:24+00:00
+Group: device_hamiltonians
+Pytest target: benchpress/qiskit_gym/device_transpile/test_hamiltonians.py
+QISKIT_TRANSPILER_SEED: 1
+Main build:  ea2546703108b4cf879bb5d9877f34d68cc8ff5d  (socket 0)
+PR build:    e3b0017939d71e53bbd7c546a9c9326289af0ed6  (socket 1)
+Benchpress:  a9744133a5fb227201caac014fba65c41ae9df3d  + benchpress_patch.diff
+Backend (from default.conf): backend_name = 'fake_torino'
+Model name:                              Intel Xeon Processor (SapphireRapids)
+BIOS Model name:                         pc-q35-jammy-hpb
+Thread(s) per core:                      2
+Core(s) per socket:                      40
+Socket(s):                               2
+NUMA node(s):                            2

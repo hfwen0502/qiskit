@@ -1,0 +1,16 @@
+=== PR #16157 (rebased onto 2.6-dev main) - full benchpress suite ===
+group                   circ    2Qgate d  totgate d   totdepth d  wall main   wall pr   wall %
+----------------------------------------------------------------------------------------------
+feynman                   50          +0         +0           +0      18.89     15.52  -17.81%
+device_hamiltonians       81          +0         +0           +0      26.32     22.73  -13.62%
+abstract_small           168          +0         +1           +0       1.17      1.06   -9.08%
+abstract_medium           92          +0         +0           +0      81.16     68.42  -15.70%
+abstract_large           232          +0         +0           +0     515.23    452.93  -12.09%
+abstract_hamiltonians    400          +0         +0           +0     231.94    201.43  -13.15%
+----------------------------------------------------------------------------------------------
+TOTAL                   1023          +0         +1           +0     874.70    762.09  -12.87%
+
+Grand totals: 2Q gates 33162721 (delta +0); total depth 57412969 (delta +0)
+Caveats:
+  - abstract_small: +1 1Q gate on qec_en_n5 (known 1Q tie-break non-determinism; 2Q + depth identical).
+  - abstract_large: bv_n280-all-to-all +13% wall on a <2s circuit (single-shot noise; output identical).
