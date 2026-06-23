@@ -101,6 +101,12 @@ for g in GROUPS:
     if pts:
         ax.scatter([a for a, _ in pts], [b for _, b in pts], s=9, alpha=0.7,
                    color=COLOR[g], edgecolor="none", label=g)
+# red-ring the circuits whose PR mean exceeds main (all within run-to-run noise)
+above = [(statistics.fmean(c["mw"]), statistics.fmean(c["pw"]))
+         for _, c in circ.items() if statistics.fmean(c["pw"]) > statistics.fmean(c["mw"])]
+ax.scatter([a for a, _ in above], [b for _, b in above], s=55, facecolors="none",
+           edgecolors="red", linewidths=0.9, zorder=6,
+           label=f"PR mean > main ({len(above)}, within noise)")
 ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlim(lo2, hi2); ax.set_ylim(lo2, hi2)
 ax.set_aspect("equal"); ax.set_xlabel("mean transpile time — main (s)")
 ax.set_ylabel("mean transpile time — PR (s)")
