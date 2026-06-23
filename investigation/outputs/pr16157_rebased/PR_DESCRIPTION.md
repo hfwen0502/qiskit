@@ -64,8 +64,6 @@ detailed in **Issues** below.
 
 ![2Q gate count, main vs PR — every point on the diagonal](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/scatter_2q.png)
 
-![Circuit depth, main vs PR — identical except 3 ringed non-determinism circuits](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/scatter_depth.png)
-
 **Compilation is faster.** Total suite compile time drops **−10.6% ± 0.3%** (5 runs), and
 the PR is **faster in every group in every run**. Per group the reduction ranges **−6.7%
 to −20.1%**. A few circuits (**red rings** in the per-circuit plot) have PR's *mean*
@@ -172,11 +170,13 @@ overnight sweep; `qec_en_n5-square` additionally has 8 dedicated main-only runs 
 The **2Q-gate count is stable on every one of these — and on all 1,023 circuits.** The
 cause is a seed-independent tie-break in 1Q-rotation decomposition: it persists even with a
 fixed `PassManager` and an explicit `seed_transpiler` (root-cause analysis in
-`NONDETERMINISM_ISSUE.md`). The red-ringed off-diagonal points in the 1Q scatter (and the
-depth scatter above) come entirely from these circuits; every other point is on the
-diagonal. Because it is not introduced by this PR, we will **open a separate PR** to fix it.
+`NONDETERMINISM_ISSUE.md`). The red-ringed off-diagonal points in the 1Q and depth scatters
+below come entirely from these circuits; every other point is on the diagonal. Because it
+is not introduced by this PR, we will **open a separate PR** to fix it.
 
 ![1Q gate count, main vs PR — only the non-determinism circuits leave the diagonal](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/scatter_1q.png)
+
+![Circuit depth, main vs PR — the ±1 depth non-determinism circuits, ringed](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/scatter_depth.png)
 
 ## AI / LLM disclosure
 
