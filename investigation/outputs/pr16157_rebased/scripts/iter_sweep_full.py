@@ -14,7 +14,7 @@ sys.path.insert(0, "/mnt/data/spotter-val/benchpress")
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import SparsePauliOp
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-from qiskit_ibm_runtime.fake_provider import FakeNighthawk
+from qiskit_ibm_runtime.fake_provider import FakeTorino
 
 from benchpress.config import Configuration
 from benchpress.utilities.backends import FlexibleBackend
@@ -25,7 +25,10 @@ from benchpress.workouts.abstract_transpile.qasmbench import (
 from benchpress.workouts.abstract_transpile.hamlib_hamiltonians import HAM_TOPO, HAM_TOPO_NAMES
 
 LOOP_PASS = "CommutativeCancellation"
-NH = FakeNighthawk()
+# Device groups (feynman, device_hamiltonians) target FakeTorino (133q) — the same
+# backend Configuration.backend() resolves to for the benchpress timing run
+# (default.conf backend_name='fake_torino'). Abstract groups use FlexibleBackend.
+TORINO = FakeTorino()
 
 
 class _B:
@@ -56,14 +59,14 @@ fdir = "/mnt/data/spotter-val/benchpress/benchpress/qasm/feynman"
 for f in sorted(os.listdir(fdir)):
     if f.endswith(".qasm"):
         run_one("feynman", f[:-5],
-                lambda f=f: (NH, QuantumCircuit.from_qasm_file(f"{fdir}/{f}")))
+                lambda f=f: (TORINO, QuantumCircuit.from_qasm_file(f"{fdir}/{f}")))
 
 hdir = Configuration.get_hamiltonian_dir("hamlib")
 for h in json.load(open(hdir + "100_representative.json")):
-    if h["ham_qubits"] > NH.num_qubits:
+    if h["ham_qubits"] > TORINO.num_qubits:
         continue
     run_one("device_hamiltonians", "ham_" + h["ham_instance"][1:-1],
-            lambda h=h: (NH, generate_hamiltonian_circuit(
+            lambda h=h: (TORINO, generate_hamiltonian_circuit(
                 SparsePauliOp(h["ham_hamlib_hamiltonian_terms"],
                               h["ham_hamlib_hamiltonian_coefficients"]), _B())))
 

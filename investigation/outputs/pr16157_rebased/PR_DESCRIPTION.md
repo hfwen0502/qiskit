@@ -54,7 +54,17 @@ sockets, `QISKIT_TRANSPILER_SEED=1`. Timing is the mean of **5 full-suite runs**
 this PR (`scripts/0001..0003-*.patch`); Benchpress @ `a9744133` + `scripts/benchpress_patch.diff`.
 Per-run commit SHAs are also recorded in each group's `environment.txt`.
 
-**Fewer loop iterations, never more.** ~**43% of circuits (435 / 1,021) compile with one
+**Backends (one model per group, used for *every* metric).** The device groups (feynman,
+device-Hamiltonian) target **`FakeTorino`** (133 qubits) — the backend benchpress's
+`Configuration.backend()` resolves to (`default.conf` `backend_name = 'fake_torino'`). The
+abstract groups target Benchpress `FlexibleBackend` topologies (all-to-all / linear / square /
+heavy-hex), seeded. Transpile time, gate counts, depth, **and** loop-iteration counts are all
+measured on these same backends over the same **1,023** circuits, so every figure below is
+directly comparable. (Circuits that exceed 133 qubits — 3 large feynman multipliers and 19
+device Hamiltonians up to 930 qubits — cannot map to the device and are dropped identically by
+`main` and the PR; the 1,023 are exactly those that transpile on `FakeTorino`.)
+
+**Fewer loop iterations, never more.** ~**42% of circuits (425 / 1,023) compile with one
 fewer optimization-loop iteration**; the rest keep the same count; **none take more**
 (every delta is exactly +1 or 0). The effect concentrates in larger circuits (e.g.
 abstract Hamiltonians: 249/400).
@@ -81,9 +91,9 @@ None is a real slowdown.
 
 ![Per-group transpile time, mean ± stdev over 5 runs](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/runtime_by_group.png)
 
-In one line: **the PR helps ~43% of circuits, by ~13% each (median −13.5%), cutting total
-suite compile time by 10.6%** — and the ~57% of circuits whose iteration count is unchanged
-show **no slowdown** (mean Δ −2.6%, i.e. within run-to-run noise, if anything marginally
+In one line: **the PR helps ~42% of circuits, by ~13% each (median −13.6%), cutting total
+suite compile time by 10.6%** — and the ~58% of circuits whose iteration count is unchanged
+show **no slowdown** (mean Δ −2.5%, i.e. within run-to-run noise, if anything marginally
 faster), confirming the added signal checks are cheap.
 
 ## Details — how the metrics are captured
@@ -146,7 +156,7 @@ circuits in the set — nothing is excluded:
 speedup = ( Σ_c t_PR(c) − Σ_c t_main(c) ) / Σ_c t_main(c)
 ```
 
-All circuits count, but the ~57% with unchanged iteration count have `t_PR(c) ≈ t_main(c)`
+All circuits count, but the ~58% with unchanged iteration count have `t_PR(c) ≈ t_main(c)`
 so they contribute ≈0 to the numerator; the savers (mostly the large circuits) drive the
 reduction. This is the honest "total time to transpile the suite" number: **−10.6% ± 0.3%**.
 
@@ -154,11 +164,11 @@ To separate *effect size* from *coverage*, we also report the unweighted per-cir
 of `(t_PR(c) − t_main(c)) / t_main(c)`:
 
 ```
-savers (one fewer iteration):    mean −12.7%  (median −13.5%)   ← effect size where it acts
-unchanged-iteration circuits:    mean  −2.6%                    ← ≈0, i.e. no slowdown
+savers (one fewer iteration):    mean −13.1%  (median −13.6%)   ← effect size where it acts
+unchanged-iteration circuits:    mean  −2.5%                    ← ≈0, i.e. no slowdown
 ```
 
-i.e. **the PR helps ~43% of circuits by ~13% each, which cuts total suite compile time by
+i.e. **the PR helps ~42% of circuits by ~13% each, which cuts total suite compile time by
 10.6%**, and the rest are not slowed.
 
 ## Issues — pre-existing non-determinism (not introduced here)
