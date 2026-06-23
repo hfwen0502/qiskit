@@ -48,7 +48,9 @@ for g in GROUPS:
     if not xs:
         continue
     xticks.append(sum(xs) / len(xs))
-    xlabels.append(f"{g}\n(n={len(xs)})")
+    # stagger every other label down a line so narrow neighbors don't overlap
+    prefix = "\n" if len(xlabels) % 2 == 1 else ""
+    xlabels.append(f"{prefix}{g}\n(n={len(xs)})")
     running = max(xs)
     ax.axvline(running + 0.5, color="0.85", lw=0.7, zorder=0)
 ax.set_yticks([0, -1])
