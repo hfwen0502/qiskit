@@ -52,16 +52,24 @@ sockets, `QISKIT_TRANSPILER_SEED=1`. Timing is the mean of **5 full-suite runs**
 **Fewer loop iterations, never more.** ~**43% of circuits (435 / 1,021) compile with one
 fewer optimization-loop iteration**; the rest keep the same count; **none take more**
 (every delta is exactly +1 or 0). The effect concentrates in larger circuits (e.g.
-abstract Hamiltonians: 249/400). → `iteration_histogram.png`
+abstract Hamiltonians: 249/400).
+
+![Level-2 optimization-loop iterations, main vs PR](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/iteration_histogram.png)
 
 **Output is unchanged.** Across all 1,023 circuits and all 5 runs, **2Q-gate counts and
-circuit depths are bit-identical** between `main` and the PR — every point on the
-diagonal. → `scatter_2q.png`, `scatter_depth.png`
+circuit depths are bit-identical** between `main` and the PR — every point on the diagonal.
+
+![2Q gate count, main vs PR — every point on the diagonal](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/scatter_2q.png)
+
+![Circuit depth, main vs PR — every point on the diagonal](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/scatter_depth.png)
 
 **Compilation is faster.** Total suite compile time drops **−10.6% ± 0.3%** (5 runs), and
 the PR is **faster in every group in every run**. Per group the reduction ranges **−6.7%
-to −20.1%**. → `runtime_scatter.png` (per-circuit mean, main vs PR), `runtime_by_group.png`
-(per-group mean ± stdev).
+to −20.1%**.
+
+![Per-circuit transpile time (mean of 5 runs), main vs PR](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/runtime_scatter.png)
+
+![Per-group transpile time, mean ± stdev over 5 runs](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/runtime_by_group.png)
 
 In one line: **the PR helps ~43% of circuits, by ~13% each (median −13.5%), cutting total
 suite compile time by 10.6%** — and the ~57% of circuits whose iteration count is unchanged
@@ -96,6 +104,8 @@ decomposition (it varies even with a fixed `PassManager` and `seed_transpiler`; 
 on `main` alone — see `recheck/` and `NONDETERMINISM_ISSUE.md`). The 2Q-gate count and
 depth are unaffected. It is called out here only so the off-diagonal points in the 1Q
 plot are not mistaken for a PR-induced change.
+
+![1Q gate count, main vs PR — only the 4 non-determinism circuits leave the diagonal](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/scatter_1q.png)
 
 ## AI / LLM disclosure
 
