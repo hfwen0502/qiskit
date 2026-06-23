@@ -128,15 +128,16 @@ ax.legend(); ax.grid(axis="y", which="both", ls=":", alpha=0.4)
 fig.tight_layout(); fig.savefig(f"{CH}/runtime_by_group.png", dpi=150); plt.close(fig)
 
 # === 4. gate/depth all-point scatters =====================================
-def scatter_metric(keyname, label, fname):
+def scatter_metric(keyname, label, fname, highlight=False):
     fig, ax = plt.subplots(figsize=(7, 7))
     allp = []
-    off = 0
-    for (g, _), c in circ.items():
+    offpts = []  # (a, b, circuit_id) for points off the diagonal
+    for (g, cid), c in circ.items():
         for a, b in c[keyname]:
             if a > 0 and b > 0:
                 allp.append((g, a, b))
-                off += a != b
+                if a != b:
+                    offpts.append((a, b, cid))
     lo, hi = min(min(a, b) for _, a, b in allp) * 0.7, max(max(a, b) for _, a, b in allp) * 1.4
     ax.plot([lo, hi], [lo, hi], "k--", lw=1, label="y = x", zorder=1)
     for g in GROUPS:
@@ -144,15 +145,22 @@ def scatter_metric(keyname, label, fname):
         if gp:
             ax.scatter([a for a, _ in gp], [b for _, b in gp], s=6, alpha=0.5,
                        color=COLOR[g], edgecolor="none", label=g)
+    if highlight and offpts:
+        ax.scatter([a for a, _, _ in offpts], [b for _, b, _ in offpts], s=70,
+                   facecolors="none", edgecolors="red", linewidths=1.3, zorder=6,
+                   label="off-diagonal (1Q non-determinism)")
+        names = sorted(set(cid for _, _, cid in offpts))
+        ax.text(0.03, 0.97, "off-diagonal circuits:\n" + "\n".join(names),
+                transform=ax.transAxes, va="top", ha="left", fontsize=7, color="red")
     ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
     ax.set_aspect("equal"); ax.set_xlabel(f"{label} — main"); ax.set_ylabel(f"{label} — PR")
-    ax.set_title(f"Per-circuit {label} (all 5 runs)\n{len(allp)-off}/{len(allp)} points identical")
-    ax.grid(True, which="both", ls=":", alpha=0.4); ax.legend(fontsize=8, loc="upper left")
+    ax.set_title(f"Per-circuit {label} (all 5 runs)\n{len(allp)-len(offpts)}/{len(allp)} points identical")
+    ax.grid(True, which="both", ls=":", alpha=0.4); ax.legend(fontsize=8, loc="lower right")
     fig.tight_layout(); fig.savefig(f"{CH}/{fname}", dpi=150); plt.close(fig)
-    return off
+    return len(offpts)
 
 off2q = scatter_metric("2q", "2Q gate count", "scatter_2q.png")
-off1q = scatter_metric("1q", "1Q gate count", "scatter_1q.png")
+off1q = scatter_metric("1q", "1Q gate count", "scatter_1q.png", highlight=True)
 offdp = scatter_metric("dp", "circuit depth", "scatter_depth.png")
 
 # === stats for the draft ==================================================

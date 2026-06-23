@@ -107,6 +107,10 @@ plot are not mistaken for a PR-induced change.
 
 ![1Q gate count, main vs PR — only the 4 non-determinism circuits leave the diagonal](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/scatter_1q.png)
 
+The red-ringed off-diagonal points above come entirely from those four circuits; every
+other point is on the diagonal. This non-determinism is independent of this PR, so we will
+**open a separate PR** to address it (root-cause analysis in `NONDETERMINISM_ISSUE.md`).
+
 ## AI / LLM disclosure
 
 - [x] I used **Claude Code (Claude Opus)** to help with the rebase onto current `main` and

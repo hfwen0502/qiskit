@@ -48,16 +48,14 @@ for g in GROUPS:
     if not xs:
         continue
     xticks.append(sum(xs) / len(xs))
-    # stagger every other label down a line so narrow neighbors don't overlap
-    prefix = "\n" if len(xlabels) % 2 == 1 else ""
-    xlabels.append(f"{prefix}{g}\n(n={len(xs)})")
+    xlabels.append(f"{g} (n={len(xs)})")
     running = max(xs)
     ax.axvline(running + 0.5, color="0.85", lw=0.7, zorder=0)
 ax.set_yticks([0, -1])
 ax.set_yticklabels(["0\n(same)", "−1\n(one fewer)"])
 ax.set_ylim(-1.6, 0.6)
 ax.set_xticks(xticks)
-ax.set_xticklabels(xlabels, fontsize=8)
+ax.set_xticklabels(xlabels, rotation=20, ha="right", fontsize=8)
 ax.set_ylabel("PR − main\n(loop iterations)")
 n = len(keys)
 ax.set_title(f"Per-circuit change in Level-2 loop iterations (PR − main), n={n}\n"
