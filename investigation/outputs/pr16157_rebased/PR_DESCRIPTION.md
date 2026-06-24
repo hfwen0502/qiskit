@@ -81,13 +81,17 @@ detailed in **Issues** below.
 
 **Compilation is faster.** Total suite compile time drops **−10.6% ± 0.3%** (5 runs), and
 the PR is **faster in every group in every run**. Per group the reduction ranges **−6.7%
-to −20.1%**. A few circuits (**red rings** in the per-circuit plot) have PR's *mean*
-slightly above main's — these are **within run-to-run noise**: on those circuits `main`
-happened to have higher variance (a couple unusually fast runs pulling its mean down)
-while the PR was *tighter* (lower stdev), and the gap is smaller than `main`'s own spread.
-None is a real slowdown.
+to −20.1%**. The per-circuit scatter below is **split by loop-iteration outcome**, which
+separates the two questions a reviewer cares about: the **425 savers (left)** sit well
+below the diagonal (median **−13.6%**) — that's where the speedup comes from — while the
+**598 unchanged-iteration circuits (right)** lie **on the diagonal** (median −2.0%),
+showing the three added signal checks impose **no slowdown** on circuits that don't
+benefit. A handful of points (**red rings**) have PR's *mean* slightly above main's; they
+are confined to the unchanged panel — sub-millisecond `abstract_small` circuits where
+`main` happened to have higher run-to-run variance — and the gap is smaller than `main`'s
+own spread, so none is a real slowdown.
 
-![Per-circuit transpile time (mean of 5 runs), main vs PR](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/runtime_scatter.png)
+![Per-circuit transpile time (mean of 5 runs), main vs PR — left: 425 circuits that save an iteration; right: 598 unchanged, on the diagonal](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/runtime_scatter.png)
 
 ![Per-group transpile time, mean ± stdev over 5 runs](https://raw.githubusercontent.com/hfwen0502/qiskit/pass-manager-investigation/investigation/outputs/pr16157_rebased/images/runtime_by_group.png)
 

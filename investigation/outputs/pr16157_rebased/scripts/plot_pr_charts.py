@@ -87,6 +87,10 @@ ax.set_xticks(list(xs)); ax.legend(); ax.grid(axis="y", ls=":", alpha=0.4)
 fig.tight_layout(); fig.savefig(f"{CH}/iteration_histogram.png", dpi=150); plt.close(fig)
 
 # === 2. runtime scatter (per-circuit mean) ================================
+# NOTE: the runtime scatter EMBEDDED in PR_DESCRIPTION.md (images/runtime_scatter.png)
+# is the two-panel savers-vs-unchanged split produced by plot_runtime_split.py. This
+# single-panel all-points version is kept as a supplementary view and written to a
+# distinct filename so it never clobbers the embedded split chart.
 fig, ax = plt.subplots(figsize=(7, 7))
 allv = []
 faster = 0; ncirc = 0
@@ -112,7 +116,7 @@ ax.set_aspect("equal"); ax.set_xlabel("mean transpile time — main (s)")
 ax.set_ylabel("mean transpile time — PR (s)")
 ax.set_title(f"Per-circuit transpile time (mean of 5 runs)\n{faster}/{ncirc} below the line (PR faster)")
 ax.grid(True, which="both", ls=":", alpha=0.4); ax.legend(fontsize=8, loc="upper left")
-fig.tight_layout(); fig.savefig(f"{CH}/runtime_scatter.png", dpi=150); plt.close(fig)
+fig.tight_layout(); fig.savefig(f"{CH}/runtime_scatter_combined.png", dpi=150); plt.close(fig)
 
 # === 3. per-group avg ± stdev bars ========================================
 fig, ax = plt.subplots(figsize=(9, 5))
