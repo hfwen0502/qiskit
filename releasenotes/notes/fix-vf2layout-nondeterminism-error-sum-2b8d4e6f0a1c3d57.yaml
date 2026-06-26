@@ -1,0 +1,13 @@
+---
+fixes:
+  - |
+    Fixed a source of non-deterministic transpiler output when running
+    :func:`.generate_preset_pass_manager` at ``optimization_level=2`` against a
+    :class:`.Target` that supports control flow and has a symmetric coupling map.
+    The average-error scoring used by :class:`.VF2Layout` summed per-qubit gate
+    errors in a non-deterministic order; because floating-point addition is not
+    associative, the resulting score for two symmetric layouts could differ between
+    runs, so the chosen layout -- and therefore the single-qubit gate count and depth
+    of the transpiled circuit -- varied (the two-qubit gate count was unaffected).
+    The error contributions are now summed in a deterministic order.
+    Fixed `#16490 <https://github.com/Qiskit/qiskit/issues/16490>`__.
