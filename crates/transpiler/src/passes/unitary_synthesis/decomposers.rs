@@ -505,7 +505,7 @@ impl DecomposerCache {
 /// Get the [EulerBasisSet] denoting valid 1q decompositions for a given qubit in the target.
 fn euler_bases_from_target(target: &Target, qubit: PhysicalQubit) -> EulerBasisSet {
     match target.operation_names_for_qargs(&[qubit]) {
-        Ok(gates) => EulerBasisSet::from_support(|gate| gates.contains(gate)),
+        Ok(gates) => EulerBasisSet::from_support(|gate| gates.contains(&gate)),
         Err(_) => EulerBasisSet::from_support(|_| true),
     }
 }
@@ -925,10 +925,14 @@ fn get_candidate_2q_operations(
     let forwards_names = target
         .operation_names_for_qargs(&qubits)
         .unwrap_or_default();
-    let mut reverse_names = target
+    let reverse_names = target
         .operation_names_for_qargs(&rev_qubits)
         .unwrap_or_default();
-    for name in forwards_names {
+    // `*_names` are deterministically ordered (sorted); use a set only for O(1) membership tests so
+    // the resulting candidate order stays reproducible.
+    let reverse_set: HashSet<&str> = reverse_names.iter().copied().collect();
+    let mut matched_reverse: HashSet<&str> = HashSet::default();
+    for &name in &forwards_names {
         let Some(TargetOperation::Normal(op)) = target.operation_from_name(name) else {
             continue;
         };
@@ -936,7 +940,8 @@ fn get_candidate_2q_operations(
             continue;
         }
         let error_fwd = target.get_error(name, &qubits).unwrap_or(0.);
-        let (directions, error) = if reverse_names.remove(name) {
+        let (directions, error) = if reverse_set.contains(name) {
+            matched_reverse.insert(name);
             let error_rev = target.get_error(name, &rev_qubits).unwrap_or(0.);
             // TODO: the historical behaviour of this path is to choose a direction based on the
             // gate _duration_ instead of the error.  This probably wants revisiting.
@@ -968,7 +973,10 @@ fn get_candidate_2q_operations(
             error,
         });
     }
-    for name in reverse_names {
+    for &name in &reverse_names {
+        if matched_reverse.contains(name) {
+            continue;
+        }
         let Some(TargetOperation::Normal(op)) = target.operation_from_name(name) else {
             continue;
         };

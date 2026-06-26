@@ -1,0 +1,15 @@
+---
+fixes:
+  - |
+    Fixed a source of non-deterministic transpiler output when running
+    :func:`.generate_preset_pass_manager` at ``optimization_level=2`` against a
+    :class:`.Target` that supports control flow and has a symmetric coupling map.
+    :meth:`.Target.operation_names_for_qargs` returned the operation names in a
+    non-deterministic order (the iteration order of an internal hash set), which made
+    the floating-point error averaging used by :class:`.VF2Layout` scoring -- and the
+    two-qubit decomposer candidate ordering used during unitary synthesis -- depend on
+    that order.  As a result the chosen layout, and therefore the single-qubit gate
+    count and depth of the transpiled circuit, could vary between otherwise-identical
+    runs (the two-qubit gate count was unaffected).  The method now returns the names
+    in a deterministic, sorted order.
+    Fixed `#16490 <https://github.com/Qiskit/qiskit/issues/16490>`__.

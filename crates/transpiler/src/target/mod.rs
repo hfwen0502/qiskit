@@ -477,7 +477,7 @@ impl Target {
     #[pyo3(name = "operation_names_for_qargs", signature=(qargs, /))]
     pub fn py_operation_names_for_qargs(&self, qargs: Qargs) -> PyResult<HashSet<&str>> {
         match self.operation_names_for_qargs(&qargs) {
-            Ok(set) => Ok(set),
+            Ok(names) => Ok(names.into_iter().collect()),
             Err(e) => Err(PyKeyError::new_err(e.to_string())),
         }
     }
@@ -1261,7 +1261,7 @@ impl Target {
     }
 
     /// Gets all the operation names that use these qargs. Rust native equivalent of ``BaseTarget.operation_names_for_qargs()``
-    pub fn operation_names_for_qargs<'a, T>(&self, qargs: T) -> Result<HashSet<&str>, TargetError>
+    pub fn operation_names_for_qargs<'a, T>(&self, qargs: T) -> Result<Vec<&str>, TargetError>
     where
         T: Into<QargsRef<'a>>,
     {
@@ -1295,7 +1295,13 @@ impl Target {
         if res.is_empty() {
             return Err(TargetError::QargsWithoutInstruction(format!("{qargs:?}")));
         }
-        Ok(res)
+        // Return names in a deterministic (sorted) order.  `res` is a `HashSet` whose iteration
+        // order is randomised per call, and several callers do order-sensitive work on the result
+        // (floating-point error summation in VF2 layout scoring, 2q-decomposer candidate ordering),
+        // which makes transpilation non-reproducible if the order is unstable.
+        let mut names: Vec<&str> = res.into_iter().collect();
+        names.sort_unstable();
+        Ok(names)
     }
 
     /// Returns an iterator of `OperationType` instances and parameters present in the Target that
